@@ -162,7 +162,7 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
           }
         });
         mapRef.current = m;
-        if (process.env.NODE_ENV !== "production") (window as unknown as { __ledigtMap?: MapLibreMap }).__ledigtMap = m;
+        if (process.env.NODE_ENV !== "production") (window as unknown as { __hittaLyanMap?: MapLibreMap }).__hittaLyanMap = m;
       } catch (e) {
         console.error("[karta]", e);
         setFailed(true);

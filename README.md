@@ -1,4 +1,4 @@
-# Ledigt
+# Hitta Lyan
 
 Bevakar nya hyresrätter hos **Bostadsförmedlingen i Stockholm** (bostad.stockholm.se) och skickar mail och
 push-notis så fort en annons som matchar dina kriterier publiceras. Filtrera på kommun, stadsdel, adress/hus,
@@ -35,29 +35,29 @@ Skapa ett konto med en e-post som finns i `ADMIN_EMAILS` så blir det admin auto
 | --- | --- |
 | `DATABASE_URL` | Postgres-anslutning. Neon: `postgresql://...neon.tech/neondb?sslmode=require` |
 | `BETTER_AUTH_SECRET` | Slumpad hemlighet, t.ex. `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` | Sajtens publika URL, t.ex. `https://ledigt.vercel.app` |
+| `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL` | Sajtens publika URL, t.ex. `https://hittalyan.se` |
 | `CRON_SECRET` | Hemlighet som cron-anropet skickar som `Authorization: Bearer ...` |
 | `RESEND_API_KEY` | API-nyckel från resend.com. Saknas den loggas mailen bara i konsolen |
-| `EMAIL_FROM` | Avsändare. Utan verifierad domän: `Ledigt <onboarding@resend.dev>` (kan då bara skicka till Resend-kontots egen adress) |
+| `EMAIL_FROM` | Avsändare. Utan verifierad domän: `Hitta Lyan <onboarding@resend.dev>` (kan då bara skicka till Resend-kontots egen adress) |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push-nycklar: `npx web-push generate-vapid-keys` |
 | `ADMIN_EMAILS` | Kommaseparerade adresser som blir admin vid registrering |
 
 ## Deploy till Vercel
 
-1. **Importera repot** på vercel.com → Add New → Project → `JohanWRutberg/ledigt`. Framework: Next.js (upptäcks automatiskt).
+1. **Importera repot** på vercel.com → Add New → Project → `JohanWRutberg/hittalyan` (efter namnbytet på GitHub). Framework: Next.js (upptäcks automatiskt).
    Build-kommandot behöver inte ändras: Vercel kör `vercel-build` i package.json, som kopierar kartans worker,
    kör `prisma migrate deploy` mot produktionsdatabasen och sedan `next build`.
 2. **Databas:** i projektet → Storage → Create → **Neon** (Marketplace). Neon lägger själv in `DATABASE_URL` (pooled)
    och `DATABASE_URL_UNPOOLED` (används av migreringarna) som miljövariabler.
 3. **Miljövariabler:** Settings → Environment Variables → "Import .env" och klistra in innehållet i din lokala
    `.env.vercel` (skapas av utvecklaren med nya hemligheter, gitignorerad). Fyll i `RESEND_API_KEY` från resend.com.
-   `BETTER_AUTH_URL` och `NEXT_PUBLIC_APP_URL` ska vara sajtens riktiga URL, t.ex. `https://ledigt.vercel.app`.
+   `BETTER_AUTH_URL` och `NEXT_PUBLIC_APP_URL` ska vara sajtens riktiga URL, t.ex. `https://hittalyan.se`.
 4. **Deploya** (Deployments → Redeploy om env lades in efter första bygget). Registrera dig sedan med adressen i
    `ADMIN_EMAILS` på sajten. Kör "Hämta annonser nu" under Admin en första gång (första körningen skickar inga notiser).
 5. **Timvis polling:** `vercel.json` har en daglig cron (Hobby-planen tillåter max en gång per dag; Vercel skickar
    `CRON_SECRET` automatiskt). Den timvisa pollningen sköts av `.github/workflows/poll.yml`. Lägg in två
    repo-secrets på GitHub → Settings → Secrets and variables → Actions:
-   - `APP_URL` = `https://ledigt.vercel.app` (utan avslutande snedstreck)
+   - `APP_URL` = `https://hittalyan.se` (utan avslutande snedstreck)
    - `CRON_SECRET` = samma värde som i Vercel
    Testa med Actions → "Poll Bostadsförmedlingen" → Run workflow.
 6. **Resend:** skapa kontot med samma e-post som ditt admin-konto. Utan verifierad domän får `onboarding@resend.dev`
@@ -77,7 +77,7 @@ Skapa ett konto med en e-post som finns i `ADMIN_EMAILS` så blir det admin auto
 - **Gratis:** bläddra, filtrera, karta, sortering, antal per område, chansmätare.
 - **Pro:** bevakningar med mail och push. Nya konton får Pro som provperiod i `TRIAL_DAYS` dagar (0 stänger av).
 - Admin har alltid Pro och kan ge/ta Pro manuellt i adminportalen (kronan i användarlistan).
-- Stripe: skapa produkten "Ledigt Pro" med tre priser (månad recurring, år recurring, 3-månaderspass one-time) och
+- Stripe: skapa produkten "Hitta Lyan Pro" med tre priser (månad recurring, år recurring, 3-månaderspass one-time) och
   lägg `price_…`-ID:n i `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `STRIPE_PRICE_PASS`. Visningspriserna i UI:t
   styrs av `PRICE_LABEL_*`. Webhook-endpoint: `POST /api/stripe/webhook` med händelserna `checkout.session.completed`,
   `customer.subscription.created/updated/deleted` och `invoice.paid`; hemligheten i `STRIPE_WEBHOOK_SECRET`.

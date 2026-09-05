@@ -50,7 +50,7 @@ function renderEmailHtml(watch: Watch, listings: Listing[]) {
   <div style="max-width:600px;margin:0 auto;padding:32px 16px">
     <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.08)">
       <div style="padding:24px 16px 8px">
-        <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700">Ledigt</div>
+        <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700">Hitta Lyan</div>
         <h1 style="margin:8px 0 4px;font-size:22px">${listings.length === 1 ? "Ny lägenhet" : `${listings.length} nya lägenheter`} matchar «${escapeHtml(watch.name)}»</h1>
         <p style="margin:0;color:#475569;font-size:14px">Annonserna kommer från Bostadsförmedlingen i Stockholm. Anmäl intresse snabbt, annonser ligger ofta bara ute några dagar.</p>
       </div>
@@ -77,7 +77,7 @@ export async function sendWatchEmail(to: string, watch: Watch, listings: Listing
   }
   const resend = new Resend(key);
   const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "Ledigt <onboarding@resend.dev>",
+    from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>",
     to,
     subject,
     html,

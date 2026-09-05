@@ -94,7 +94,7 @@ model Verification {
   @@map("verification")
 }
 
-// ---------- Ledigt ----------
+// ---------- Hitta Lyan ----------
 
 /// En annons från bostad.stockholm.se (/AllaAnnonser/)
 model Listing {

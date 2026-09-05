@@ -10,7 +10,7 @@ export function Logo({ href = "/" }: { href?: string }) {
           <path d="M10 20v-6h4v6" />
         </svg>
       </span>
-      <span className="text-lg font-bold tracking-tight">Ledigt</span>
+      <span className="text-lg font-bold tracking-tight">Hitta Lyan</span>
     </Link>
   );
 }

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Ledigt – nya hyresrätter i Stockholm",
-    short_name: "Ledigt",
+    name: "Hitta Lyan – nya hyresrätter i Stockholm",
+    short_name: "Hitta Lyan",
     description: "Bevaka nya hyresrätter hos Bostadsförmedlingen i Stockholm och få notis direkt.",
     start_url: "/app",
     scope: "/",

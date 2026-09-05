@@ -6,11 +6,11 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Ledigt – bevaka nya hyresrätter i Stockholm", template: "%s · Ledigt" },
+  title: { default: "Hitta Lyan – bevaka nya hyresrätter i Stockholm", template: "%s · Hitta Lyan" },
   description:
     "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm.",
-  applicationName: "Ledigt",
-  appleWebApp: { capable: true, title: "Ledigt", statusBarStyle: "default" },
+  applicationName: "Hitta Lyan",
+  appleWebApp: { capable: true, title: "Hitta Lyan", statusBarStyle: "default" },
   icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
 

@@ -38,7 +38,7 @@ async function detect(): Promise<GuideState> {
   return { platform, supported, subscribed, permission: supported ? Notification.permission : "unsupported" };
 }
 
-const DISMISS_KEY = "ledigt:push-banner-dismissed";
+const DISMISS_KEY = "hittalyan:push-banner-dismissed";
 
 /**
  * Plattformsanpassad guide för push-notiser.
@@ -74,7 +74,7 @@ export function PushGuide({ variant }: { variant: "banner" | "full" }) {
     if (!mobile || state.subscribed || dismissed) return null;
     const text =
       state.platform === "ios-safari"
-        ? "På iPhone får du notiser om du lägger Ledigt på hemskärmen: Dela → Lägg till på hemskärmen, öppna därifrån och aktivera under Konto."
+        ? "På iPhone får du notiser om du lägger Hitta Lyan på hemskärmen: Dela → Lägg till på hemskärmen, öppna därifrån och aktivera under Konto."
         : state.platform === "ios-installed"
           ? "Aktivera notiser under Konto så hör vi av oss direkt när något matchar."
           : "Aktivera notiser under Konto så får du en notis i telefonen när något matchar.";
@@ -117,19 +117,19 @@ function FullGuide({ state }: { state: GuideState }) {
       icon: Smartphone,
       title: "iPhone och iPad",
       steps: [
-        "Öppna Ledigt i Safari och tryck på Dela-knappen (rutan med pilen).",
+        "Öppna Hitta Lyan i Safari och tryck på Dela-knappen (rutan med pilen).",
         "Välj “Lägg till på hemskärmen” och sedan “Lägg till”.",
-        "Öppna Ledigt från hemskärmen, gå till Konto och tryck “Aktivera notiser”.",
+        "Öppna Hitta Lyan från hemskärmen, gå till Konto och tryck “Aktivera notiser”.",
         "Tillåt notiser när iPhone frågar.",
       ],
-      note: "Kräver iOS 16.4 eller senare. Notiser fungerar bara i hemskärmsversionen, inte i vanliga Safari. Får du inga notiser: Inställningar → Notiser → Ledigt.",
+      note: "Kräver iOS 16.4 eller senare. Notiser fungerar bara i hemskärmsversionen, inte i vanliga Safari. Får du inga notiser: Inställningar → Notiser → Hitta Lyan.",
     },
     {
       id: "android",
       icon: Smartphone,
       title: "Android",
       steps: [
-        "Öppna Ledigt i Chrome, Edge, Samsung Internet eller Firefox.",
+        "Öppna Hitta Lyan i Chrome, Edge, Samsung Internet eller Firefox.",
         "Gå till Konto och tryck “Aktivera notiser”, tillåt när telefonen frågar.",
         "Valfritt: lägg till på hemskärmen via webbläsarens meny för snabbare åtkomst.",
       ],
@@ -153,7 +153,7 @@ function FullGuide({ state }: { state: GuideState }) {
   return (
     <div className="space-y-3">
       {state.platform === "ios-installed" && (
-        <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900">Ledigt är installerat på hemskärmen. Tryck på knappen ovan för att aktivera notiser.</p>
+        <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900">Hitta Lyan är installerat på hemskärmen. Tryck på knappen ovan för att aktivera notiser.</p>
       )}
       {sections.map((s) => {
         const mine = s.id === current;

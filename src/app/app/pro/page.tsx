@@ -30,7 +30,7 @@ export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Ledigt Pro</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Hitta Lyan Pro</h1>
         <p className="mt-1 text-sm text-muted">Bevakningar med mail och push, så du aldrig missar en annons som matchar.</p>
       </div>
 

@@ -66,7 +66,7 @@ export function PushToggle() {
       });
       if (!res.ok) throw new Error("Kunde inte spara prenumerationen");
       setState("on");
-      reg.showNotification("Ledigt", { body: "Notiser är aktiverade på den här enheten.", icon: "/icon-192.png" });
+      reg.showNotification("Hitta Lyan", { body: "Notiser är aktiverade på den här enheten.", icon: "/icon-192.png" });
     } catch (e) {
       setError((e as Error).message);
       setState("off");
@@ -91,11 +91,11 @@ export function PushToggle() {
   if (state === "ios-install") {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <p className="font-semibold">På iPhone behöver Ledigt ligga på hemskärmen</p>
+        <p className="font-semibold">På iPhone behöver Hitta Lyan ligga på hemskärmen</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Tryck på Dela-knappen i Safari (rutan med pilen).</li>
           <li>Välj <strong>Lägg till på hemskärmen</strong>.</li>
-          <li>Öppna Ledigt från hemskärmen och aktivera notiser här.</li>
+          <li>Öppna Hitta Lyan från hemskärmen och aktivera notiser här.</li>
         </ol>
       </div>
     );

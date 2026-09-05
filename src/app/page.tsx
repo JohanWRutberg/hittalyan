@@ -46,7 +46,7 @@ export default async function LandingPage() {
               Missa aldrig en ny hyresrätt i Stockholm igen.
             </h1>
             <p className="mt-5 text-lg text-muted">
-              Ledigt håller koll på Bostadsförmedlingens nya annonser och skickar mail och notis direkt när något dyker upp
+              Hitta Lyan håller koll på Bostadsförmedlingens nya annonser och skickar mail och notis direkt när något dyker upp
               som matchar ditt område, dina rum, din hyra – eller ett specifikt hus du drömmer om.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -89,7 +89,7 @@ export default async function LandingPage() {
       </main>
 
       <footer className="border-t border-line py-6 text-center text-xs text-muted">
-        Ledigt är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB.
+        Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB.
       </footer>
     </div>
   );

@@ -30,7 +30,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/app/kont
     <div className="mx-auto max-w-4xl space-y-6">
       {sp.ny && (
         <FadeIn className="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-brand-900">
-          <p className="font-semibold">Välkommen till Ledigt!</p>
+          <p className="font-semibold">Välkommen till Hitta Lyan!</p>
           <p className="mt-1 text-sm">
             Tre snabba steg: ange ditt ködatum nedan, aktivera notiser, och{" "}
             <Link href="/app/bevakningar/ny" className="font-semibold underline">skapa din första bevakning</Link>.

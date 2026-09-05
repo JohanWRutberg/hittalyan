@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Clock3, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { getAreaMap } from "@/lib/areas";
+import { getAreaCounts, getAreaMap } from "@/lib/areas";
 import { countActiveFilters, parseFilters, filtersToWhere, type SearchParams } from "@/lib/filters";
 import { dayAgo, formatDateTime, queueTime } from "@/lib/format";
 import { formatYears, queueYears } from "@/lib/chance";
@@ -29,8 +29,10 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const where = filtersToWhere(filters);
   const sort = parseSort(sp);
+  // Antal per område: samma filter som listan, men utan valda kommuner/stadsdelar
+  const areaWhere = filtersToWhere({ ...filters, kommuner: [], stadsdelar: [] });
 
-  const [areas, total, listings, newLast24h, lastRun, user, mapRows] = await Promise.all([
+  const [areas, total, listings, newLast24h, lastRun, user, mapRows, areaCounts] = await Promise.all([
     getAreaMap(),
     prisma.listing.count({ where }),
     prisma.listing.findMany({
@@ -53,6 +55,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
         kotidQ1: true, kotidQ3: true,
       },
     }),
+    getAreaCounts(areaWhere),
   ]);
 
   const cutoff = dayAgo();
@@ -113,7 +116,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
         </Link>
       </div>
 
-      <FilterPanel areas={areas} filters={filters} activeCount={activeCount} />
+      <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} />
 
       <ListingsMap points={mapPoints} userYears={userYears} />
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, Mail, Save } from "lucide-react";
 import type { Watch } from "@/generated/prisma/client";
 import type { AreaMap, Filters } from "@/lib/filters";
+import type { AreaCounts } from "@/lib/areas";
 import { FilterFields, Check } from "@/components/filter-fields";
 import { saveWatch } from "@/app/app/actions";
 import { FadeIn } from "@/components/motion";
@@ -14,11 +15,13 @@ export function WatchForm({
   watch,
   initialFilters,
   pushReady,
+  counts,
 }: {
   areas: AreaMap;
   watch?: Watch | null;
   initialFilters: Partial<Filters>;
   pushReady: boolean;
+  counts?: AreaCounts;
 }) {
   const [state, action, pending] = useActionState(saveWatch, undefined);
 
@@ -31,7 +34,7 @@ export function WatchForm({
           <input id="name" name="name" defaultValue={watch?.name ?? ""} required placeholder="t.ex. Nacka Grace, 3 rok" className="input" />
         </div>
 
-        <FilterFields areas={areas} initial={initialFilters} compact />
+        <FilterFields areas={areas} initial={initialFilters} compact counts={counts} />
 
         <div>
           <span className="label">Notiser</span>

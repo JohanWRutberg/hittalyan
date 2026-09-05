@@ -6,10 +6,11 @@ import { SlidersHorizontal, X, BellPlus, Search } from "lucide-react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AreaMap, Filters } from "@/lib/filters";
+import type { AreaCounts } from "@/lib/areas";
 import { filtersToQuery, parseFilters } from "@/lib/filters";
 import { FilterFields, Check } from "@/components/filter-fields";
 
-export function FilterPanel({ areas, filters, activeCount }: { areas: AreaMap; filters: Filters; activeCount: number }) {
+export function FilterPanel({ areas, filters, activeCount, counts }: { areas: AreaMap; filters: Filters; activeCount: number; counts?: AreaCounts }) {
   const router = useRouter();
   const [open, setOpen] = useState(activeCount > 0);
   const [pending, start] = useTransition();
@@ -55,7 +56,7 @@ export function FilterPanel({ areas, filters, activeCount }: { areas: AreaMap; f
             className="overflow-hidden border-t border-line"
           >
             <div className="space-y-5 p-5">
-              <FilterFields areas={areas} initial={filters} />
+              <FilterFields areas={areas} initial={filters} counts={counts} />
               <Check name="nya" label="Visa bara nya (senaste 24 h)" checked={filters.nya} />
               <div className="flex justify-end gap-2">
                 <button type="submit" disabled={pending} className="btn-primary">

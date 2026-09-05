@@ -2,21 +2,53 @@
 
 import { useMemo, useState } from "react";
 import type { AreaMap, Filters } from "@/lib/filters";
+import type { AreaCounts } from "@/lib/areas";
 
 /**
  * Gemensamma filterfält för lägenhetslistan och bevakningsformuläret.
  * Renderas inuti ett <form>; fältens namn matchar filterSchema.
  */
-export function FilterFields({ areas, initial, compact }: { areas: AreaMap; initial: Partial<Filters>; compact?: boolean }) {
+export function FilterFields({
+  areas,
+  initial,
+  compact,
+  counts,
+}: {
+  areas: AreaMap;
+  initial: Partial<Filters>;
+  compact?: boolean;
+  /** Antal annonser per område med övriga filter applicerade. Utan counts visas inga siffror. */
+  counts?: AreaCounts;
+}) {
   const [kommuner, setKommuner] = useState<string[]>(initial.kommuner ?? []);
   const [stadsdelar, setStadsdelar] = useState<string[]>(initial.stadsdelar ?? []);
 
+  // Stadsdelar: alla i valda kommuner. Utan vald kommun bara de som har annonser
+  // (hela registret är ~1 000 namn), eller alla om vi saknar antal.
   const stadsdelOptions = useMemo(() => {
     const src = kommuner.length ? kommuner : Object.keys(areas);
-    const set = new Set<string>();
-    for (const k of src) for (const s of areas[k] ?? []) set.add(s);
-    return [...set].sort((a, b) => a.localeCompare(b, "sv"));
-  }, [areas, kommuner]);
+    const opts: { name: string; count: number }[] = [];
+    const seen = new Set<string>();
+    for (const k of src) {
+      for (const s of areas[k] ?? []) {
+        const count = counts?.stadsdel[`${k}|${s}`] ?? 0;
+        if (!kommuner.length && counts && count === 0) continue;
+        if (seen.has(s)) {
+          const existing = opts.find((o) => o.name === s);
+          if (existing) existing.count += count;
+          continue;
+        }
+        seen.add(s);
+        opts.push({ name: s, count });
+      }
+    }
+    return opts.sort((a, b) => a.name.localeCompare(b.name, "sv"));
+  }, [areas, kommuner, counts]);
+
+  const kommunOptions = useMemo(
+    () => Object.keys(areas).map((k) => ({ name: k, count: counts?.kommun[k] ?? 0 })),
+    [areas, counts],
+  );
 
   function toggle(list: string[], v: string) {
     return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
@@ -30,7 +62,8 @@ export function FilterFields({ areas, initial, compact }: { areas: AreaMap; init
       <fieldset>
         <legend className="label">Kommun</legend>
         <ChipPicker
-          options={Object.keys(areas)}
+          options={kommunOptions}
+          showCounts={!!counts}
           selected={kommuner}
           onToggle={(v) => {
             const next = toggle(kommuner, v);
@@ -45,9 +78,10 @@ export function FilterFields({ areas, initial, compact }: { areas: AreaMap; init
         <legend className="label">Område / stadsdel</legend>
         <ChipPicker
           options={stadsdelOptions}
+          showCounts={!!counts}
           selected={stadsdelar}
           onToggle={(v) => setStadsdelar(toggle(stadsdelar, v))}
-          placeholder={kommuner.length ? "Alla områden i valda kommuner" : "Välj gärna kommun först"}
+          placeholder={kommuner.length ? "Alla områden i valda kommuner" : counts ? "Alla områden med annonser" : "Välj gärna kommun först"}
           searchable
         />
       </fieldset>
@@ -90,23 +124,28 @@ function ChipPicker({
   onToggle,
   placeholder,
   searchable,
+  showCounts,
 }: {
-  options: string[];
+  options: { name: string; count: number }[];
   selected: string[];
   onToggle: (v: string) => void;
   placeholder: string;
   searchable?: boolean;
+  showCounts?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(selected.length > 0);
-  const visible = options.filter((o) => !q || o.toLocaleLowerCase("sv").includes(q.toLocaleLowerCase("sv")));
+  const visible = options.filter((o) => !q || o.name.toLocaleLowerCase("sv").includes(q.toLocaleLowerCase("sv")));
+  const countOf = (name: string) => options.find((o) => o.name === name)?.count ?? 0;
 
   return (
     <div className="rounded-xl border border-line bg-white p-2">
       <div className="flex flex-wrap items-center gap-1.5">
         {selected.map((s) => (
           <button key={s} type="button" onClick={() => onToggle(s)} className="chip border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100">
-            {s} <span aria-hidden>×</span>
+            {s}
+            {showCounts && <CountBadge n={countOf(s)} active />}
+            <span aria-hidden>×</span>
           </button>
         ))}
         <button type="button" onClick={() => setOpen(!open)} className="chip hover:border-brand-300">
@@ -121,15 +160,19 @@ function ChipPicker({
           <div className="flex max-h-44 flex-wrap gap-1.5 overflow-y-auto">
             {visible.length === 0 && <span className="px-1 text-xs text-muted">Inga träffar</span>}
             {visible.map((o) => {
-              const on = selected.includes(o);
+              const on = selected.includes(o.name);
+              const empty = showCounts && o.count === 0;
               return (
                 <button
-                  key={o}
+                  key={o.name}
                   type="button"
-                  onClick={() => onToggle(o)}
-                  className={`chip transition ${on ? "border-brand-300 bg-brand-100 text-brand-800" : "hover:border-brand-300 hover:text-ink"}`}
+                  onClick={() => onToggle(o.name)}
+                  className={`chip transition ${
+                    on ? "border-brand-300 bg-brand-100 text-brand-800" : empty ? "text-slate-400 hover:border-slate-300" : "hover:border-brand-300 hover:text-ink"
+                  }`}
                 >
-                  {o}
+                  {o.name}
+                  {showCounts && <CountBadge n={o.count} active={on} />}
                 </button>
               );
             })}
@@ -137,6 +180,18 @@ function ChipPicker({
         </div>
       )}
     </div>
+  );
+}
+
+function CountBadge({ n, active }: { n: number; active?: boolean }) {
+  return (
+    <span
+      className={`ml-0.5 rounded-full px-1.5 text-[10px] font-semibold tabular-nums ${
+        active ? "bg-brand-600 text-white" : n > 0 ? "bg-slate-100 text-slate-600" : "bg-slate-50 text-slate-300"
+      }`}
+    >
+      {n}
+    </span>
   );
 }
 

@@ -6,6 +6,7 @@ import type * as MapLibre from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Maximize2, Minimize2, MapPin } from "lucide-react";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
+import { chanceFor } from "@/lib/chance";
 
 export interface MapPoint {
   id: number;
@@ -20,6 +21,8 @@ export interface MapPoint {
   vaning: number | null;
   url: string;
   nyproduktion: boolean;
+  kotidQ1: number | null;
+  kotidQ3: number | null;
   isNew: boolean;
 }
 
@@ -74,18 +77,24 @@ function groupPoints(points: MapPoint[]): Group[] {
   return [...map.values()];
 }
 
-function popupHtml(g: Group) {
+function popupHtml(g: Group, userYears: number | null) {
   const first = g.items[0];
   const rows = g.items
     .slice(0, 6)
-    .map(
-      (p) => `
+    .map((p) => {
+      const c = chanceFor(userYears, p.kotidQ1, p.kotidQ3);
+      const chance =
+        c.level === "unknown"
+          ? ""
+          : `<span class="lm-popup__chance lm-popup__chance--${c.level}" title="Liknande lägenheter: ${p.kotidQ1}–${p.kotidQ3} års kötid">${escapeHtml(c.label)}</span>`;
+      return `
       <a class="lm-popup__row" href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer">
         <span class="lm-popup__main">${escapeHtml(formatRum(p.antalRum))} · ${escapeHtml(formatYta(p.yta))} · ${escapeHtml(formatVaning(p.vaning))}</span>
         <span class="lm-popup__rent">${escapeHtml(formatKr(p.hyra))}</span>
+        ${chance}
         ${p.isNew ? '<span class="lm-popup__new">Ny</span>' : ""}
-      </a>`,
-    )
+      </a>`;
+    })
     .join("");
   const more = g.items.length > 6 ? `<div class="lm-popup__more">+ ${g.items.length - 6} till på samma adress</div>` : "";
   const sameStreet = g.items.every((p) => p.gatuadress === first.gatuadress);
@@ -116,7 +125,7 @@ function markerElement(g: Group, index: number) {
   return el;
 }
 
-export function ListingsMap({ points }: { points: MapPoint[] }) {
+export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; userYears?: number | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -182,7 +191,7 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
       const groups = groupPoints(points);
       const bounds = new maplibregl.LngLatBounds();
       groups.forEach((g, i) => {
-        const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(popupHtml(g));
+        const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(popupHtml(g, userYears));
         const marker = new maplibregl.Marker({ element: markerElement(g, i), anchor: "bottom" })
           .setLngLat([g.lng, g.lat])
           .setPopup(popup)
@@ -207,7 +216,7 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
     return () => {
       cancelled = true;
     };
-  }, [points, ready]);
+  }, [points, ready, userYears]);
 
   // Låt kartan räkna om sin storlek när höjden ändras
   useEffect(() => {

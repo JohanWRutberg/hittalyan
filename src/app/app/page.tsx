@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Clock3 } from "lucide-react";
+import { Clock3, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAreaMap } from "@/lib/areas";
 import { countActiveFilters, parseFilters, filtersToWhere, type SearchParams } from "@/lib/filters";
 import { dayAgo, formatDateTime, queueTime } from "@/lib/format";
+import { formatYears, queueYears } from "@/lib/chance";
 import { requireSession } from "@/lib/session";
 import { watchToFilters } from "@/lib/watch-filters";
 import { FilterPanel } from "@/components/filter-panel";
@@ -46,6 +47,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
       select: {
         id: true, lat: true, lng: true, gatuadress: true, stadsdel: true, kommun: true,
         antalRum: true, yta: true, hyra: true, vaning: true, url: true, nyproduktion: true, firstSeenAt: true,
+        kotidQ1: true, kotidQ3: true,
       },
     }),
   ]);
@@ -64,12 +66,15 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
     vaning: r.vaning,
     url: r.url,
     nyproduktion: r.nyproduktion,
+    kotidQ1: r.kotidQ1,
+    kotidQ3: r.kotidQ3,
     isNew: r.firstSeenAt >= cutoff,
   }));
 
   const activeCount = countActiveFilters(filters);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const qt = user?.queueRegisteredAt ? queueTime(user.queueRegisteredAt) : null;
+  const userYears = user?.queueRegisteredAt ? queueYears(user.queueRegisteredAt) : null;
 
   return (
     <div className="space-y-6">
@@ -82,15 +87,32 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
             {lastRun?.finishedAt && ` · uppdaterat ${formatDateTime(lastRun.finishedAt)}`}
           </p>
         </div>
-        <Link href="/app/konto" className="chip py-1.5 hover:border-brand-300">
-          <Clock3 className="size-3.5 text-brand-600" />
-          {qt ? `Kötid ${qt.years} år ${qt.days} dagar` : "Ange din kötid"}
+        <Link
+          href="/app/konto"
+          className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 shadow-soft transition hover:shadow-lift ${
+            qt ? "border-brand-200 bg-white" : "border-amber-200 bg-amber-50"
+          }`}
+        >
+          <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${qt ? "bg-brand-50 text-brand-700" : "bg-amber-100 text-amber-700"}`}>
+            {qt ? <Clock3 className="size-4.5" /> : <HelpCircle className="size-4.5" />}
+          </span>
+          <span className="leading-tight">
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted">Din kötid</span>
+            {qt ? (
+              <span className="block text-base font-bold text-ink">
+                {qt.years} år {qt.days} {qt.days === 1 ? "dag" : "dagar"}
+                <span className="ml-1.5 text-xs font-medium text-muted">≈ {formatYears(userYears!)}</span>
+              </span>
+            ) : (
+              <span className="block text-sm font-semibold text-amber-800">Ange ködatum för att se din chans</span>
+            )}
+          </span>
         </Link>
       </div>
 
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} />
 
-      <ListingsMap points={mapPoints} />
+      <ListingsMap points={mapPoints} userYears={userYears} />
 
       {listings.length === 0 ? (
         <div className="card p-12 text-center text-muted">
@@ -99,7 +121,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {listings.map((l, i) => (
-            <ListingCard key={l.id} listing={l} index={i} />
+            <ListingCard key={l.id} listing={l} index={i} userYears={userYears} />
           ))}
         </div>
       )}

@@ -254,6 +254,18 @@ body {
   padding: 1px 6px;
   border-radius: 999px;
 }
+.lm-popup__chance {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.lm-popup__chance--great { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
+.lm-popup__chance--good { color: var(--color-brand-700); background: var(--color-brand-50); border-color: var(--color-brand-200); }
+.lm-popup__chance--slim { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+.lm-popup__chance--low { color: #64748b; background: #f8fafc; border-color: #e2e8f0; }
 .lm-popup__more {
   margin-top: 6px;
   font-size: 11px;

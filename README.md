@@ -44,16 +44,24 @@ Skapa ett konto med en e-post som finns i `ADMIN_EMAILS` så blir det admin auto
 
 ## Deploy till Vercel
 
-1. Skapa en Neon-databas (Vercel Marketplace → Neon, eller neon.tech) och lägg `DATABASE_URL` i Vercel.
-2. Lägg in övriga miljövariabler ovan i Vercel → Settings → Environment Variables.
-3. Build-kommandot kör `prisma generate` via `postinstall`. Kör migreringar mot produktion en gång:
-   `DATABASE_URL=... npx prisma migrate deploy` (eller sätt build command till `prisma migrate deploy && next build`).
-4. Timvis polling:
-   - `vercel.json` innehåller ett cron-jobb varje hel timme. Vercel skickar automatiskt `Authorization: Bearer $CRON_SECRET`.
-     **OBS:** på Hobby-planen körs Vercel-cron bara en gång per dag.
-   - Därför finns `.github/workflows/poll.yml` som anropar endpointen varje timme gratis. Lägg in
-     secrets `APP_URL` (t.ex. `https://ledigt.vercel.app`) och `CRON_SECRET` i GitHub-repot → Settings → Secrets.
-5. Registrera dig med adressen i `ADMIN_EMAILS`. Adminportalen finns under `/app/admin`.
+1. **Importera repot** på vercel.com → Add New → Project → `JohanWRutberg/ledigt`. Framework: Next.js (upptäcks automatiskt).
+   Build-kommandot behöver inte ändras: Vercel kör `vercel-build` i package.json, som kopierar kartans worker,
+   kör `prisma migrate deploy` mot produktionsdatabasen och sedan `next build`.
+2. **Databas:** i projektet → Storage → Create → **Neon** (Marketplace). Neon lägger själv in `DATABASE_URL` (pooled)
+   och `DATABASE_URL_UNPOOLED` (används av migreringarna) som miljövariabler.
+3. **Miljövariabler:** Settings → Environment Variables → "Import .env" och klistra in innehållet i din lokala
+   `.env.vercel` (skapas av utvecklaren med nya hemligheter, gitignorerad). Fyll i `RESEND_API_KEY` från resend.com.
+   `BETTER_AUTH_URL` och `NEXT_PUBLIC_APP_URL` ska vara sajtens riktiga URL, t.ex. `https://ledigt.vercel.app`.
+4. **Deploya** (Deployments → Redeploy om env lades in efter första bygget). Registrera dig sedan med adressen i
+   `ADMIN_EMAILS` på sajten. Kör "Hämta annonser nu" under Admin en första gång (första körningen skickar inga notiser).
+5. **Timvis polling:** `vercel.json` har en daglig cron (Hobby-planen tillåter max en gång per dag; Vercel skickar
+   `CRON_SECRET` automatiskt). Den timvisa pollningen sköts av `.github/workflows/poll.yml`. Lägg in två
+   repo-secrets på GitHub → Settings → Secrets and variables → Actions:
+   - `APP_URL` = `https://ledigt.vercel.app` (utan avslutande snedstreck)
+   - `CRON_SECRET` = samma värde som i Vercel
+   Testa med Actions → "Poll Bostadsförmedlingen" → Run workflow.
+6. **Resend:** skapa kontot med samma e-post som ditt admin-konto. Utan verifierad domän får `onboarding@resend.dev`
+   bara skicka till den adressen, vilket räcker för eget bruk. Egen domän → byt `EMAIL_FROM`.
 
 ## Scripts
 

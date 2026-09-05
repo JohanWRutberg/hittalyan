@@ -26,21 +26,28 @@ export async function runPoll(): Promise<PollResult> {
     const existingIds = new Set(existing.map((e) => e.id));
     const isFirstRun = existingIds.size === 0;
 
-    const newListings: Listing[] = [];
-    for (const l of listings) {
-      const saved = await prisma.listing.upsert({
-        where: { id: l.id },
-        create: { ...l, firstSeenAt: now, lastSeenAt: now, active: true },
-        update: { ...l, lastSeenAt: now, active: true },
-      });
-      if (!existingIds.has(l.id)) newListings.push(saved);
-    }
-
+    // Få frågor i stället för en per annons: serverless-funktioner har kort tidsgräns.
+    const incomingNew = listings.filter((l) => !existingIds.has(l.id));
     const currentIds = listings.map((l) => l.id);
+
+    if (incomingNew.length) {
+      await prisma.listing.createMany({
+        data: incomingNew.map((l) => ({ ...l, firstSeenAt: now, lastSeenAt: now, active: true })),
+        skipDuplicates: true,
+      });
+    }
+    await prisma.listing.updateMany({
+      where: { id: { in: currentIds } },
+      data: { lastSeenAt: now, active: true },
+    });
     const { count: deactivated } = await prisma.listing.updateMany({
       where: { active: true, id: { notIn: currentIds } },
       data: { active: false },
     });
+
+    const newListings: Listing[] = incomingNew.length
+      ? await prisma.listing.findMany({ where: { id: { in: incomingNew.map((l) => l.id) } } })
+      : [];
 
     // Första körningen fyller bara databasen – annars skulle alla få 700 notiser.
     const notified = isFirstRun ? 0 : await notifyWatches(newListings);

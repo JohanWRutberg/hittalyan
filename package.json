@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "prebuild": "node scripts/copy-maplibre-worker.mjs",
-    "predev": "node scripts/copy-maplibre-worker.mjs"
+    "predev": "node scripts/copy-maplibre-worker.mjs",
+    "vercel-build": "node scripts/copy-maplibre-worker.mjs && prisma migrate deploy && next build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

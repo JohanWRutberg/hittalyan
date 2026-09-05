@@ -5,7 +5,7 @@ push-notis så fort en annons som matchar dina kriterier publiceras. Filtrera p�
 antal rum, yta, hyra, våning, balkong, hiss och nyproduktion. Visar även din kötid i bostadskön.
 
 Stack: Next.js 16 (App Router), React 19, Tailwind 4, Framer Motion, Prisma 7 + PostgreSQL, Better Auth,
-Resend (mail), Web Push (VAPID). Hostas på Vercel.
+Resend (mail), Web Push (VAPID), MapLibre GL + OpenFreeMap (karta, ingen API-nyckel). Hostas på Vercel.
 
 ## Hur det fungerar
 
@@ -63,6 +63,14 @@ Skapa ett konto med en e-post som finns i `ADMIN_EMAILS` så blir det admin auto
 | `npm run poll` | Kör en hämtning + notiser manuellt |
 | `npm run db:migrate` | `prisma migrate deploy` (produktion) |
 | `npm run db:studio` | Prisma Studio |
+
+## Kartan
+
+Lägenhetslistan visar en karta (MapLibre GL, vektorkartor från [OpenFreeMap](https://openfreemap.org), stil "Positron").
+MapLibre kör tile-tolkning i en Web Worker som laddas från en separat fil. Bundlern kan inte räkna ut var den ligger,
+så `scripts/copy-maplibre-worker.mjs` kopierar `maplibre-gl-worker.mjs` + `maplibre-gl-shared.mjs` till
+`public/maplibre/` (körs automatiskt vid `npm install`, `npm run dev` och `npm run build`) och komponenten anropar
+`setWorkerUrl("/maplibre/maplibre-gl-worker.mjs")`. Mappen är gitignorerad.
 
 ## Begränsningar
 

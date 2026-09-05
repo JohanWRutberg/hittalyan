@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
+import type * as MapLibre from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Maximize2, Minimize2, MapPin } from "lucide-react";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
@@ -34,6 +35,25 @@ interface Group {
 const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 const STOCKHOLM: [number, number] = [18.07, 59.33];
 const MAX_MARKERS = 1500;
+const MIN_FIT_ZOOM = 8.3;
+
+/**
+ * maplibre-gl levereras som UMD. Beroende på bundler hamnar API:t antingen
+ * som namnexporter eller under `default`, så vi hanterar båda.
+ */
+let workerConfigured = false;
+async function loadMapLibre(): Promise<typeof MapLibre> {
+  const mod = (await import("maplibre-gl")) as unknown as { default?: typeof MapLibre; Map?: unknown };
+  const ml = typeof mod.Map === "function" ? (mod as unknown as typeof MapLibre) : mod.default;
+  if (!ml || typeof ml.Map !== "function") throw new Error("maplibre-gl kunde inte laddas");
+  if (!workerConfigured) {
+    // Bundlern kan inte räkna ut var worker-filen ligger; vi serverar den själva
+    // (kopieras av scripts/copy-maplibre-worker.mjs).
+    ml.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
+    workerConfigured = true;
+  }
+  return ml;
+}
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -80,14 +100,19 @@ function popupHtml(g: Group) {
 }
 
 function markerElement(g: Group, index: number) {
+  // Yttre element positioneras av MapLibre (via transform) och får därför inte animeras.
+  // All animation sker på det inre elementet.
   const el = document.createElement("div");
-  el.className = `lm-marker${g.hasNew ? " lm-marker--new" : ""}`;
-  el.style.setProperty("--delay", `${Math.min(index, 60) * 12}ms`);
-  el.innerHTML = `
+  el.className = "lm-marker";
+  el.title = `${g.items[0].gatuadress}${g.items.length > 1 ? ` (${g.items.length} lägenheter)` : ""}`;
+  const inner = document.createElement("div");
+  inner.className = `lm-marker__inner${g.hasNew ? " lm-marker--new" : ""}`;
+  inner.style.setProperty("--delay", `${Math.min(index, 60) * 12}ms`);
+  inner.innerHTML = `
     <span class="lm-marker__halo"></span>
     <span class="lm-marker__pin">${g.items.length > 1 ? `<span class="lm-marker__count">${g.items.length}</span>` : ""}</span>
   `;
-  el.title = `${g.items[0].gatuadress}${g.items.length > 1 ? ` (${g.items.length} lägenheter)` : ""}`;
+  el.appendChild(inner);
   return el;
 }
 
@@ -105,7 +130,7 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
     let map: MapLibreMap | undefined;
     (async () => {
       try {
-        const maplibregl = await import("maplibre-gl");
+        const maplibregl = await loadMapLibre();
         if (cancelled || !containerRef.current) return;
         const m = new maplibregl.Map({
           container: containerRef.current,
@@ -128,6 +153,7 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
           }
         });
         mapRef.current = m;
+        if (process.env.NODE_ENV !== "production") (window as unknown as { __ledigtMap?: MapLibreMap }).__ledigtMap = m;
       } catch (e) {
         console.error("[karta]", e);
         setFailed(true);
@@ -148,7 +174,7 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
     if (!map || !ready) return;
     let cancelled = false;
     (async () => {
-      const maplibregl = await import("maplibre-gl");
+      const maplibregl = await loadMapLibre();
       if (cancelled) return;
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
@@ -166,7 +192,14 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
       });
 
       if (groups.length > 0) {
-        map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 900, essential: true });
+        // Enstaka annonser långt bort (Eskilstuna, Norrtälje) ska inte zooma ut hela kartan;
+        // då hamnar vi hellre på Stockholm och låter användaren zooma själv.
+        const camera = map.cameraForBounds(bounds, { padding: 48, maxZoom: 15 });
+        if (camera && (camera.zoom ?? 0) < MIN_FIT_ZOOM) {
+          map.easeTo({ center: STOCKHOLM, zoom: MIN_FIT_ZOOM, duration: 900, essential: true });
+        } else {
+          map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 900, essential: true });
+        }
       } else {
         map.easeTo({ center: STOCKHOLM, zoom: 9, duration: 600 });
       }
@@ -201,7 +234,7 @@ export function ListingsMap({ points }: { points: MapPoint[] }) {
         </button>
       </div>
       <div className={`relative border-t border-line bg-canvas transition-[height] duration-300 ease-out ${expanded ? "h-[70vh] min-h-[420px]" : "h-72"}`}>
-        <div ref={containerRef} className="absolute inset-0" />
+        <div ref={containerRef} className="h-full w-full" style={{ position: "absolute", inset: 0 }} />
         {!ready && !failed && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted">
             <span className="chip animate-pulse">Laddar karta…</span>

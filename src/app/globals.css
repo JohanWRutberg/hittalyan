@@ -113,10 +113,14 @@ body {
 }
 
 .lm-marker {
-  position: relative;
   width: 26px;
   height: 34px;
   cursor: pointer;
+}
+.lm-marker__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
   animation: lm-drop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--delay, 0ms);
   will-change: transform, opacity;
@@ -254,4 +258,11 @@ body {
   margin-top: 6px;
   font-size: 11px;
   color: var(--color-muted);
+}
+.lm-popup__row:focus:not(:focus-visible) {
+  outline: none;
+}
+.lm-popup__row:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 1px;
 }

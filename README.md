@@ -54,9 +54,10 @@ Skapa ett konto med en e-post som finns i `ADMIN_EMAILS` så blir det admin auto
    `BETTER_AUTH_URL` och `NEXT_PUBLIC_APP_URL` ska vara sajtens riktiga URL, t.ex. `https://hittalyan.se`.
 4. **Deploya** (Deployments → Redeploy om env lades in efter första bygget). Registrera dig sedan med adressen i
    `ADMIN_EMAILS` på sajten. Kör "Hämta annonser nu" under Admin en första gång (första körningen skickar inga notiser).
-5. **Timvis polling:** `vercel.json` har en daglig cron (Hobby-planen tillåter max en gång per dag; Vercel skickar
-   `CRON_SECRET` automatiskt). Den timvisa pollningen sköts av `.github/workflows/poll.yml`. Lägg in två
-   repo-secrets på GitHub → Settings → Secrets and variables → Actions:
+5. **Polling var 30:e minut:** `vercel.json` har en daglig cron (Hobby-planen tillåter max en gång per dag; Vercel
+   skickar `CRON_SECRET` automatiskt). Den täta pollningen sköts istället av `.github/workflows/poll.yml`, gratis
+   eftersom Actions-minuter är obegränsade på publika repon. Lägg in två repo-secrets på GitHub → Settings →
+   Secrets and variables → Actions:
    - `APP_URL` = `https://hittalyan.se` (utan avslutande snedstreck)
    - `CRON_SECRET` = samma värde som i Vercel
    Testa med Actions → "Poll Bostadsförmedlingen" → Run workflow.

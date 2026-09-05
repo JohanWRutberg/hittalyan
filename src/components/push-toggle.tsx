@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { Bell, BellOff, BellRing } from "lucide-react";
 
-type State = "unsupported" | "denied" | "off" | "on" | "loading";
+type State = "unsupported" | "ios-install" | "denied" | "off" | "on" | "loading";
+
+/** iPhone/iPad-Safari stöder Web Push bara när sajten lagts till på hemskärmen. */
+function isIosBrowserNotInstalled() {
+  const ua = navigator.userAgent;
+  const isIos = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
+  return isIos && !standalone;
+}
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -13,6 +21,7 @@ function urlBase64ToUint8Array(base64: string) {
 }
 
 async function detectPushState(vapid: string | undefined): Promise<State> {
+  if (!("PushManager" in window) && isIosBrowserNotInstalled()) return "ios-install";
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !vapid) return "unsupported";
   if (Notification.permission === "denied") return "denied";
   try {
@@ -79,6 +88,18 @@ export function PushToggle() {
     setState("off");
   }
 
+  if (state === "ios-install") {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <p className="font-semibold">På iPhone behöver Ledigt ligga på hemskärmen</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>Tryck på Dela-knappen i Safari (rutan med pilen).</li>
+          <li>Välj <strong>Lägg till på hemskärmen</strong>.</li>
+          <li>Öppna Ledigt från hemskärmen och aktivera notiser här.</li>
+        </ol>
+      </div>
+    );
+  }
   if (state === "unsupported") {
     return <p className="text-sm text-muted">Din webbläsare stöder inte push-notiser (eller VAPID-nycklar saknas i miljön).</p>;
   }

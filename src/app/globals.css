@@ -40,6 +40,23 @@ body {
   background: var(--color-brand-200);
 }
 
+/* iOS Safari zoomar in på fält med text under 16px. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Tryckytor: minst ~36px på pekskärm */
+@media (pointer: coarse) {
+  .chip {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+}
+
 @utility input {
   @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink shadow-none outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:opacity-60;
 }

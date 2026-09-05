@@ -9,10 +9,16 @@ export const metadata: Metadata = {
   title: { default: "Ledigt – bevaka nya hyresrätter i Stockholm", template: "%s · Ledigt" },
   description:
     "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm.",
+  applicationName: "Ledigt",
+  appleWebApp: { capable: true, title: "Ledigt", statusBarStyle: "default" },
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
 
 export const viewport: Viewport = {
   themeColor: "#157e6c",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

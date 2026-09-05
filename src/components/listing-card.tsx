@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, Building2, DoorOpen, Sparkles } from "lucide-react";
 import type { Listing } from "@/generated/prisma/client";
-import { formatDate, formatKr, formatRum, formatVaning, formatYta, isRecent } from "@/lib/format";
+import { formatDate, formatRum, formatVaning, formatYta, isRecent } from "@/lib/format";
 import { ChanceMeter } from "@/components/chance-meter";
 
 type ListingLike = Omit<Listing, "annonseradFran" | "annonseradTill" | "firstSeenAt" | "lastSeenAt"> & {
@@ -56,7 +56,7 @@ export function ListingCard({ listing: l, index = 0, userYears = null }: { listi
       <dl className="grid grid-cols-4 gap-2 text-sm">
         <Stat label="Rum" value={formatRum(l.antalRum).replace(" rok", "")} />
         <Stat label="Yta" value={formatYta(l.yta)} />
-        <Stat label="Hyra" value={formatKr(l.hyra)} />
+        <Stat label="Hyra kr" value={l.hyra == null ? "–" : new Intl.NumberFormat("sv-SE").format(l.hyra)} />
         <Stat label="Våning" value={formatVaning(l.vaning).replace("vån ", "")} />
       </dl>
 
@@ -87,9 +87,9 @@ export function ListingCard({ listing: l, index = 0, userYears = null }: { listi
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-canvas px-2.5 py-2">
+    <div className="rounded-xl bg-canvas px-2 py-2 sm:px-2.5">
       <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="mt-0.5 font-semibold text-ink">{value}</dd>
+      <dd className="mt-0.5 whitespace-nowrap font-semibold text-ink">{value}</dd>
     </div>
   );
 }

@@ -50,7 +50,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/app/kont
             {qt ? (
               <p className="mt-1 text-3xl font-bold tracking-tight text-brand-700">
                 {qt.years} år {qt.days} {qt.days === 1 ? "dag" : "dagar"}
-                <span className="ml-2 text-base font-medium text-muted">({qt.totalDays} dagar sedan {formatDate(user.queueRegisteredAt)})</span>
+                <span className="mt-0.5 block text-sm font-medium text-muted sm:ml-2 sm:inline sm:text-base">
+                  {qt.totalDays} dagar sedan {formatDate(user.queueRegisteredAt)}
+                </span>
               </p>
             ) : (
               <p className="mt-1 text-sm text-muted">Ange datumet du registrerade dig i bostadskön så räknar vi ut din kötid. Du hittar det på Mina sidor hos bostad.stockholm.se.</p>
@@ -69,7 +71,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/app/kont
         <div className="flex items-start gap-4">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><ShieldCheck className="size-5" /></span>
           <div className="flex-1">
-            <h2 className="text-lg font-semibold">Notiser på datorn</h2>
+            <h2 className="text-lg font-semibold">Notiser på datorn och mobilen</h2>
             <p className="mt-1 text-sm text-muted">
               Push-notiser skickas till varje enhet där du aktiverat dem. {pushCount > 0 ? `Aktiverat på ${pushCount} ${pushCount === 1 ? "enhet" : "enheter"}.` : "Inte aktiverat på någon enhet än."}
             </p>

@@ -9,10 +9,16 @@ import type { AreaMap, Filters } from "@/lib/filters";
 import type { AreaCounts } from "@/lib/areas";
 import { filtersToQuery, parseFilters } from "@/lib/filters";
 import { FilterFields, Check } from "@/components/filter-fields";
+import { useIsDesktop } from "@/lib/use-media-query";
 
 export function FilterPanel({ areas, filters, activeCount, counts }: { areas: AreaMap; filters: Filters; activeCount: number; counts?: AreaCounts }) {
   const router = useRouter();
-  const [open, setOpen] = useState(activeCount > 0);
+  const isDesktop = useIsDesktop();
+  // Öppen som standard bara på desktop när filter är aktiva; på mobil skulle
+  // panelen annars trycka ner kartan och resultaten en hel skärm.
+  const [openOverride, setOpenOverride] = useState<boolean | null>(null);
+  const open = openOverride ?? (activeCount > 0 && isDesktop);
+  const setOpen = setOpenOverride;
   const [pending, start] = useTransition();
   const query = filtersToQuery(filters);
 
@@ -28,19 +34,20 @@ export function FilterPanel({ areas, filters, activeCount, counts }: { areas: Ar
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
-        <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold">
+        <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold" aria-expanded={open}>
           <SlidersHorizontal className="size-4 text-brand-600" />
           Filter
           {activeCount > 0 && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs text-white">{activeCount}</span>}
+          <span className="text-xs font-normal text-muted">{open ? "Dölj" : "Visa"}</span>
         </button>
         <div className="flex items-center gap-2">
           {activeCount > 0 && (
-            <Link href="/app" className="btn-ghost px-2.5 py-1.5 text-xs">
-              <X className="size-3.5" /> Rensa
+            <Link href="/app" className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
+              <X className="size-3.5" /> <span className="hidden sm:inline">Rensa</span>
             </Link>
           )}
           <Link href={`/app/bevakningar/ny?${query}`} className="btn-secondary px-3 py-1.5 text-xs">
-            <BellPlus className="size-3.5" /> Bevaka detta filter
+            <BellPlus className="size-3.5" /> <span className="sm:hidden">Bevaka</span><span className="hidden sm:inline">Bevaka detta filter</span>
           </Link>
         </div>
       </div>

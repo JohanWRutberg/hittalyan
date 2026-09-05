@@ -9,8 +9,9 @@ import { SORT_OPTIONS, withSort, type Sort } from "@/lib/sort";
  */
 export function SortBar({ sort, sp }: { sort: Sort; sp: SearchParams }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+    // På mobil en svepbar rad (kant till kant), på desktop radbrytning.
+    <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+      <span className="mr-1 inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
         <ArrowUpDown className="size-3.5" /> Sortera
       </span>
       {SORT_OPTIONS.map((o) => {
@@ -24,7 +25,7 @@ export function SortBar({ sort, sp }: { sort: Sort; sp: SearchParams }) {
             href={href}
             scroll={false}
             title={active ? `Byt till: ${o[nextDir]}` : o[o.defaultDir]}
-            className={`chip py-1.5 transition ${
+            className={`chip shrink-0 whitespace-nowrap py-1.5 transition ${
               active ? "border-brand-300 bg-brand-50 text-brand-800 shadow-soft" : "hover:border-brand-300 hover:text-ink"
             }`}
           >

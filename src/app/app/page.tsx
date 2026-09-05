@@ -11,6 +11,8 @@ import { watchToFilters } from "@/lib/watch-filters";
 import { FilterPanel } from "@/components/filter-panel";
 import { ListingCard } from "@/components/listing-card";
 import { ListingsMap, type MapPoint } from "@/components/listings-map";
+import { SortBar } from "@/components/sort-bar";
+import { parseSort, sortToOrderBy } from "@/lib/sort";
 
 export const metadata: Metadata = { title: "Lägenheter" };
 
@@ -26,13 +28,14 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
   }
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const where = filtersToWhere(filters);
+  const sort = parseSort(sp);
 
   const [areas, total, listings, newLast24h, lastRun, user, mapRows] = await Promise.all([
     getAreaMap(),
     prisma.listing.count({ where }),
     prisma.listing.findMany({
       where,
-      orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }],
+      orderBy: sortToOrderBy(sort),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
@@ -113,6 +116,8 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} />
 
       <ListingsMap points={mapPoints} userYears={userYears} />
+
+      <SortBar sort={sort} sp={sp} />
 
       {listings.length === 0 ? (
         <div className="card p-12 text-center text-muted">

@@ -18,7 +18,10 @@ export function FilterPanel({ areas, filters, activeCount }: { areas: AreaMap; f
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = parseFilters(new FormData(e.currentTarget));
-    start(() => router.push(`/app?${filtersToQuery(f)}`));
+    const q = new URLSearchParams(filtersToQuery(f));
+    const cur = new URLSearchParams(window.location.search);
+    for (const k of ["sort", "dir"]) if (cur.get(k)) q.set(k, cur.get(k)!);
+    start(() => router.push(`/app?${q}`));
   }
 
   return (

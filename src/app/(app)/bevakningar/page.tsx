@@ -37,11 +37,11 @@ export default async function WatchesPage() {
           <p className="mt-1 text-sm text-muted">{t("lead")}</p>
         </div>
         {info.active ? (
-          <Link href="/app/bevakningar/ny" className="btn-primary">
+          <Link href="/bevakningar/ny" className="btn-primary">
             <BellPlus className="size-4" /> {t("new")}
           </Link>
         ) : (
-          <Link href="/app/pro" className="btn-primary">
+          <Link href="/pro" className="btn-primary">
             <BellPlus className="size-4" /> {t("getPro")}
           </Link>
         )}
@@ -56,7 +56,7 @@ export default async function WatchesPage() {
         <div className="card p-12 text-center">
           <p className="text-lg font-semibold">{t("empty.title")}</p>
           <p className="mt-1 text-sm text-muted">{t("empty.lead")}</p>
-          <Link href="/app/bevakningar/ny" className="btn-primary mt-6">
+          <Link href="/bevakningar/ny" className="btn-primary mt-6">
             <BellPlus className="size-4" /> {t("empty.cta")}
           </Link>
         </div>

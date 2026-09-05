@@ -1,23 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-// Optimistisk kontroll: har användaren ingen sessionscookie skickas den till /login.
+/** Sidor som kräver inloggning. /lagenheter är öppen i begränsat läge. */
+const PROTECTED = ["/bevakningar", "/konto", "/pro", "/admin"];
+
+// Optimistisk kontroll: saknas sessionscookie skickas man till /login.
 // Riktig verifiering sker i server components via requireSession().
 export function proxy(request: NextRequest) {
   const cookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
 
-  // /app (listan) är öppen för alla i begränsat läge; allt under /app/... kräver inloggning
-  if (pathname.startsWith("/app/") && !cookie) {
-    const url = new URL("/login", request.url);
-    return NextResponse.redirect(url);
+  if (!cookie && PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
-  if ((pathname === "/login" || pathname === "/register") && cookie) {
-    return NextResponse.redirect(new URL("/app", request.url));
+  if (cookie && (pathname === "/login" || pathname === "/register" || pathname === "/glomt-losenord")) {
+    return NextResponse.redirect(new URL("/lagenheter", request.url));
   }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/login", "/register"],
+  matcher: ["/bevakningar/:path*", "/konto/:path*", "/pro/:path*", "/admin/:path*", "/login", "/register", "/glomt-losenord"],
 };

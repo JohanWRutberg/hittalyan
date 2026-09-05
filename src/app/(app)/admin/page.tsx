@@ -19,7 +19,7 @@ export default async function AdminPage() {
   const tPro = await getTranslations("pro");
   const locale = (await getLocale()) as Locale;
   const session = await requireSession();
-  if (session.user.role !== "admin") redirect("/app");
+  if (session.user.role !== "admin") redirect("/lagenheter");
 
   const [users, runs, stats] = await Promise.all([
     prisma.user.findMany({

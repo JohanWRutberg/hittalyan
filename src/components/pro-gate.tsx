@@ -13,7 +13,7 @@ export async function ProGate({ info, what }: { info: PlanInfo; what: string }) 
       </span>
       <h2 className="text-lg font-semibold">{t("title", { what })}</h2>
       <p className="max-w-md text-sm text-muted">{info.detail} {t("text")}</p>
-      <Link href="/app/pro" className="btn-primary mt-2">
+      <Link href="/pro" className="btn-primary mt-2">
         <Crown className="size-4" /> {t("cta")}
       </Link>
     </div>

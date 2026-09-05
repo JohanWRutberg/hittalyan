@@ -67,7 +67,7 @@ function renderEmailHtml(watch: Watch, listings: Listing[], locale: Locale) {
       <table style="width:100%;border-collapse:collapse;margin-top:8px">${rows}</table>
       <div style="padding:16px;border-top:1px solid #e6eef2;font-size:12px;color:#94a3b8">
         ${escapeHtml(t("email.footer"))} <a href="${appUrl}" style="color:#0f766e">${appUrl.replace(/^https?:\/\//, "")}</a>.
-        <a href="${appUrl}/app/bevakningar" style="color:#0f766e">${escapeHtml(t("email.manage"))}</a>
+        <a href="${appUrl}/bevakningar" style="color:#0f766e">${escapeHtml(t("email.manage"))}</a>
       </div>
     </div>
   </div>
@@ -114,7 +114,7 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
         ? t("pushMsg.single", { address: `${first.gatuadress}, ${first.stadsdel}` })
         : t("pushMsg.multi", { count: listings.length, name: watch.name }),
     body: listings.length === 1 ? listingSummary(first, locale, t("email.perMonth")) : listings.map((l) => l.gatuadress).slice(0, 4).join(", "),
-    url: listings.length === 1 ? first.url : `${appUrl}/app`,
+    url: listings.length === 1 ? first.url : `${appUrl}/lagenheter`,
     tag: `watch-${watch.id}`,
   });
 
@@ -137,4 +137,45 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
     }),
   );
   return anyOk;
+}
+
+// ---------- Engångskoder (glömt lösenord, byte av e-post) ----------
+
+export type OtpType = "sign-in" | "email-verification" | "forget-password" | "change-email";
+
+/** Mail med en 6-siffrig kod. Koden visas stor och tydlig, aldrig som länk. */
+export async function sendOtpEmail(to: string, otp: string, type: OtpType, rawLocale?: string | null): Promise<boolean> {
+  const locale = localeOf(rawLocale);
+  const t = translatorFor(locale);
+  const kind = type === "change-email" ? "changeEmail" : type === "forget-password" ? "reset" : "verify";
+  const subject = t(`otp.${kind}.subject`);
+
+  const html = `<!doctype html>
+<html lang="${locale}"><body style="margin:0;background:#f4f8fa;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+  <div style="max-width:520px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:16px;padding:28px 24px;box-shadow:0 1px 3px rgba(15,23,42,.08)">
+      <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700">Hitta Lyan</div>
+      <h1 style="margin:10px 0 6px;font-size:21px">${escapeHtml(t(`otp.${kind}.heading`))}</h1>
+      <p style="margin:0 0 20px;color:#475569;font-size:14px">${escapeHtml(t(`otp.${kind}.lead`))}</p>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:18px;text-align:center">
+        <div style="font-size:34px;font-weight:700;letter-spacing:.32em;color:#0f766e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">${escapeHtml(otp)}</div>
+      </div>
+      <p style="margin:18px 0 0;color:#64748b;font-size:13px">${escapeHtml(t("otp.expires"))}</p>
+      <p style="margin:8px 0 0;color:#94a3b8;font-size:12px">${escapeHtml(t(`otp.${kind}.ignore`))}</p>
+    </div>
+  </div>
+</body></html>`;
+
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.log(`[mail:dev] Kod till ${to} (${type}): ${otp}`);
+    return false;
+  }
+  const resend = new Resend(key);
+  const { error } = await resend.emails.send({ from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>", to, subject, html });
+  if (error) {
+    console.error("[mail] otp-fel:", error);
+    return false;
+  }
+  return true;
 }

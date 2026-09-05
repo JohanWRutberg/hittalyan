@@ -12,7 +12,7 @@ export function NavLinks({ links, mobile }: { links: { href: string; label: stri
   return (
     <nav className={mobile ? "flex gap-1 py-1" : "hidden items-center gap-1 sm:flex"}>
       {links.map((l) => {
-        const active = l.href === "/app" ? pathname === "/app" : pathname.startsWith(l.href);
+        const active = l.href === "/lagenheter" ? pathname === "/lagenheter" : pathname.startsWith(l.href);
         return (
           <Link
             key={l.href}

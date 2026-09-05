@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogIn } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -10,14 +11,15 @@ export async function PublicNav() {
   const t = await getTranslations("common");
   return (
     <AutoHideHeader>
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
         <Logo href="/" />
-        <nav className="flex items-center gap-2">
+        <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LocaleSwitcher compact />
-          <Link href="/login" className="btn-ghost">
-            {t("login")}
+          <Link href="/login" title={t("login")} aria-label={t("login")} className="btn-ghost px-2 sm:px-4">
+            <LogIn className="size-4 sm:hidden" />
+            <span className="hidden sm:inline">{t("login")}</span>
           </Link>
-          <Link href="/register" className="btn-primary">
+          <Link href="/register" className="btn-primary px-3 text-xs sm:px-4 sm:text-sm">
             {t("register")}
           </Link>
         </nav>
@@ -29,11 +31,11 @@ export async function PublicNav() {
 export async function AppNav({ user }: { user: { name: string; email: string; role?: string | null } }) {
   const t = await getTranslations("nav");
   const links = [
-    { href: "/app", label: t("listings") },
-    { href: "/app/bevakningar", label: t("watches") },
-    { href: "/app/konto", label: t("account") },
-    { href: "/app/pro", label: t("pro") },
-    ...(user.role === "admin" ? [{ href: "/app/admin", label: t("admin") }] : []),
+    { href: "/lagenheter", label: t("listings") },
+    { href: "/bevakningar", label: t("watches") },
+    { href: "/konto", label: t("account") },
+    { href: "/pro", label: t("pro") },
+    ...(user.role === "admin" ? [{ href: "/admin", label: t("admin") }] : []),
   ];
   return (
     <AutoHideHeader>
@@ -42,9 +44,9 @@ export async function AppNav({ user }: { user: { name: string; email: string; ro
           <Logo href="/" />
           <NavLinks links={links} />
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <LocaleSwitcher compact />
-          <Link href="/app/konto" className="hidden text-sm text-muted sm:block">
+          <Link href="/konto" className="hidden text-sm text-muted sm:block">
             {user.name}
           </Link>
           <SignOutButton />

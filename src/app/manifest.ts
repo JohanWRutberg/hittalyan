@@ -7,7 +7,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     name: t("title"),
     short_name: "Hitta Lyan",
     description: t("description"),
-    start_url: "/app",
+    start_url: "/lagenheter",
     scope: "/",
     display: "standalone",
     background_color: "#f5f9fb",

@@ -95,6 +95,25 @@
       "errorExists": "There is already an account with that email.",
       "errorGeneric": "Something went wrong.",
       "passwordShort": "The password must be at least 8 characters."
+    },
+    "forgot": {
+      "link": "Forgot your password?",
+      "title": "Forgot password",
+      "step1Lead": "Enter your email address and we will send you a six-digit code.",
+      "step2Lead": "We have sent a code to {email}. Enter it and choose a new password.",
+      "send": "Send code",
+      "sending": "Sending…",
+      "code": "Code (6 digits)",
+      "newPassword": "New password (at least 8 characters)",
+      "submit": "Save new password",
+      "submitting": "Saving…",
+      "done": "Your password has been changed. You can log in now.",
+      "toLogin": "Go to login",
+      "resend": "Send a new code",
+      "back": "Use a different email",
+      "errorSend": "Could not send the code. Check the address and try again.",
+      "errorCode": "Wrong or expired code. Try again or request a new one.",
+      "sentIfExists": "If an account exists for that address, the code is on its way."
     }
   },
   "listings": {
@@ -130,7 +149,8 @@
       "floor": "Floor",
       "lastDay": "Deadline {date}",
       "loginForChance": "to see your odds",
-      "similarRequired": " · similar ones required {q1}–{q3} years in the queue"
+      "similarRequired": " · similar ones required {q1}–{q3} years in the queue",
+      "tapAgain": "Tap again to open the listing"
     },
     "tags": {
       "nyproduktion": "New build",
@@ -354,6 +374,22 @@
       "empty": "No notifications sent yet.",
       "mail": "Email",
       "push": "Push"
+    },
+    "email": {
+      "title": "Email address",
+      "current": "Current address",
+      "newLabel": "New email address",
+      "send": "Send code to the new address",
+      "sending": "Sending…",
+      "codeLead": "We have sent a six-digit code to {email}. Enter it to confirm the change.",
+      "code": "Code (6 digits)",
+      "confirm": "Confirm change",
+      "confirming": "Confirming…",
+      "cancel": "Cancel",
+      "changed": "Your email address has been changed. Notifications now go here.",
+      "errorSend": "Could not send the code. The address may already be taken.",
+      "errorCode": "Wrong or expired code. Try again.",
+      "note": "The code goes to the new address, so you need access to it. You will log in with the new address after the change."
     }
   },
   "push": {
@@ -565,5 +601,26 @@
   "pushMsg": {
     "single": "New apartment: {address}",
     "multi": "{count} new apartments – {name}"
+  },
+  "otp": {
+    "expires": "The code is valid for 10 minutes.",
+    "reset": {
+      "subject": "Your password reset code",
+      "heading": "Reset your password",
+      "lead": "Enter the code below on hittalyan.se to choose a new password.",
+      "ignore": "If you did not request this, you can ignore this email. Your password will not change."
+    },
+    "changeEmail": {
+      "subject": "Confirm your new email address",
+      "heading": "Confirm your new email address",
+      "lead": "Enter the code below on Hitta Lyan to start using this address for your account.",
+      "ignore": "If you did not request this, you can ignore this email. Your address will not change."
+    },
+    "verify": {
+      "subject": "Your verification code",
+      "heading": "Verify your email address",
+      "lead": "Enter the code below on Hitta Lyan.",
+      "ignore": "If you did not request this, you can ignore this email."
+    }
   }
 }

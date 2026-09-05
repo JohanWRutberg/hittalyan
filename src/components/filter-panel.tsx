@@ -30,7 +30,7 @@ export function FilterPanel({ areas, filters, activeCount, counts }: { areas: Ar
     const q = new URLSearchParams(filtersToQuery(f));
     const cur = new URLSearchParams(window.location.search);
     if (cur.get("sort")) q.set("sort", cur.get("sort")!);
-    start(() => router.push(`/app?${q}`));
+    start(() => router.push(`/lagenheter?${q}`));
   }
 
   return (
@@ -44,11 +44,11 @@ export function FilterPanel({ areas, filters, activeCount, counts }: { areas: Ar
         </button>
         <div className="flex items-center gap-2">
           {activeCount > 0 && (
-            <Link href="/app" className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
+            <Link href="/lagenheter" className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
               <X className="size-3.5" /> <span className="hidden sm:inline">{t("clear")}</span>
             </Link>
           )}
-          <Link href={`/app/bevakningar/ny?${query}`} className="btn-secondary px-3 py-1.5 text-xs">
+          <Link href={`/bevakningar/ny?${query}`} className="btn-secondary px-3 py-1.5 text-xs">
             <BellPlus className="size-3.5" /> <span className="sm:hidden">{t("watchThisShort")}</span><span className="hidden sm:inline">{t("watchThis")}</span>
           </Link>
         </div>

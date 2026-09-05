@@ -1,11 +1,12 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins";
+import { admin, emailOTP } from "better-auth/plugins";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { TRIAL_DAYS } from "@/lib/plan";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/i18n/config";
+import { sendOtpEmail } from "@/lib/notify";
 
 /** E-postadresser (kommaseparerade i ADMIN_EMAILS) som automatiskt blir admin. */
 export function adminEmails(): string[] {
@@ -24,6 +25,7 @@ export const auth = betterAuth({
     minPasswordLength: 8,
   },
   user: {
+    changeEmail: { enabled: true },
     additionalFields: {
       queueRegisteredAt: {
         type: "date",
@@ -70,7 +72,31 @@ export const auth = betterAuth({
   session: {
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
-  plugins: [admin({ defaultRole: "user" }), nextCookies()],
+  plugins: [
+    // 6-siffriga koder för glömt lösenord och byte av e-postadress.
+    // Vid byte skickas koden till den NYA adressen, så den måste bevisas ägd.
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 10 * 60,
+      allowedAttempts: 5,
+      storeOTP: "hashed",
+      // Koden går till den nya adressen, som därmed bevisas ägd. Den gamla adressen
+      // behöver inte bekräfta, eftersom bytet redan kräver en inloggad session.
+      changeEmail: { enabled: true, verifyCurrentEmail: false },
+      async sendVerificationOTP({ email, otp, type }) {
+        let locale = DEFAULT_LOCALE;
+        try {
+          const c = (await cookies()).get(LOCALE_COOKIE)?.value;
+          if (isLocale(c)) locale = c;
+        } catch {
+          /* utanför request-kontext */
+        }
+        await sendOtpEmail(email, otp, type, locale);
+      },
+    }),
+    admin({ defaultRole: "user" }),
+    nextCookies(),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

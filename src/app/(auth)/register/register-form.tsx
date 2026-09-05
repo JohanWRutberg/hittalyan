@@ -36,7 +36,7 @@ export function RegisterForm() {
       setError(error.code === "USER_ALREADY_EXISTS" ? t("register.errorExists") : (error.message ?? t("register.errorGeneric")));
       return;
     }
-    router.push("/app/konto?ny=1");
+    router.push("/konto?ny=1");
     router.refresh();
   }
 

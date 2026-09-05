@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/session";
 import { AppNav, PublicNav } from "@/components/nav";
 
-export default async function AppLayout({ children }: LayoutProps<"/app">) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   return (
     <div className="flex flex-1 flex-col">

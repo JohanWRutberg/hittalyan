@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const PAGE_SIZE = 60;
 
-export default async function ListingsPage({ searchParams }: PageProps<"/app">) {
+export default async function ListingsPage({ searchParams }: PageProps<"/lagenheter">) {
   const sp = (await searchParams) as SearchParams;
   const t = await getTranslations("listings");
   const locale = (await getLocale()) as Locale;
@@ -105,7 +105,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
           </p>
         </div>
         <Link
-          href="/app/konto"
+          href="/konto"
           className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 shadow-soft transition hover:shadow-lift ${
             qt ? "border-brand-200 bg-white" : "border-amber-200 bg-amber-50"
           }`}
@@ -155,7 +155,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
             const q = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (v == null ? [] : Array.isArray(v) ? v.map((x) => [k, x]) : [[k, v]])) as [string, string][]);
             q.set("sida", String(p));
             return (
-              <Link key={p} href={`/app?${q}`} className={p === page ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}>
+              <Link key={p} href={`/lagenheter?${q}`} className={p === page ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}>
                 {p}
               </Link>
             );
@@ -262,7 +262,7 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
       {pages > 1 && (
         <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
           {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-            <Link key={p} href={`/app?sida=${p}`} className={p === page ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}>
+            <Link key={p} href={`/lagenheter?sida=${p}`} className={p === page ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}>
               {p}
             </Link>
           ))}

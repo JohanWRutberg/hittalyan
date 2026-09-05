@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
-import { updateName, updateQueueDate } from "@/app/app/actions";
+import { updateName, updateQueueDate } from "@/app/(app)/actions";
 
 export function QueueDateForm({ value }: { value: string }) {
   const t = useTranslations("account");

@@ -41,7 +41,7 @@ export async function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }
               }`}
             >
               <Link
-                href={`/app?${withSorts(sp, toggled)}`}
+                href={`/lagenheter?${withSorts(sp, toggled)}`}
                 scroll={false}
                 title={active ? t("switchTo", { dir: t(`options.${o.key}.${nextDir}`) }) : t("add", { dir: t(`options.${o.key}.${o.defaultDir}`) })}
                 className="inline-flex items-center gap-1 py-1.5 pl-2.5 pr-2.5"
@@ -59,7 +59,7 @@ export async function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }
               </Link>
               {removable && (
                 <Link
-                  href={`/app?${withSorts(sp, removed)}`}
+                  href={`/lagenheter?${withSorts(sp, removed)}`}
                   scroll={false}
                   title={t("removeLevel")}
                   aria-label={t("removeAria", { label })}
@@ -72,7 +72,7 @@ export async function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }
           );
         })}
         {explicit.length > 0 && (
-          <Link href={`/app?${withSorts(sp, [])}`} scroll={false} className="btn-ghost shrink-0 px-2.5 py-1.5 text-xs">
+          <Link href={`/lagenheter?${withSorts(sp, [])}`} scroll={false} className="btn-ghost shrink-0 px-2.5 py-1.5 text-xs">
             <RotateCcw className="size-3.5" /> {t("reset")}
           </Link>
         )}

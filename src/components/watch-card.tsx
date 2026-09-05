@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import { Bell, BellOff, Mail, Pencil, Trash2 } from "lucide-react";
 import type { Watch } from "@/generated/prisma/client";
-import { deleteWatch, toggleWatch } from "@/app/app/actions";
+import { deleteWatch, toggleWatch } from "@/app/(app)/actions";
 import { formatKr } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 
@@ -50,14 +50,14 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
         <span>{t("hits", { count: hits })}</span>
       </div>
       <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
-        <Link href={`/app?${w.id ? `bevakning=${w.id}` : ""}`} className="text-sm font-medium text-brand-700 hover:underline">
+        <Link href={`/lagenheter?${w.id ? `bevakning=${w.id}` : ""}`} className="text-sm font-medium text-brand-700 hover:underline">
           {t("showHits")}
         </Link>
         <div className="flex items-center gap-1">
           <button type="button" className="btn-ghost px-2.5 py-1.5" title={w.enabled ? t("pause") : t("enable")} onClick={() => start(() => toggleWatch(w.id, !w.enabled))}>
             {w.enabled ? <BellOff className="size-4" /> : <Bell className="size-4" />}
           </button>
-          <Link href={`/app/bevakningar/${w.id}`} className="btn-ghost px-2.5 py-1.5" title={tc("edit")}>
+          <Link href={`/bevakningar/${w.id}`} className="btn-ghost px-2.5 py-1.5" title={tc("edit")}>
             <Pencil className="size-4" />
           </Link>
           <button

@@ -95,6 +95,25 @@
       "errorExists": "Det finns redan ett konto med den e-posten.",
       "errorGeneric": "Något gick fel.",
       "passwordShort": "Lösenordet måste vara minst 8 tecken."
+    },
+    "forgot": {
+      "link": "Glömt lösenordet?",
+      "title": "Glömt lösenordet",
+      "step1Lead": "Ange din e-postadress så skickar vi en sexsiffrig kod.",
+      "step2Lead": "Vi har skickat en kod till {email}. Ange den och välj ett nytt lösenord.",
+      "send": "Skicka kod",
+      "sending": "Skickar…",
+      "code": "Kod (6 siffror)",
+      "newPassword": "Nytt lösenord (minst 8 tecken)",
+      "submit": "Spara nytt lösenord",
+      "submitting": "Sparar…",
+      "done": "Lösenordet är ändrat. Du kan logga in nu.",
+      "toLogin": "Till inloggningen",
+      "resend": "Skicka en ny kod",
+      "back": "Byt e-postadress",
+      "errorSend": "Kunde inte skicka koden. Kontrollera adressen och försök igen.",
+      "errorCode": "Fel eller utgången kod. Försök igen eller begär en ny.",
+      "sentIfExists": "Finns ett konto med den adressen är koden på väg."
     }
   },
   "listings": {
@@ -130,7 +149,8 @@
       "floor": "Våning",
       "lastDay": "Sista dag {date}",
       "loginForChance": "för att se din chans",
-      "similarRequired": " · liknande har krävt {q1}–{q3} års kötid"
+      "similarRequired": " · liknande har krävt {q1}–{q3} års kötid",
+      "tapAgain": "Tryck igen för att öppna annonsen"
     },
     "tags": {
       "nyproduktion": "Nyproduktion",
@@ -354,6 +374,22 @@
       "empty": "Inga notiser skickade än.",
       "mail": "Mail",
       "push": "Push"
+    },
+    "email": {
+      "title": "E-postadress",
+      "current": "Nuvarande adress",
+      "newLabel": "Ny e-postadress",
+      "send": "Skicka kod till nya adressen",
+      "sending": "Skickar…",
+      "codeLead": "Vi har skickat en sexsiffrig kod till {email}. Ange den för att bekräfta bytet.",
+      "code": "Kod (6 siffror)",
+      "confirm": "Bekräfta byte",
+      "confirming": "Bekräftar…",
+      "cancel": "Avbryt",
+      "changed": "E-postadressen är ändrad. Notiser skickas nu hit.",
+      "errorSend": "Kunde inte skicka koden. Adressen kan redan vara upptagen.",
+      "errorCode": "Fel eller utgången kod. Försök igen.",
+      "note": "Koden går till den nya adressen, så du måste ha tillgång till den. Inloggning sker med den nya adressen efter bytet."
     }
   },
   "push": {
@@ -565,5 +601,26 @@
   "pushMsg": {
     "single": "Ny lägenhet: {address}",
     "multi": "{count} nya lägenheter – {name}"
+  },
+  "otp": {
+    "expires": "Koden gäller i 10 minuter.",
+    "reset": {
+      "subject": "Din kod för att återställa lösenordet",
+      "heading": "Återställ ditt lösenord",
+      "lead": "Ange koden nedan på hittalyan.se för att välja ett nytt lösenord.",
+      "ignore": "Har du inte begärt detta kan du strunta i mailet. Ditt lösenord ändras inte."
+    },
+    "changeEmail": {
+      "subject": "Bekräfta din nya e-postadress",
+      "heading": "Bekräfta din nya e-postadress",
+      "lead": "Ange koden nedan på Hitta Lyan för att börja använda den här adressen för ditt konto.",
+      "ignore": "Har du inte begärt detta kan du strunta i mailet. Din adress ändras inte."
+    },
+    "verify": {
+      "subject": "Din verifieringskod",
+      "heading": "Verifiera din e-postadress",
+      "lead": "Ange koden nedan på Hitta Lyan.",
+      "ignore": "Har du inte begärt detta kan du strunta i mailet."
+    }
   }
 }

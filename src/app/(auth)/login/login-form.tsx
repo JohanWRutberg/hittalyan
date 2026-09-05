@@ -27,7 +27,7 @@ export function LoginForm() {
       setError(error.status === 403 && error.code === "BANNED_USER" ? t("login.errorBanned") : t("login.errorInvalid"));
       return;
     }
-    router.push("/app");
+    router.push("/lagenheter");
     router.refresh();
   }
 
@@ -41,7 +41,12 @@ export function LoginForm() {
           <input id="email" name="email" type="email" autoComplete="email" required className="input" />
         </div>
         <div>
-          <label className="label" htmlFor="password">{t("fields.password")}</label>
+          <div className="flex items-baseline justify-between gap-2">
+            <label className="label" htmlFor="password">{t("fields.password")}</label>
+            <Link href="/glomt-losenord" className="mb-1.5 text-xs font-medium text-brand-700 hover:underline">
+              {t("forgot.link")}
+            </Link>
+          </div>
           <input id="password" name="password" type="password" autoComplete="current-password" required className="input" />
         </div>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

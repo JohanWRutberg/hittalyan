@@ -8,7 +8,7 @@ import type { Watch } from "@/generated/prisma/client";
 import type { AreaMap, Filters } from "@/lib/filters";
 import type { AreaCounts } from "@/lib/areas";
 import { FilterFields, Check } from "@/components/filter-fields";
-import { saveWatch } from "@/app/app/actions";
+import { saveWatch } from "@/app/(app)/actions";
 import { FadeIn } from "@/components/motion";
 
 export function WatchForm({
@@ -55,7 +55,7 @@ export function WatchForm({
         {state?.error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
 
         <div className="flex items-center justify-end gap-2">
-          <Link href="/app/bevakningar" className="btn-ghost">
+          <Link href="/bevakningar" className="btn-ghost">
             {tc("cancel")}
           </Link>
           <button type="submit" disabled={pending} className="btn-primary">

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, Building2, DoorOpen, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useRef, useState } from "react";
 import type { Listing } from "@/generated/prisma/client";
 import { formatDate, formatNumber, formatVaning, formatYta, isRecent } from "@/lib/format";
 import { ChanceMeter } from "@/components/chance-meter";
@@ -29,7 +30,10 @@ export function ListingCard({
   const t = useTranslations("listings");
   const tc = useTranslations("common");
   const locale = useLocale() as Locale;
-  const { setHovered } = useHoveredListing();
+  const { hovered, setHovered } = useHoveredListing();
+  // På pekskärm visar första trycket huset på kartan, andra trycket öppnar annonsen.
+  const [armed, setArmed] = useState(false);
+  const touchRef = useRef(false);
   const isNew = isRecent(l.firstSeenAt);
   const tagKeys = [
     l.nyproduktion && { key: "nyproduktion", cls: "border-amber-200 bg-amber-50 text-amber-700" },
@@ -55,7 +59,23 @@ export function ListingCard({
       onMouseLeave={() => setHovered(null)}
       onFocus={() => setHovered(l.id)}
       onBlur={() => setHovered(null)}
-      className="card group flex flex-col gap-3 p-5 transition hover:shadow-lift"
+      onPointerDown={(e) => {
+        touchRef.current = e.pointerType === "touch";
+      }}
+      onClick={(e) => {
+        if (!touchRef.current) return;
+        // Första trycket: markera på kartan i stället för att öppna annonsen.
+        // Har ett annat kort tagit över markeringen räknas det som ett första tryck igen.
+        if (!armed || hovered !== l.id) {
+          e.preventDefault();
+          setHovered(l.id);
+          setArmed(true);
+        }
+      }}
+      aria-describedby={armed ? `tap-${l.id}` : undefined}
+      className={`card group flex flex-col gap-3 p-5 transition hover:shadow-lift ${
+        armed && hovered === l.id ? "ring-2 ring-blue-500/60" : ""
+      }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -98,6 +118,11 @@ export function ListingCard({
           <p className="text-xs text-muted">
             <span className="font-medium text-brand-700">{tc("login")}</span> {t("card.loginForChance")}
             {l.kotidQ1 != null && l.kotidQ3 != null && t("card.similarRequired", { q1: l.kotidQ1, q3: l.kotidQ3 })}
+          </p>
+        )}
+        {armed && hovered === l.id && (
+          <p id={`tap-${l.id}`} className="rounded-lg bg-blue-50 px-2 py-1 text-center text-[11px] font-medium text-blue-700 sm:hidden">
+            {t("card.tapAgain")}
           </p>
         )}
         <div className="flex items-center justify-between text-xs text-muted">

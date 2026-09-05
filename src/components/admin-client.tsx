@@ -3,7 +3,7 @@
 import { useActionState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { RefreshCw, ShieldOff, ShieldCheck, Trash2, UserCog } from "lucide-react";
-import { adminBan, adminDeleteUser, adminRunPoll, adminSetPlan, adminSetRole, adminUnban } from "@/app/app/actions";
+import { adminBan, adminDeleteUser, adminRunPoll, adminSetPlan, adminSetRole, adminUnban } from "@/app/(app)/actions";
 import { Crown } from "lucide-react";
 
 export function RunPollButton() {

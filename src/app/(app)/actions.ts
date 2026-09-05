@@ -18,7 +18,7 @@ export type ActionState = { error?: string; ok?: boolean; summary?: string } | u
 
 async function requirePro(userId: string) {
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-  if (!hasPro(user)) redirect("/app/pro?status=required");
+  if (!hasPro(user)) redirect("/pro?status=required");
   return user;
 }
 
@@ -62,21 +62,21 @@ export async function saveWatch(_prev: ActionState, formData: FormData): Promise
   } else {
     await prisma.watch.create({ data: { ...data, userId: session.user.id } });
   }
-  revalidatePath("/app/bevakningar");
-  redirect("/app/bevakningar");
+  revalidatePath("/bevakningar");
+  redirect("/bevakningar");
 }
 
 export async function toggleWatch(id: string, enabled: boolean) {
   const session = await requireSession();
   if (enabled) await requirePro(session.user.id);
   await prisma.watch.updateMany({ where: { id, userId: session.user.id }, data: { enabled } });
-  revalidatePath("/app/bevakningar");
+  revalidatePath("/bevakningar");
 }
 
 export async function deleteWatch(id: string) {
   const session = await requireSession();
   await prisma.watch.deleteMany({ where: { id, userId: session.user.id } });
-  revalidatePath("/app/bevakningar");
+  revalidatePath("/bevakningar");
 }
 
 // ---------- Konto ----------
@@ -90,8 +90,8 @@ export async function updateQueueDate(_prev: ActionState, formData: FormData): P
   if (raw && !date) return { error: t("dateFormat") };
   if (date && date > new Date()) return { error: t("dateFuture") };
   await prisma.user.update({ where: { id: session.user.id }, data: { queueRegisteredAt: date } });
-  revalidatePath("/app/konto");
-  revalidatePath("/app");
+  revalidatePath("/konto");
+  revalidatePath("/lagenheter");
   return { ok: true };
 }
 
@@ -101,7 +101,7 @@ export async function updateName(_prev: ActionState, formData: FormData): Promis
   const t = await getTranslations("errors");
   if (!name) return { error: t("nameMissing") };
   await prisma.user.update({ where: { id: session.user.id }, data: { name } });
-  revalidatePath("/app", "layout");
+  revalidatePath("/lagenheter", "layout");
   return { ok: true };
 }
 
@@ -109,7 +109,7 @@ export async function updateName(_prev: ActionState, formData: FormData): Promis
 
 async function requireAdmin() {
   const session = await requireSession();
-  if (session.user.role !== "admin") redirect("/app");
+  if (session.user.role !== "admin") redirect("/lagenheter");
   return session;
 }
 
@@ -117,41 +117,41 @@ export async function adminSetRole(userId: string, role: "user" | "admin") {
   const session = await requireAdmin();
   if (userId === session.user.id) return;
   await auth.api.setRole({ headers: await headers(), body: { userId, role } });
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function adminBan(userId: string, reason: string) {
   const session = await requireAdmin();
   if (userId === session.user.id) return;
   await auth.api.banUser({ headers: await headers(), body: { userId, banReason: reason || "Suspended by admin" } });
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function adminUnban(userId: string) {
   await requireAdmin();
   await auth.api.unbanUser({ headers: await headers(), body: { userId } });
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function adminDeleteUser(userId: string) {
   const session = await requireAdmin();
   if (userId === session.user.id) return;
   await auth.api.removeUser({ headers: await headers(), body: { userId } });
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function adminSetPlan(userId: string, plan: "free" | "pro", months: number | null) {
   await requireAdmin();
   const planExpiresAt = plan === "pro" && months ? new Date(Date.now() + months * 30 * 86_400_000) : null;
   await prisma.user.update({ where: { id: userId }, data: { plan, planSource: "admin", planExpiresAt } });
-  revalidatePath("/app/admin");
+  revalidatePath("/admin");
 }
 
 export async function adminRunPoll(): Promise<ActionState> {
   await requireAdmin();
   try {
     const r = await runPoll();
-    revalidatePath("/app", "layout");
+    revalidatePath("/lagenheter", "layout");
     const t = await getTranslations("admin");
     return { ok: true, summary: t("summary", { total: r.total, new: r.newCount, notified: r.notified }) };
   } catch (e) {

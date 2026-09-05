@@ -9,6 +9,7 @@ import type { Locale } from "@/i18n/config";
 import { PushToggle } from "@/components/push-toggle";
 import { PushGuide } from "@/components/push-guide";
 import { NameForm, QueueDateForm } from "@/components/account-forms";
+import { EmailChangeForm } from "@/components/email-change-form";
 import { FadeIn } from "@/components/motion";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("account") };
 }
 
-export default async function AccountPage({ searchParams }: PageProps<"/app/konto">) {
+export default async function AccountPage({ searchParams }: PageProps<"/konto">) {
   const t = await getTranslations("account");
   const locale = (await getLocale()) as Locale;
   const sp = await searchParams;
@@ -41,7 +42,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/app/kont
           <p className="mt-1 text-sm">
             {t.rich("welcome.lead", {
               link: (c) => (
-                <Link href="/app/bevakningar/ny" className="font-semibold underline">
+                <Link href="/bevakningar/ny" className="font-semibold underline">
                   {c}
                 </Link>
               ),
@@ -101,6 +102,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/app/kont
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{t("profile.title")}</h2>
             <div className="mt-4"><NameForm value={user.name} /></div>
+            <div className="mt-6 border-t border-line pt-5">
+              <h3 className="font-semibold">{t("email.title")}</h3>
+              <div className="mt-3"><EmailChangeForm current={user.email} /></div>
+            </div>
           </div>
         </div>
       </FadeIn>

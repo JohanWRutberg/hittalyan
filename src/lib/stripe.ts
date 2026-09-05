@@ -53,8 +53,8 @@ export async function createCheckoutUrl(user: { id: string; email: string; name:
     customer,
     client_reference_id: user.id,
     line_items: [{ price: def.id, quantity: 1 }],
-    success_url: `${appUrl()}/app/pro?status=success`,
-    cancel_url: `${appUrl()}/app/pro?status=cancel`,
+    success_url: `${appUrl()}/pro?status=success`,
+    cancel_url: `${appUrl()}/pro?status=cancel`,
     locale: user.locale === "en" ? "en" : "sv",
     allow_promotion_codes: true,
     metadata: { userId: user.id, priceKey: key },
@@ -65,7 +65,7 @@ export async function createCheckoutUrl(user: { id: string; email: string; name:
 }
 
 export async function createPortalUrl(customerId: string): Promise<string> {
-  const session = await stripe().billingPortal.sessions.create({ customer: customerId, return_url: `${appUrl()}/app/pro` });
+  const session = await stripe().billingPortal.sessions.create({ customer: customerId, return_url: `${appUrl()}/pro` });
   return session.url;
 }
 

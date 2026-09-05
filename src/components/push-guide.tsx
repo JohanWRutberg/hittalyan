@@ -81,7 +81,7 @@ export function PushGuide({ variant }: { variant: "banner" | "full" }) {
         <Bell className="mt-0.5 size-4 shrink-0 text-brand-700" />
         <p className="flex-1">
           {text}{" "}
-          <Link href="/app/konto" className="font-semibold underline">
+          <Link href="/konto" className="font-semibold underline">
             {t("link")}
           </Link>
         </p>

@@ -33,7 +33,7 @@ export default async function LandingPage() {
         <nav className="flex items-center gap-2">
           <LocaleSwitcher compact />
           {session ? (
-            <Link href="/app" className="btn-primary">
+            <Link href="/lagenheter" className="btn-primary">
               {tc("toApp")} <ArrowRight className="size-4" />
             </Link>
           ) : (
@@ -60,10 +60,10 @@ export default async function LandingPage() {
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-ink sm:text-6xl">{t("title")}</h1>
             <p className="mt-5 text-lg text-muted">{t("lead")}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={session ? "/app" : "/register"} className="btn-primary px-6 py-3 text-base">
+              <Link href={session ? "/lagenheter" : "/register"} className="btn-primary px-6 py-3 text-base">
                 {t("cta")} <ArrowRight className="size-4" />
               </Link>
-              <Link href="/app" className="btn-secondary px-6 py-3 text-base">
+              <Link href="/lagenheter" className="btn-secondary px-6 py-3 text-base">
                 {tc("viewListings")}
               </Link>
             </div>

@@ -24,7 +24,7 @@ const STATUS_CLS: Record<string, string> = {
   nocustomer: "border-line bg-white text-muted",
 };
 
-export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
+export default async function ProPage({ searchParams }: PageProps<"/pro">) {
   const sp = await searchParams;
   const t = await getTranslations("pro");
   const locale = (await getLocale()) as Locale;
@@ -111,7 +111,7 @@ export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
 
       <p className="text-xs text-muted">
         {t("footer")}{" "}
-        <Link href="/app/bevakningar" className="text-brand-700 hover:underline">{t("toWatches")}</Link>
+        <Link href="/bevakningar" className="text-brand-700 hover:underline">{t("toWatches")}</Link>
       </p>
     </div>
   );

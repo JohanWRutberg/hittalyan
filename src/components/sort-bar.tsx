@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpDown, RotateCcw, X } from "lucide-react";
 import type { SearchParams } from "@/lib/filters";
-import { SORT_OPTIONS, isDefaultSorts, withSorts, type Sort } from "@/lib/sort";
+import { DEFAULT_SORTS, SORT_OPTIONS, isDefaultSorts, withSorts, type Sort } from "@/lib/sort";
 
 /**
  * Sorteringsrad med flera nivåer. Klick på inaktivt piller lägger till det som
@@ -9,8 +9,12 @@ import { SORT_OPTIONS, isDefaultSorts, withSorts, type Sort } from "@/lib/sort";
  * Ren länk-navigation, inget klientskript.
  */
 export function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }) {
-  const explicit = isDefaultSorts(sorts) ? [] : sorts; // standardläget visas inte som "valt"
-  const multi = explicit.length > 1;
+  // explicit = vad som ligger i URL:en. I standardläget (tomt) visas ändå "Inkommet · Nyast först"
+  // som aktivt, eftersom det är den sortering som faktiskt gäller. Väljer man en annan nyckel
+  // ersätter den standardläget i stället för att läggas efter det.
+  const explicit = isDefaultSorts(sorts) ? [] : sorts;
+  const display = explicit.length ? explicit : DEFAULT_SORTS;
+  const multi = display.length > 1;
 
   return (
     <div className="space-y-1.5">
@@ -19,12 +23,13 @@ export function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }) {
           <ArrowUpDown className="size-3.5" /> Sortera
         </span>
         {SORT_OPTIONS.map((o) => {
-          const idx = explicit.findIndex((s) => s.key === o.key);
+          const idx = display.findIndex((s) => s.key === o.key);
           const active = idx >= 0;
-          const current = active ? explicit[idx] : null;
+          const current = active ? display[idx] : null;
+          const removable = explicit.some((s) => s.key === o.key);
           const nextDir = current ? (current.dir === "asc" ? "desc" : "asc") : o.defaultDir;
           const toggled = active
-            ? explicit.map((s) => (s.key === o.key ? { key: s.key, dir: nextDir } : s))
+            ? display.map((s) => (s.key === o.key ? { key: s.key, dir: nextDir } : s))
             : [...explicit, { key: o.key, dir: nextDir }];
           const removed = explicit.filter((s) => s.key !== o.key);
           const Icon = current?.dir === "asc" ? ArrowUp : ArrowDown;
@@ -53,7 +58,7 @@ export function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }) {
                   </>
                 )}
               </Link>
-              {active && (
+              {removable && (
                 <Link
                   href={`/app?${withSorts(sp, removed)}`}
                   scroll={false}
@@ -75,7 +80,7 @@ export function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }) {
       </div>
       {multi && (
         <p className="text-xs text-muted">
-          Sorterar i ordning: {explicit.map((s, i) => `${i + 1}. ${SORT_OPTIONS.find((o) => o.key === s.key)![s.dir].toLowerCase()} (${SORT_OPTIONS.find((o) => o.key === s.key)!.label.toLowerCase()})`).join(", ")}.
+          Sorterar i ordning: {display.map((s, i) => `${i + 1}. ${SORT_OPTIONS.find((o) => o.key === s.key)![s.dir].toLowerCase()} (${SORT_OPTIONS.find((o) => o.key === s.key)!.label.toLowerCase()})`).join(", ")}.
         </p>
       )}
     </div>

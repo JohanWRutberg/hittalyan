@@ -9,6 +9,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
 import { chanceFor } from "@/lib/chance";
 import { useHoveredListing } from "@/components/hovered-listing";
+import { useIsDesktop } from "@/lib/use-media-query";
 import type { Locale } from "@/i18n/config";
 
 export interface MapPoint {
@@ -152,6 +153,20 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
   const [expanded, setExpanded] = useState(false);
   const [failed, setFailed] = useState(false);
   const stuck = sticky && !expanded;
+  const isDesktop = useIsDesktop();
+  // Är kartan just nu fastnaglad (scrollad förbi sin plats i flödet)? Mäts med en
+  // sentinel ovanför kortet, så att vi slipper läsa positioner under scroll.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [stuckNow, setStuckNow] = useState(false);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !stuck) return;
+    const io = new IntersectionObserver(([e]) => setStuckNow(!e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [stuck]);
+  // På mobil döljs kartans rubrikrad när kartan är fastnaglad, så själva kartan ligger högst upp
+  const hideHeader = stuckNow && !isDesktop;
 
   // Initiera kartan en gång
   useEffect(() => {
@@ -269,16 +284,25 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
   const buildings = groupPoints(points).length;
 
   return (
+    <>
+      {/* Sentinel: när den scrollat ovanför skärmen är kartan fastnaglad. Ingen höjd, ingen marginal. */}
+      {stuck && <div ref={sentinelRef} aria-hidden className="h-0 !m-0" />}
     <div
-      className={`card overflow-hidden ${stuck ? "sticky z-20 transition-[top] duration-300 ease-out motion-reduce:transition-none" : ""}`}
-      // Tätt mot menyn, annars skymtar kort som scrollar förbi i springan
-      style={stuck ? { top: "var(--nav-h, 0px)" } : undefined}
+      className={`card overflow-hidden ${stuck ? "sticky top-0 z-20 will-change-transform transition-transform duration-300 ease-out motion-reduce:transition-none" : ""}`}
+      // Fastnaglad karta ligger på top 0 och skjuts ned med en transform (GPU, inget
+      // layoutarbete) så mycket som menyn är hög, i stället för att animera top.
+      style={stuck && stuckNow ? { transform: "translateY(var(--nav-h, 0px))" } : undefined}
     >
-      <div className="flex items-center justify-between gap-3 px-5 py-3">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <MapPin className="size-4 text-brand-600" />
+      <div
+        className={`flex items-center justify-between gap-3 overflow-hidden px-5 transition-[max-height,opacity,padding] duration-200 ease-out motion-reduce:transition-none ${
+          hideHeader ? "max-h-0 py-0 opacity-0" : "max-h-14 py-3"
+        }`}
+        aria-hidden={hideHeader || undefined}
+      >
+        <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+          <MapPin className="size-4 shrink-0 text-brand-600" />
           {t("title")}
-          <span className="font-normal text-muted">
+          <span className="truncate font-normal text-muted">
             · {t("summary", { listings: points.length, buildings })}
             {points.length > MAX_MARKERS && t("showing", { max: MAX_MARKERS })}
           </span>
@@ -300,5 +324,6 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
         )}
       </div>
     </div>
+    </>
   );
 }

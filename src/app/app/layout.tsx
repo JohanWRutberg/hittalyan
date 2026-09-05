@@ -1,11 +1,11 @@
-import { requireSession } from "@/lib/session";
-import { AppNav } from "@/components/nav";
+import { getSession } from "@/lib/session";
+import { AppNav, PublicNav } from "@/components/nav";
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
-  const session = await requireSession();
+  const session = await getSession();
   return (
     <div className="flex flex-1 flex-col">
-      <AppNav user={session.user} />
+      {session ? <AppNav user={session.user} /> : <PublicNav />}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
     </div>
   );

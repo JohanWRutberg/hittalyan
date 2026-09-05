@@ -53,8 +53,8 @@ export default async function LandingPage() {
               <Link href={session ? "/app" : "/register"} className="btn-primary px-6 py-3 text-base">
                 Kom igång gratis <ArrowRight className="size-4" />
               </Link>
-              <Link href={session ? "/app" : "/login"} className="btn-secondary px-6 py-3 text-base">
-                {session ? "Visa lägenheter" : "Jag har redan konto"}
+              <Link href="/app" className="btn-secondary px-6 py-3 text-base">
+                Visa lägenheter
               </Link>
             </div>
             <p className="mt-6 text-sm text-muted">

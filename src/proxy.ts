@@ -7,7 +7,8 @@ export function proxy(request: NextRequest) {
   const cookie = getSessionCookie(request);
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/app") && !cookie) {
+  // /app (listan) är öppen för alla i begränsat läge; allt under /app/... kräver inloggning
+  if (pathname.startsWith("/app/") && !cookie) {
     const url = new URL("/login", request.url);
     return NextResponse.redirect(url);
   }

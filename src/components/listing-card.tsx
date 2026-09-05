@@ -12,7 +12,17 @@ type ListingLike = Omit<Listing, "annonseradFran" | "annonseradTill" | "firstSee
   firstSeenAt: Date | string;
 };
 
-export function ListingCard({ listing: l, index = 0, userYears = null }: { listing: ListingLike; index?: number; userYears?: number | null }) {
+export function ListingCard({
+  listing: l,
+  index = 0,
+  userYears = null,
+  showChance = true,
+}: {
+  listing: ListingLike;
+  index?: number;
+  userYears?: number | null;
+  showChance?: boolean;
+}) {
   const isNew = isRecent(l.firstSeenAt);
   const tags = [
     l.nyproduktion && { label: "Nyproduktion", cls: "border-amber-200 bg-amber-50 text-amber-700" },
@@ -71,7 +81,14 @@ export function ListingCard({ listing: l, index = 0, userYears = null }: { listi
       )}
 
       <div className="mt-auto space-y-2.5 border-t border-line pt-3">
-        <ChanceMeter userYears={userYears} q1={l.kotidQ1} q3={l.kotidQ3} />
+        {showChance ? (
+          <ChanceMeter userYears={userYears} q1={l.kotidQ1} q3={l.kotidQ3} />
+        ) : (
+          <p className="text-xs text-muted">
+            <span className="font-medium text-brand-700">Logga in</span> för att se din chans
+            {l.kotidQ1 != null && l.kotidQ3 != null && ` · liknande har krävt ${l.kotidQ1}–${l.kotidQ3} års kötid`}
+          </p>
+        )}
         <div className="flex items-center justify-between text-xs text-muted">
           <span className="inline-flex items-center gap-1">
             <DoorOpen className="size-3.5" /> Sista dag {formatDate(l.annonseradTill)}

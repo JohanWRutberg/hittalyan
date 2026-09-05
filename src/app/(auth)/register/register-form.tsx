@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { signUp } from "@/lib/auth-client";
 import { FadeIn } from "@/components/motion";
 
 export function RegisterForm() {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,7 +20,7 @@ export function RegisterForm() {
     const form = new FormData(e.currentTarget);
     const password = String(form.get("password"));
     if (password.length < 8) {
-      setError("Lösenordet måste vara minst 8 tecken.");
+      setError(t("register.passwordShort"));
       return;
     }
     setLoading(true);
@@ -25,10 +28,12 @@ export function RegisterForm() {
       name: String(form.get("name")),
       email: String(form.get("email")),
       password,
-    });
+      // Nya konton får språket de registrerade sig på, används i mail och push
+      locale,
+    } as Parameters<typeof signUp.email>[0]);
     setLoading(false);
     if (error) {
-      setError(error.code === "USER_ALREADY_EXISTS" ? "Det finns redan ett konto med den e-posten." : (error.message ?? "Något gick fel."));
+      setError(error.code === "USER_ALREADY_EXISTS" ? t("register.errorExists") : (error.message ?? t("register.errorGeneric")));
       return;
     }
     router.push("/app/konto?ny=1");
@@ -37,30 +42,30 @@ export function RegisterForm() {
 
   return (
     <FadeIn>
-      <h1 className="text-2xl font-bold tracking-tight">Skapa konto</h1>
-      <p className="mt-1 text-sm text-muted">Notiserna skickas till e-posten du anger här.</p>
+      <h1 className="text-2xl font-bold tracking-tight">{t("register.title")}</h1>
+      <p className="mt-1 text-sm text-muted">{t("register.lead")}</p>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="label" htmlFor="name">Namn</label>
+          <label className="label" htmlFor="name">{t("fields.name")}</label>
           <input id="name" name="name" autoComplete="name" required className="input" />
         </div>
         <div>
-          <label className="label" htmlFor="email">E-post</label>
+          <label className="label" htmlFor="email">{t("fields.email")}</label>
           <input id="email" name="email" type="email" autoComplete="email" required className="input" />
         </div>
         <div>
-          <label className="label" htmlFor="password">Lösenord (minst 8 tecken)</label>
+          <label className="label" htmlFor="password">{t("fields.passwordMin")}</label>
           <input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required className="input" />
         </div>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? "Skapar konto…" : "Skapa konto"}
+          {loading ? t("register.submitting") : t("register.submit")}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
-        Har du redan konto?{" "}
+        {t("register.hasAccount")}{" "}
         <Link href="/login" className="font-semibold text-brand-700 hover:underline">
-          Logga in
+          {t("register.loginLink")}
         </Link>
       </p>
     </FadeIn>

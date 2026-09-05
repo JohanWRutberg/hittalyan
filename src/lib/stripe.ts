@@ -12,44 +12,17 @@ export interface PriceDef {
   key: PriceKey;
   id: string | undefined;
   mode: "subscription" | "payment";
-  title: string;
+  /** Titel, period och beskrivning översätts via pro.prices.<key> i ordlistan */
   amountLabel: string;
-  period: string;
-  description: string;
   /** Giltighet i månader för engångspass */
   passMonths?: number;
 }
 
 export function priceDefs(): PriceDef[] {
   return [
-    {
-      key: "monthly",
-      id: process.env.STRIPE_PRICE_MONTHLY,
-      mode: "subscription",
-      title: "Månad",
-      amountLabel: process.env.PRICE_LABEL_MONTHLY ?? "49 kr",
-      period: "per månad",
-      description: "Förnyas automatiskt, säg upp när du vill.",
-    },
-    {
-      key: "pass",
-      id: process.env.STRIPE_PRICE_PASS,
-      mode: "payment",
-      title: "3-månaderspass",
-      amountLabel: process.env.PRICE_LABEL_PASS ?? "99 kr",
-      period: "engångsbetalning",
-      description: "Perfekt under en intensiv bostadsjakt. Ingen prenumeration.",
-      passMonths: 3,
-    },
-    {
-      key: "yearly",
-      id: process.env.STRIPE_PRICE_YEARLY,
-      mode: "subscription",
-      title: "År",
-      amountLabel: process.env.PRICE_LABEL_YEARLY ?? "299 kr",
-      period: "per år",
-      description: "Billigast per månad. Förnyas automatiskt.",
-    },
+    { key: "monthly", id: process.env.STRIPE_PRICE_MONTHLY, mode: "subscription", amountLabel: process.env.PRICE_LABEL_MONTHLY ?? "49 kr" },
+    { key: "pass", id: process.env.STRIPE_PRICE_PASS, mode: "payment", amountLabel: process.env.PRICE_LABEL_PASS ?? "99 kr", passMonths: 3 },
+    { key: "yearly", id: process.env.STRIPE_PRICE_YEARLY, mode: "subscription", amountLabel: process.env.PRICE_LABEL_YEARLY ?? "299 kr" },
   ];
 }
 
@@ -71,7 +44,7 @@ export async function ensureCustomer(user: { id: string; email: string; name: st
   return customer.id;
 }
 
-export async function createCheckoutUrl(user: { id: string; email: string; name: string; stripeCustomerId: string | null }, key: PriceKey): Promise<string> {
+export async function createCheckoutUrl(user: { id: string; email: string; name: string; stripeCustomerId: string | null; locale?: string }, key: PriceKey): Promise<string> {
   const def = priceDefs().find((p) => p.key === key);
   if (!def?.id) throw new Error("Priset är inte konfigurerat");
   const customer = await ensureCustomer(user);
@@ -82,7 +55,7 @@ export async function createCheckoutUrl(user: { id: string; email: string; name:
     line_items: [{ price: def.id, quantity: 1 }],
     success_url: `${appUrl()}/app/pro?status=success`,
     cancel_url: `${appUrl()}/app/pro?status=cancel`,
-    locale: "sv",
+    locale: user.locale === "en" ? "en" : "sv",
     allow_promotion_codes: true,
     metadata: { userId: user.id, priceKey: key },
     ...(def.mode === "payment" ? { invoice_creation: { enabled: true } } : {}),

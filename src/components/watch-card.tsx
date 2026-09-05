@@ -3,24 +3,29 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { motion } from "framer-motion";
+import { useLocale, useTranslations } from "next-intl";
 import { Bell, BellOff, Mail, Pencil, Trash2 } from "lucide-react";
 import type { Watch } from "@/generated/prisma/client";
 import { deleteWatch, toggleWatch } from "@/app/app/actions";
 import { formatKr } from "@/lib/format";
+import type { Locale } from "@/i18n/config";
 
 export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: number; index: number }) {
+  const t = useTranslations("watches.card");
+  const tc = useTranslations("common");
+  const locale = useLocale() as Locale;
   const [pending, start] = useTransition();
   const parts: string[] = [];
   if (w.kommuner.length) parts.push(w.kommuner.join(", "));
   if (w.stadsdelar.length) parts.push(w.stadsdelar.join(", "));
   if (w.adress) parts.push(`"${w.adress}"`);
-  if (w.minRum != null || w.maxRum != null) parts.push(`${w.minRum ?? "–"}–${w.maxRum ?? "–"} rum`);
+  if (w.minRum != null || w.maxRum != null) parts.push(t("rooms", { min: w.minRum ?? "–", max: w.maxRum ?? "–" }));
   if (w.minYta != null || w.maxYta != null) parts.push(`${w.minYta ?? "–"}–${w.maxYta ?? "–"} m²`);
-  if (w.minHyra != null || w.maxHyra != null) parts.push(`${w.minHyra != null ? formatKr(w.minHyra) : "–"} – ${w.maxHyra != null ? formatKr(w.maxHyra) : "–"}`);
-  if (w.minVaning != null || w.maxVaning != null) parts.push(`vån ${w.minVaning ?? "–"}–${w.maxVaning ?? "–"}`);
-  if (w.balkong) parts.push("balkong");
-  if (w.hiss) parts.push("hiss");
-  if (w.nyproduktion) parts.push("nyproduktion");
+  if (w.minHyra != null || w.maxHyra != null) parts.push(`${w.minHyra != null ? formatKr(w.minHyra, locale) : "–"} – ${w.maxHyra != null ? formatKr(w.maxHyra, locale) : "–"}`);
+  if (w.minVaning != null || w.maxVaning != null) parts.push(t("floor", { min: w.minVaning ?? "–", max: w.maxVaning ?? "–" }));
+  if (w.balkong) parts.push(t("balcony"));
+  if (w.hiss) parts.push(t("elevator"));
+  if (w.nyproduktion) parts.push(t("newBuild"));
 
   return (
     <motion.div
@@ -33,34 +38,34 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-lg font-semibold">{w.name}</h3>
-          <p className="mt-0.5 text-sm text-muted">{parts.length ? parts.join(" · ") : "Alla annonser (vanliga kön)"}</p>
+          <p className="mt-0.5 text-sm text-muted">{parts.length ? parts.join(" · ") : t("all")}</p>
         </div>
         <span className={`chip ${w.enabled ? "border-brand-200 bg-brand-50 text-brand-700" : ""}`}>
-          {w.enabled ? "Aktiv" : "Pausad"}
+          {w.enabled ? t("active") : t("paused")}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-        <span className="inline-flex items-center gap-1"><Mail className={`size-3.5 ${w.notifyEmail ? "text-brand-600" : "text-slate-300"}`} /> Mail {w.notifyEmail ? "på" : "av"}</span>
-        <span className="inline-flex items-center gap-1"><Bell className={`size-3.5 ${w.notifyPush ? "text-brand-600" : "text-slate-300"}`} /> Push {w.notifyPush ? "på" : "av"}</span>
-        <span>· {hits} {hits === 1 ? "träff" : "träffar"} just nu</span>
+        <span className="inline-flex items-center gap-1"><Mail className={`size-3.5 ${w.notifyEmail ? "text-brand-600" : "text-slate-300"}`} /> {t("mail", { state: w.notifyEmail ? t("on") : t("off") })}</span>
+        <span className="inline-flex items-center gap-1"><Bell className={`size-3.5 ${w.notifyPush ? "text-brand-600" : "text-slate-300"}`} /> {t("push", { state: w.notifyPush ? t("on") : t("off") })}</span>
+        <span>{t("hits", { count: hits })}</span>
       </div>
       <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
         <Link href={`/app?${w.id ? `bevakning=${w.id}` : ""}`} className="text-sm font-medium text-brand-700 hover:underline">
-          Visa träffar
+          {t("showHits")}
         </Link>
         <div className="flex items-center gap-1">
-          <button type="button" className="btn-ghost px-2.5 py-1.5" title={w.enabled ? "Pausa" : "Aktivera"} onClick={() => start(() => toggleWatch(w.id, !w.enabled))}>
+          <button type="button" className="btn-ghost px-2.5 py-1.5" title={w.enabled ? t("pause") : t("enable")} onClick={() => start(() => toggleWatch(w.id, !w.enabled))}>
             {w.enabled ? <BellOff className="size-4" /> : <Bell className="size-4" />}
           </button>
-          <Link href={`/app/bevakningar/${w.id}`} className="btn-ghost px-2.5 py-1.5" title="Redigera">
+          <Link href={`/app/bevakningar/${w.id}`} className="btn-ghost px-2.5 py-1.5" title={tc("edit")}>
             <Pencil className="size-4" />
           </Link>
           <button
             type="button"
             className="btn-ghost px-2.5 py-1.5 hover:text-red-600"
-            title="Ta bort"
+            title={tc("delete")}
             onClick={() => {
-              if (confirm(`Ta bort bevakningen "${w.name}"?`)) start(() => deleteWatch(w.id));
+              if (confirm(t("confirmDelete", { name: w.name }))) start(() => deleteWatch(w.id));
             }}
           >
             <Trash2 className="size-4" />

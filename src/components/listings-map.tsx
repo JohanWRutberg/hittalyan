@@ -5,8 +5,11 @@ import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type * as MapLibre from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Maximize2, Minimize2, MapPin } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
 import { chanceFor } from "@/lib/chance";
+import { useHoveredListing } from "@/components/hovered-listing";
+import type { Locale } from "@/i18n/config";
 
 export interface MapPoint {
   id: number;
@@ -77,7 +80,17 @@ function groupPoints(points: MapPoint[]): Group[] {
   return [...map.values()];
 }
 
-function popupHtml(g: Group, userYears: number | null) {
+interface PopupText {
+  more: (n: number) => string;
+  isNew: string;
+  newBuild: string;
+  chanceLabel: (level: string) => string;
+  chanceTitle: (q1: number, q3: number) => string;
+  etAl: string;
+  locale: Locale;
+}
+
+function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
   const first = g.items[0];
   const rows = g.items
     .slice(0, 6)
@@ -86,23 +99,23 @@ function popupHtml(g: Group, userYears: number | null) {
       const chance =
         c.level === "unknown"
           ? ""
-          : `<span class="lm-popup__chance lm-popup__chance--${c.level}" title="Liknande lägenheter: ${p.kotidQ1}–${p.kotidQ3} års kötid">${escapeHtml(c.label)}</span>`;
+          : `<span class="lm-popup__chance lm-popup__chance--${c.level}" title="${escapeHtml(tx.chanceTitle(p.kotidQ1!, p.kotidQ3!))}">${escapeHtml(tx.chanceLabel(c.level))}</span>`;
       return `
       <a class="lm-popup__row" href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer">
-        <span class="lm-popup__main">${escapeHtml(formatRum(p.antalRum))} · ${escapeHtml(formatYta(p.yta))} · ${escapeHtml(formatVaning(p.vaning))}</span>
-        <span class="lm-popup__rent">${escapeHtml(formatKr(p.hyra))}</span>
+        <span class="lm-popup__main">${escapeHtml(formatRum(p.antalRum, tx.locale))} · ${escapeHtml(formatYta(p.yta))} · ${escapeHtml(formatVaning(p.vaning, tx.locale))}</span>
+        <span class="lm-popup__rent">${escapeHtml(formatKr(p.hyra, tx.locale))}</span>
         ${chance}
-        ${p.isNew ? '<span class="lm-popup__new">Ny</span>' : ""}
+        ${p.isNew ? `<span class="lm-popup__new">${escapeHtml(tx.isNew)}</span>` : ""}
       </a>`;
     })
     .join("");
-  const more = g.items.length > 6 ? `<div class="lm-popup__more">+ ${g.items.length - 6} till på samma adress</div>` : "";
+  const more = g.items.length > 6 ? `<div class="lm-popup__more">${escapeHtml(tx.more(g.items.length - 6))}</div>` : "";
   const sameStreet = g.items.every((p) => p.gatuadress === first.gatuadress);
-  const title = sameStreet ? first.gatuadress : `${first.gatuadress} m.fl.`;
+  const title = sameStreet ? first.gatuadress : `${first.gatuadress} ${tx.etAl}`;
   return `
     <div class="lm-popup">
       <div class="lm-popup__title">${escapeHtml(title)}</div>
-      <div class="lm-popup__sub">${escapeHtml(first.stadsdel)} · ${escapeHtml(first.kommun)}${first.nyproduktion ? " · Nyproduktion" : ""}</div>
+      <div class="lm-popup__sub">${escapeHtml(first.stadsdel)} · ${escapeHtml(first.kommun)}${first.nyproduktion ? ` · ${escapeHtml(tx.newBuild)}` : ""}</div>
       <div class="lm-popup__rows">${rows}</div>
       ${more}
     </div>`;
@@ -113,7 +126,8 @@ function markerElement(g: Group, index: number) {
   // All animation sker på det inre elementet.
   const el = document.createElement("div");
   el.className = "lm-marker";
-  el.title = `${g.items[0].gatuadress}${g.items.length > 1 ? ` (${g.items.length} lägenheter)` : ""}`;
+  el.dataset.ids = g.items.map((i) => i.id).join(",");
+  el.title = g.items[0].gatuadress;
   const inner = document.createElement("div");
   inner.className = `lm-marker__inner${g.hasNew ? " lm-marker--new" : ""}`;
   inner.style.setProperty("--delay", `${Math.min(index, 60) * 12}ms`);
@@ -126,6 +140,11 @@ function markerElement(g: Group, index: number) {
 }
 
 export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; userYears?: number | null }) {
+  const t = useTranslations("listings.map");
+  const tChance = useTranslations("chance");
+  const tListing = useTranslations("listings");
+  const locale = useLocale() as Locale;
+  const { hovered } = useHoveredListing();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -191,7 +210,17 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
       const groups = groupPoints(points);
       const bounds = new maplibregl.LngLatBounds();
       groups.forEach((g, i) => {
-        const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(popupHtml(g, userYears));
+        const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(
+          popupHtml(g, userYears, {
+            more: (n) => t("popupMore", { count: n }),
+            isNew: t("popupNew"),
+            newBuild: tListing("tags.nyproduktion"),
+            chanceLabel: (level) => tChance(`${level}.label`),
+            chanceTitle: (q1, q3) => t("popupChanceTitle", { q1, q3 }),
+            etAl: t("etAl"),
+            locale,
+          }),
+        );
         const marker = new maplibregl.Marker({ element: markerElement(g, i), anchor: "bottom" })
           .setLngLat([g.lng, g.lat])
           .setPopup(popup)
@@ -216,7 +245,19 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
     return () => {
       cancelled = true;
     };
-  }, [points, ready, userYears]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- översättarna är stabila per språk, locale räcker som beroende
+  }, [points, ready, userYears, locale]);
+
+  // Markera markören för det kort som hovras i listan
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const markers = container.querySelectorAll<HTMLElement>(".lm-marker");
+    markers.forEach((m) => {
+      const ids = (m.dataset.ids ?? "").split(",");
+      m.classList.toggle("lm-marker--active", hovered != null && ids.includes(String(hovered)));
+    });
+  }, [hovered, points, ready]);
 
   // Låt kartan räkna om sin storlek när höjden ändras
   useEffect(() => {
@@ -231,26 +272,26 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
       <div className="flex items-center justify-between gap-3 px-5 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <MapPin className="size-4 text-brand-600" />
-          Karta
+          {t("title")}
           <span className="font-normal text-muted">
-            · {points.length} {points.length === 1 ? "lägenhet" : "lägenheter"} i {buildings} {buildings === 1 ? "hus" : "hus"}
-            {points.length > MAX_MARKERS && ` (visar ${MAX_MARKERS})`}
+            · {t("summary", { listings: points.length, buildings })}
+            {points.length > MAX_MARKERS && t("showing", { max: MAX_MARKERS })}
           </span>
         </div>
-        <button type="button" onClick={() => setExpanded(!expanded)} className="btn-ghost px-2.5 py-1.5 text-xs" title={expanded ? "Mindre karta" : "Större karta"}>
+        <button type="button" onClick={() => setExpanded(!expanded)} className="btn-ghost px-2.5 py-1.5 text-xs" title={expanded ? t("smaller") : t("larger")}>
           {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-          {expanded ? "Mindre" : "Större"}
+          {expanded ? t("smaller") : t("larger")}
         </button>
       </div>
       <div className={`relative border-t border-line bg-canvas transition-[height] duration-300 ease-out ${expanded ? "h-[70vh] min-h-[420px]" : "h-72"}`}>
         <div ref={containerRef} className="h-full w-full" style={{ position: "absolute", inset: 0 }} />
         {!ready && !failed && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted">
-            <span className="chip animate-pulse">Laddar karta…</span>
+            <span className="chip animate-pulse">{t("loading")}</span>
           </div>
         )}
         {failed && (
-          <div className="absolute inset-0 grid place-items-center text-sm text-muted">Kartan kunde inte laddas just nu.</div>
+          <div className="absolute inset-0 grid place-items-center text-sm text-muted">{t("failed")}</div>
         )}
       </div>
     </div>

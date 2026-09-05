@@ -1,16 +1,17 @@
 import type { MetadataRoute } from "next";
+import { getTranslations } from "next-intl/server";
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const t = await getTranslations("meta");
   return {
-    name: "Hitta Lyan – nya hyresrätter i Stockholm",
+    name: t("title"),
     short_name: "Hitta Lyan",
-    description: "Bevaka nya hyresrätter hos Bostadsförmedlingen i Stockholm och få notis direkt.",
+    description: t("description"),
     start_url: "/app",
     scope: "/",
     display: "standalone",
     background_color: "#f5f9fb",
     theme_color: "#157e6c",
-    lang: "sv",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

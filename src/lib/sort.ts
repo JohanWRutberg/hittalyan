@@ -6,21 +6,18 @@ export type SortDir = "asc" | "desc";
 
 export interface SortOption {
   key: SortKey;
-  label: string;
-  /** Riktning vid första klick */
+  /** Riktning vid första klick. Etiketter finns i ordlistan under sort.options.<key> */
   defaultDir: SortDir;
-  asc: string;
-  desc: string;
 }
 
 export const SORT_OPTIONS: SortOption[] = [
-  { key: "nyast", label: "Inkommet", defaultDir: "desc", desc: "Nyast först", asc: "Äldst först" },
-  { key: "hyra", label: "Hyra", defaultDir: "asc", asc: "Lägst först", desc: "Högst först" },
-  { key: "rum", label: "Rum", defaultDir: "desc", desc: "Flest först", asc: "Färst först" },
-  { key: "yta", label: "Yta", defaultDir: "desc", desc: "Störst först", asc: "Minst först" },
-  { key: "vaning", label: "Våning", defaultDir: "desc", desc: "Högst upp först", asc: "Lägst först" },
-  { key: "sistadag", label: "Sista dag", defaultDir: "asc", asc: "Snarast först", desc: "Senast först" },
-  { key: "kotid", label: "Kötid som krävs", defaultDir: "asc", asc: "Kortast först", desc: "Längst först" },
+  { key: "nyast", defaultDir: "desc" },
+  { key: "hyra", defaultDir: "asc" },
+  { key: "rum", defaultDir: "desc" },
+  { key: "yta", defaultDir: "desc" },
+  { key: "vaning", defaultDir: "desc" },
+  { key: "sistadag", defaultDir: "asc" },
+  { key: "kotid", defaultDir: "asc" },
 ];
 
 export interface Sort {

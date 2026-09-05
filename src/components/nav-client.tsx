@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { signOut } from "@/lib/auth-client";
 
 export function NavLinks({ links, mobile }: { links: { href: string; label: string }[]; mobile?: boolean }) {
@@ -36,12 +37,13 @@ export function NavLinks({ links, mobile }: { links: { href: string; label: stri
 }
 
 export function SignOutButton() {
+  const t = useTranslations("common");
   const router = useRouter();
   return (
     <button
       type="button"
       className="btn-ghost px-2.5"
-      title="Logga ut"
+      title={t("logout")}
       onClick={async () => {
         await signOut();
         router.push("/");
@@ -49,7 +51,7 @@ export function SignOutButton() {
       }}
     >
       <LogOut className="size-4" />
-      <span className="hidden sm:inline">Logga ut</span>
+      <span className="hidden sm:inline">{t("logout")}</span>
     </button>
   );
 }

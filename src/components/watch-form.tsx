@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Bell, Mail, Save } from "lucide-react";
 import type { Watch } from "@/generated/prisma/client";
@@ -23,6 +24,8 @@ export function WatchForm({
   pushReady: boolean;
   counts?: AreaCounts;
 }) {
+  const t = useTranslations("watches.form");
+  const tc = useTranslations("common");
   const [state, action, pending] = useActionState(saveWatch, undefined);
 
   return (
@@ -30,21 +33,21 @@ export function WatchForm({
       <form action={action} className="card space-y-6 p-6">
         {watch && <input type="hidden" name="id" value={watch.id} />}
         <div>
-          <label className="label" htmlFor="name">Namn på bevakningen</label>
-          <input id="name" name="name" defaultValue={watch?.name ?? ""} required placeholder="t.ex. Nacka Grace, 3 rok" className="input" />
+          <label className="label" htmlFor="name">{t("name")}</label>
+          <input id="name" name="name" defaultValue={watch?.name ?? ""} required placeholder={t("namePlaceholder")} className="input" />
         </div>
 
         <FilterFields areas={areas} initial={initialFilters} compact counts={counts} />
 
         <div>
-          <span className="label">Notiser</span>
+          <span className="label">{t("notifications")}</span>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Check name="notifyEmail" label="Skicka mail" checked={watch?.notifyEmail ?? true} description="Till din kontoadress" />
+            <Check name="notifyEmail" label={t("email")} checked={watch?.notifyEmail ?? true} description={t("emailDesc")} />
             <Check
               name="notifyPush"
-              label="Skicka notis i webbläsaren"
+              label={t("push")}
               checked={watch?.notifyPush ?? true}
-              description={pushReady ? "Aktiverad på minst en enhet" : "Aktivera under Konto för att få notiser"}
+              description={pushReady ? t("pushReady") : t("pushNotReady")}
             />
           </div>
         </div>
@@ -53,10 +56,10 @@ export function WatchForm({
 
         <div className="flex items-center justify-end gap-2">
           <Link href="/app/bevakningar" className="btn-ghost">
-            Avbryt
+            {tc("cancel")}
           </Link>
           <button type="submit" disabled={pending} className="btn-primary">
-            <Save className="size-4" /> {pending ? "Sparar…" : watch ? "Spara ändringar" : "Skapa bevakning"}
+            <Save className="size-4" /> {pending ? tc("saving") : watch ? t("saveChanges") : t("create")}
           </button>
         </div>
         <p className="flex items-center gap-3 text-xs text-muted">

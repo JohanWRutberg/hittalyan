@@ -1,40 +1,50 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Crown, Sparkles } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
-import { FREE_FEATURES, PRO_FEATURES, planInfo } from "@/lib/plan";
+import { describePlan, planState } from "@/lib/plan";
 import { priceDefs, stripeConfigured } from "@/lib/stripe";
+import { formatDate } from "@/lib/format";
 import { FadeIn } from "@/components/motion";
+import type { Locale } from "@/i18n/config";
 
-export const metadata: Metadata = { title: "Pro" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta.pages");
+  return { title: t("pro") };
+}
 
-const STATUS_TEXT: Record<string, { cls: string; text: string }> = {
-  success: { cls: "border-brand-200 bg-brand-50 text-brand-900", text: "Tack! Betalningen är genomförd. Det kan ta några sekunder innan Pro syns här, ladda om sidan om det dröjer." },
-  cancel: { cls: "border-line bg-white text-muted", text: "Köpet avbröts. Inget har debiterats." },
-  error: { cls: "border-red-200 bg-red-50 text-red-800", text: "Något gick fel med betalningen. Försök igen eller kontakta oss." },
-  unconfigured: { cls: "border-amber-200 bg-amber-50 text-amber-900", text: "Betalningar är inte aktiverade i den här miljön än." },
-  required: { cls: "border-amber-200 bg-amber-50 text-amber-900", text: "Bevakningar är en Pro-funktion. Välj en plan nedan för att fortsätta." },
-  nocustomer: { cls: "border-line bg-white text-muted", text: "Du har inget köp att hantera än." },
+const STATUS_CLS: Record<string, string> = {
+  success: "border-brand-200 bg-brand-50 text-brand-900",
+  cancel: "border-line bg-white text-muted",
+  error: "border-red-200 bg-red-50 text-red-800",
+  unconfigured: "border-amber-200 bg-amber-50 text-amber-900",
+  required: "border-amber-200 bg-amber-50 text-amber-900",
+  nocustomer: "border-line bg-white text-muted",
 };
 
 export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
   const sp = await searchParams;
+  const t = await getTranslations("pro");
+  const locale = (await getLocale()) as Locale;
   const session = await requireSession();
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
-  const info = planInfo(user);
+  const info = describePlan(planState(user), (k, v) => t(k, v), (d) => formatDate(d, locale));
   const prices = priceDefs();
-  const status = typeof sp.status === "string" ? STATUS_TEXT[sp.status] : null;
+  const statusKey = typeof sp.status === "string" && sp.status in STATUS_CLS ? sp.status : null;
   const canManage = user.stripeCustomerId && stripeConfigured();
+  const proFeatures = t.raw("features.pro") as string[];
+  const freeFeatures = t.raw("features.free") as string[];
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Hitta Lyan Pro</h1>
-        <p className="mt-1 text-sm text-muted">Bevakningar med mail och push, så du aldrig missar en annons som matchar.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-sm text-muted">{t("lead")}</p>
       </div>
 
-      {status && <FadeIn className={`rounded-2xl border px-4 py-3 text-sm ${status.cls}`}>{status.text}</FadeIn>}
+      {statusKey && <FadeIn className={`rounded-2xl border px-4 py-3 text-sm ${STATUS_CLS[statusKey]}`}>{t(`status.${statusKey}`)}</FadeIn>}
 
       <FadeIn className={`card flex flex-wrap items-center justify-between gap-4 p-5 ${info.active ? "border-brand-200" : ""}`}>
         <div className="flex items-center gap-3">
@@ -43,14 +53,14 @@ export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
           </span>
           <div>
             <p className="font-semibold">
-              Din plan: <span className={info.active ? "text-brand-700" : ""}>{info.label}</span>
+              {t("yourPlan")} <span className={info.active ? "text-brand-700" : ""}>{info.label}</span>
             </p>
             <p className="text-sm text-muted">{info.detail}</p>
           </div>
         </div>
         {canManage && (
           <form action="/api/stripe/portal" method="post">
-            <button type="submit" className="btn-secondary">Hantera betalning</button>
+            <button type="submit" className="btn-secondary">{t("manage")}</button>
           </form>
         )}
       </FadeIn>
@@ -62,17 +72,17 @@ export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
             <FadeIn key={p.key} delay={0.05 * i} className={`card relative flex flex-col p-6 ${highlight ? "border-brand-300 ring-4 ring-brand-100" : ""}`}>
               {highlight && (
                 <span className="absolute -top-3 left-6 chip border-brand-300 bg-brand-600 text-white">
-                  <Sparkles className="size-3" /> Populärast
+                  <Sparkles className="size-3" /> {t("popular")}
                 </span>
               )}
-              <h2 className="text-lg font-semibold">{p.title}</h2>
+              <h2 className="text-lg font-semibold">{t(`prices.${p.key}.title`)}</h2>
               <p className="mt-2 text-3xl font-bold tracking-tight">{p.amountLabel}</p>
-              <p className="text-sm text-muted">{p.period}</p>
-              <p className="mt-3 flex-1 text-sm text-muted">{p.description}</p>
+              <p className="text-sm text-muted">{t(`prices.${p.key}.period`)}</p>
+              <p className="mt-3 flex-1 text-sm text-muted">{t(`prices.${p.key}.description`)}</p>
               <form action="/api/stripe/checkout" method="post" className="mt-5">
                 <input type="hidden" name="price" value={p.key} />
                 <button type="submit" disabled={!p.id || !stripeConfigured()} className={`w-full ${highlight ? "btn-primary" : "btn-secondary"}`}>
-                  {info.active && info.source !== "trial" ? "Förläng" : "Välj"}
+                  {info.active && info.source !== "trial" ? t("extend") : t("choose")}
                 </button>
               </form>
             </FadeIn>
@@ -82,17 +92,17 @@ export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <FadeIn delay={0.15} className="card p-6">
-          <h3 className="font-semibold">Ingår i Pro</h3>
+          <h3 className="font-semibold">{t("included")}</h3>
           <ul className="mt-3 space-y-2 text-sm">
-            {PRO_FEATURES.map((f) => (
+            {proFeatures.map((f) => (
               <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-600" /> {f}</li>
             ))}
           </ul>
         </FadeIn>
         <FadeIn delay={0.2} className="card p-6">
-          <h3 className="font-semibold">Alltid gratis</h3>
+          <h3 className="font-semibold">{t("alwaysFree")}</h3>
           <ul className="mt-3 space-y-2 text-sm">
-            {FREE_FEATURES.map((f) => (
+            {freeFeatures.map((f) => (
               <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-slate-400" /> {f}</li>
             ))}
           </ul>
@@ -100,8 +110,8 @@ export default async function ProPage({ searchParams }: PageProps<"/app/pro">) {
       </div>
 
       <p className="text-xs text-muted">
-        Betalningen hanteras av Stripe. Prenumerationer förnyas automatiskt tills du säger upp dem under “Hantera betalning”. Pass är en engångsbetalning och förnyas inte.{" "}
-        <Link href="/app/bevakningar" className="text-brand-700 hover:underline">Till bevakningar</Link>
+        {t("footer")}{" "}
+        <Link href="/app/bevakningar" className="text-brand-700 hover:underline">{t("toWatches")}</Link>
       </p>
     </div>
   );

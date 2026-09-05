@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getAreaCounts, getAreaMap } from "@/lib/areas";
 import { filtersToWhere, parseFilters, type SearchParams } from "@/lib/filters";
 import { prisma } from "@/lib/prisma";
@@ -7,9 +8,13 @@ import { WatchForm } from "@/components/watch-form";
 import { redirect } from "next/navigation";
 import { hasPro } from "@/lib/plan";
 
-export const metadata: Metadata = { title: "Ny bevakning" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta.pages");
+  return { title: t("newWatch") };
+}
 
 export default async function NewWatchPage({ searchParams }: PageProps<"/app/bevakningar/ny">) {
+  const t = await getTranslations("watches.form");
   const session = await requireSession();
   const me = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
   if (!hasPro(me)) redirect("/app/pro?status=required");
@@ -22,8 +27,8 @@ export default async function NewWatchPage({ searchParams }: PageProps<"/app/bev
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Ny bevakning</h1>
-        <p className="mt-1 text-sm text-muted">Tomma fält betyder &quot;spelar ingen roll&quot;.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("titleNew")}</h1>
+        <p className="mt-1 text-sm text-muted">{t("leadNew")}</p>
       </div>
       <WatchForm areas={areas} initialFilters={parseFilters(sp)} pushReady={pushCount > 0} counts={counts} />
     </div>

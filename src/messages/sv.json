@@ -1,0 +1,569 @@
+{
+  "meta": {
+    "title": "Hitta Lyan – bevaka nya hyresrätter i Stockholm",
+    "template": "%s · Hitta Lyan",
+    "description": "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm.",
+    "pages": {
+      "listings": "Lägenheter",
+      "watches": "Bevakningar",
+      "newWatch": "Ny bevakning",
+      "editWatch": "Redigera bevakning",
+      "account": "Konto",
+      "admin": "Admin",
+      "pro": "Pro",
+      "login": "Logga in",
+      "register": "Skapa konto"
+    }
+  },
+  "common": {
+    "appName": "Hitta Lyan",
+    "login": "Logga in",
+    "register": "Skapa konto",
+    "logout": "Logga ut",
+    "save": "Spara",
+    "saving": "Sparar…",
+    "saved": "Sparat!",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "edit": "Redigera",
+    "show": "Visa",
+    "hide": "Dölj",
+    "toApp": "Till appen",
+    "viewListings": "Visa lägenheter",
+    "language": "Språk",
+    "swedish": "Svenska",
+    "english": "English"
+  },
+  "nav": {
+    "listings": "Lägenheter",
+    "watches": "Bevakningar",
+    "account": "Konto",
+    "pro": "Pro",
+    "admin": "Admin"
+  },
+  "landing": {
+    "badge": "Bevakar Bostadsförmedlingen var 30:e minut",
+    "title": "Missa aldrig en ny hyresrätt i Stockholm igen.",
+    "lead": "Hitta Lyan håller koll på Bostadsförmedlingens nya annonser och skickar mail och notis direkt när något dyker upp som matchar ditt område, dina rum, din hyra – eller ett specifikt hus du drömmer om.",
+    "cta": "Kom igång gratis",
+    "activeNow": "Just nu <strong>{count}</strong> aktiva annonser",
+    "updatedAt": " · senast uppdaterat {time}",
+    "features": {
+      "filter": {
+        "title": "Filtrera exakt",
+        "text": "Kommun, stadsdel, adress, rum, kvm, hyra, våning, balkong och hiss."
+      },
+      "push": {
+        "title": "Notis på datorn",
+        "text": "Push-notis i webbläsaren så fort en matchande annons publiceras."
+      },
+      "mail": {
+        "title": "Mail direkt",
+        "text": "Ett snyggt mail med länk rakt in till annonsen så du kan anmäla intresse."
+      },
+      "queue": {
+        "title": "Din kötid",
+        "text": "Se hur många år och dagar du stått i bostadskön, alltid uppdaterat."
+      }
+    },
+    "footer": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB."
+  },
+  "auth": {
+    "fields": {
+      "name": "Namn",
+      "email": "E-post",
+      "password": "Lösenord",
+      "passwordMin": "Lösenord (minst 8 tecken)"
+    },
+    "login": {
+      "title": "Välkommen tillbaka",
+      "lead": "Logga in för att se dina bevakningar.",
+      "submit": "Logga in",
+      "submitting": "Loggar in…",
+      "noAccount": "Inget konto?",
+      "createHere": "Skapa ett här",
+      "errorBanned": "Ditt konto är avstängt. Kontakta administratören.",
+      "errorInvalid": "Fel e-post eller lösenord."
+    },
+    "register": {
+      "title": "Skapa konto",
+      "lead": "Notiserna skickas till e-posten du anger här.",
+      "submit": "Skapa konto",
+      "submitting": "Skapar konto…",
+      "hasAccount": "Har du redan konto?",
+      "loginLink": "Logga in",
+      "errorExists": "Det finns redan ett konto med den e-posten.",
+      "errorGeneric": "Något gick fel.",
+      "passwordShort": "Lösenordet måste vara minst 8 tecken."
+    }
+  },
+  "listings": {
+    "title": "Lägenheter",
+    "publicTitle": "Lediga lägenheter",
+    "count": "{count} {count, plural, =1 {annons} other {annonser}}",
+    "matchFilter": " matchar ditt filter",
+    "newLast24h": "{count} nya senaste dygnet",
+    "updatedAt": "uppdaterat {time}",
+    "queueBadge": {
+      "label": "Din kötid",
+      "value": "{years} år {days} {days, plural, =1 {dag} other {dagar}}",
+      "missing": "Ange ködatum för att se din chans"
+    },
+    "empty": "Inga annonser matchar just nu. Spara filtret som en bevakning så säger vi till när något dyker upp.",
+    "public": {
+      "hiddenCount": "{count} nya {label} visas för inloggade",
+      "delayLabel24": "senaste dygnet",
+      "delayLabelHours": "senaste {hours} timmarna",
+      "bannerDelayed": "Utloggad ser du annonser med {delay} fördröjning.",
+      "delay24": "ett dygns",
+      "delayHours": "{hours} timmars",
+      "bannerFull": "Du ser hela listan, nyast först.",
+      "bannerLead": "Inloggade ser nya annonser direkt, och får filter på område, rum, yta och hyra, sortering, sin chans på varje lägenhet och bevakningar med notis.",
+      "teaserTitle": "{count} {count, plural, =1 {ny annons} other {nya annonser}} {label}",
+      "teaserText": "Visas bara för inloggade. Skapa ett gratis konto så ser du dem direkt, med din chans på varje lägenhet."
+    },
+    "card": {
+      "new": "Ny",
+      "rooms": "Rum",
+      "area": "Yta",
+      "rentKr": "Hyra kr",
+      "floor": "Våning",
+      "lastDay": "Sista dag {date}",
+      "loginForChance": "för att se din chans",
+      "similarRequired": " · liknande har krävt {q1}–{q3} års kötid"
+    },
+    "tags": {
+      "nyproduktion": "Nyproduktion",
+      "ungdom": "Ungdom",
+      "student": "Student",
+      "senior": "Senior",
+      "korttid": "Korttid",
+      "bostadssnabben": "Bostadssnabben",
+      "balkong": "Balkong",
+      "hiss": "Hiss"
+    },
+    "map": {
+      "title": "Karta",
+      "summary": "{listings} {listings, plural, =1 {lägenhet} other {lägenheter}} i {buildings} hus",
+      "showing": " (visar {max})",
+      "larger": "Större",
+      "smaller": "Mindre",
+      "loading": "Laddar karta…",
+      "failed": "Kartan kunde inte laddas just nu.",
+      "popupMore": "+ {count} till på samma adress",
+      "popupNew": "Ny",
+      "popupChanceTitle": "Liknande lägenheter: {q1}–{q3} års kötid",
+      "etAl": "m.fl."
+    }
+  },
+  "filters": {
+    "title": "Filter",
+    "clear": "Rensa",
+    "watchThis": "Bevaka detta filter",
+    "watchThisShort": "Bevaka",
+    "submit": "Visa lägenheter",
+    "submitting": "Söker…",
+    "onlyNew": "Visa bara nya (senaste 24 h)",
+    "kommun": "Kommun",
+    "allKommuner": "Alla kommuner",
+    "area": "Område / stadsdel",
+    "areaAllSelected": "Alla områden i valda kommuner",
+    "areaWithListings": "Alla områden med annonser",
+    "areaPickKommun": "Välj gärna kommun först",
+    "addressLabel": "Adress eller hus",
+    "addressPlaceholder": "t.ex. Nya gatan, Värmdövägen 169, Nackabacken",
+    "addressHelp": "Matchar del av gatuadress, stadsdel eller kommun. Flera adresser separeras med komma, då räcker det att en matchar.",
+    "rooms": "Rum",
+    "areaM2": "Yta (m²)",
+    "rentPerMonth": "Hyra (kr/mån)",
+    "floor": "Våning",
+    "min": "min",
+    "max": "max",
+    "balcony": "Balkong",
+    "elevator": "Hiss",
+    "newBuildOnly": "Endast nyproduktion",
+    "specialQueues": "Specialköer (uteslutna som standard)",
+    "includeYouth": "Inkludera ungdomslägenheter",
+    "includeStudent": "Inkludera studentlägenheter",
+    "includeSenior": "Inkludera seniorlägenheter",
+    "includeShortTerm": "Inkludera korttidskontrakt",
+    "search": "Sök…",
+    "noResults": "Inga träffar",
+    "change": "Ändra",
+    "closePicker": "Stäng",
+    "hide": "Dölj",
+    "show": "Visa"
+  },
+  "sort": {
+    "label": "Sortera",
+    "reset": "Återställ",
+    "switchTo": "Byt till: {dir}",
+    "add": "Lägg till: {dir}",
+    "removeLevel": "Ta bort nivån",
+    "removeAria": "Ta bort sortering på {label}",
+    "order": "Sorterar i ordning: {list}.",
+    "options": {
+      "nyast": {
+        "label": "Inkommet",
+        "desc": "Nyast först",
+        "asc": "Äldst först"
+      },
+      "hyra": {
+        "label": "Hyra",
+        "asc": "Lägst först",
+        "desc": "Högst först"
+      },
+      "rum": {
+        "label": "Rum",
+        "desc": "Flest först",
+        "asc": "Färst först"
+      },
+      "yta": {
+        "label": "Yta",
+        "desc": "Störst först",
+        "asc": "Minst först"
+      },
+      "vaning": {
+        "label": "Våning",
+        "desc": "Högst upp först",
+        "asc": "Lägst först"
+      },
+      "sistadag": {
+        "label": "Sista dag",
+        "asc": "Snarast först",
+        "desc": "Senast först"
+      },
+      "kotid": {
+        "label": "Kötid som krävs",
+        "asc": "Kortast först",
+        "desc": "Längst först"
+      }
+    }
+  },
+  "chance": {
+    "excellent": {
+      "label": "Utmärkt chans",
+      "hint": "Din kötid är längre än hos 75 % av dem som fått liknande lägenheter."
+    },
+    "great": {
+      "label": "Mycket god chans",
+      "hint": "Du ligger i slutet av spannet för dem som fått liknande lägenheter."
+    },
+    "good": {
+      "label": "God chans",
+      "hint": "Du ligger mitt i spannet för dem som fått liknande lägenheter."
+    },
+    "some": {
+      "label": "Viss chans",
+      "hint": "Du ligger i början av spannet. Ungefär var fjärde som fått liknande hade kortare kötid än så."
+    },
+    "slim": {
+      "label": "Liten chans",
+      "hint": "Din kötid är upp till två år kortare än spannets nedre gräns."
+    },
+    "low": {
+      "label": "Låg chans",
+      "hint": "Din kötid är mer än två år kortare än spannets nedre gräns."
+    },
+    "unknown": {
+      "label": "Okänd chans",
+      "hint": "Bostadsförmedlingen saknar statistik för den här annonsen, eller så har du inte angett ködatum."
+    },
+    "meterTitle": "{hint} Liknande lägenheter: {q1}–{q3} års kötid{user}.",
+    "meterUser": ". Din kötid: {years}",
+    "range": "{q1}–{q3} år"
+  },
+  "watches": {
+    "title": "Bevakningar",
+    "lead": "Varje bevakning är ett sparat filter. Ny annons som matchar ger mail och notis.",
+    "new": "Ny bevakning",
+    "getPro": "Skaffa Pro",
+    "gateWhat": "Bevakningar",
+    "keptNotice": "Dina {count} sparade bevakningar finns kvar men skickar inga notiser förrän Pro är aktivt igen.",
+    "empty": {
+      "title": "Du har inga bevakningar än",
+      "lead": "Skapa en för t.ex. ett specifikt hus, ett område eller ett prisintervall.",
+      "cta": "Skapa din första bevakning"
+    },
+    "form": {
+      "titleNew": "Ny bevakning",
+      "titleEdit": "Redigera bevakning",
+      "leadNew": "Tomma fält betyder \"spelar ingen roll\".",
+      "name": "Namn på bevakningen",
+      "namePlaceholder": "t.ex. Nacka Grace, 3 rok",
+      "notifications": "Notiser",
+      "email": "Skicka mail",
+      "emailDesc": "Till din kontoadress",
+      "push": "Skicka notis i webbläsaren",
+      "pushReady": "Aktiverad på minst en enhet",
+      "pushNotReady": "Aktivera under Konto för att få notiser",
+      "saveChanges": "Spara ändringar",
+      "create": "Skapa bevakning",
+      "footer": "Vi kollar Bostadsförmedlingen var 30:e minut och hör av oss så fort en ny annons matchar."
+    },
+    "card": {
+      "all": "Alla annonser (vanliga kön)",
+      "active": "Aktiv",
+      "paused": "Pausad",
+      "mail": "Mail {state}",
+      "push": "Push {state}",
+      "on": "på",
+      "off": "av",
+      "hits": "· {count} {count, plural, =1 {träff} other {träffar}} just nu",
+      "showHits": "Visa träffar",
+      "pause": "Pausa",
+      "enable": "Aktivera",
+      "confirmDelete": "Ta bort bevakningen \"{name}\"?",
+      "rooms": "{min}–{max} rum",
+      "floor": "vån {min}–{max}",
+      "balcony": "balkong",
+      "elevator": "hiss",
+      "newBuild": "nyproduktion"
+    }
+  },
+  "account": {
+    "title": "Konto",
+    "adminSuffix": " · administratör",
+    "welcome": {
+      "title": "Välkommen till Hitta Lyan!",
+      "lead": "Tre snabba steg: ange ditt ködatum nedan, aktivera notiser, och <link>skapa din första bevakning</link>."
+    },
+    "queue": {
+      "title": "Din kötid hos Bostadsförmedlingen",
+      "value": "{years} år {days} {days, plural, =1 {dag} other {dagar}}",
+      "since": "{total} dagar sedan {date}",
+      "missing": "Ange datumet du registrerade dig i bostadskön så räknar vi ut din kötid. Du hittar det på Mina sidor hos bostad.stockholm.se.",
+      "note": "Bostadsförmedlingen erbjuder tyvärr ingen inloggning via OAuth, så kötiden kan inte hämtas automatiskt. Datumet sparas bara här.",
+      "label": "Registreringsdatum i bostadskön"
+    },
+    "notifications": {
+      "title": "Notiser på datorn och mobilen",
+      "lead": "Push-notiser skickas till varje enhet där du aktiverat dem.",
+      "enabledOn": "Aktiverat på {count} {count, plural, =1 {enhet} other {enheter}}.",
+      "none": "Inte aktiverat på någon enhet än.",
+      "guide": "Så fungerar notiser på iPhone, Android och dator"
+    },
+    "profile": {
+      "title": "Profil",
+      "name": "Namn",
+      "update": "Uppdatera"
+    },
+    "history": {
+      "title": "Skickade notiser",
+      "lead": "De senaste annonserna vi hört av oss om.",
+      "empty": "Inga notiser skickade än.",
+      "mail": "Mail",
+      "push": "Push"
+    }
+  },
+  "push": {
+    "unsupported": "Din webbläsare stöder inte push-notiser (eller VAPID-nycklar saknas i miljön).",
+    "denied": "Du har blockerat notiser för den här sajten. Tillåt dem i webbläsarens inställningar och ladda om.",
+    "activeHere": "Aktiverat på den här enheten",
+    "disable": "Stäng av",
+    "enable": "Aktivera notiser i webbläsaren",
+    "wait": "Vänta…",
+    "welcomeBody": "Notiser är aktiverade på den här enheten.",
+    "saveFailed": "Kunde inte spara prenumerationen",
+    "iosInstall": {
+      "title": "På iPhone behöver Hitta Lyan ligga på hemskärmen",
+      "steps": [
+        "Tryck på Dela-knappen i Safari (rutan med pilen).",
+        "Välj <b>Lägg till på hemskärmen</b>.",
+        "Öppna Hitta Lyan från hemskärmen och aktivera notiser här."
+      ]
+    },
+    "banner": {
+      "ios": "På iPhone får du notiser om du lägger Hitta Lyan på hemskärmen: Dela → Lägg till på hemskärmen, öppna därifrån och aktivera under Konto.",
+      "iosInstalled": "Aktivera notiser under Konto så hör vi av oss direkt när något matchar.",
+      "android": "Aktivera notiser under Konto så får du en notis i telefonen när något matchar.",
+      "link": "Till Konto",
+      "dismiss": "Dölj"
+    },
+    "guide": {
+      "installed": "Hitta Lyan är installerat på hemskärmen. Tryck på knappen ovan för att aktivera notiser.",
+      "yourDevice": "Din enhet",
+      "ios": {
+        "title": "iPhone och iPad",
+        "steps": [
+          "Öppna Hitta Lyan i Safari och tryck på Dela-knappen (rutan med pilen).",
+          "Välj “Lägg till på hemskärmen” och sedan “Lägg till”.",
+          "Öppna Hitta Lyan från hemskärmen, gå till Konto och tryck “Aktivera notiser”.",
+          "Tillåt notiser när iPhone frågar."
+        ],
+        "note": "Kräver iOS 16.4 eller senare. Notiser fungerar bara i hemskärmsversionen, inte i vanliga Safari. Får du inga notiser: Inställningar → Notiser → Hitta Lyan."
+      },
+      "android": {
+        "title": "Android",
+        "steps": [
+          "Öppna Hitta Lyan i Chrome, Edge, Samsung Internet eller Firefox.",
+          "Gå till Konto och tryck “Aktivera notiser”, tillåt när telefonen frågar.",
+          "Valfritt: lägg till på hemskärmen via webbläsarens meny för snabbare åtkomst."
+        ],
+        "note": "Får du inga notiser: kontrollera Inställningar → Appar → din webbläsare → Notiser, och att batterisparläge inte begränsar webbläsaren."
+      },
+      "desktop": {
+        "title": "Dator",
+        "steps": [
+          "Chrome, Edge, Firefox och Safari (macOS 13 eller senare) stöds.",
+          "Gå till Konto och klicka “Aktivera notiser”, tillåt i webbläsarens fråga.",
+          "Notiserna visas även när fliken är stängd, så länge webbläsaren körs."
+        ],
+        "note": "På Mac: Systeminställningar → Notiser → din webbläsare måste vara tillåten. På Windows: Inställningar → System → Aviseringar."
+      }
+    }
+  },
+  "pro": {
+    "title": "Hitta Lyan Pro",
+    "lead": "Bevakningar med mail och push, så du aldrig missar en annons som matchar.",
+    "status": {
+      "success": "Tack! Betalningen är genomförd. Det kan ta några sekunder innan Pro syns här, ladda om sidan om det dröjer.",
+      "cancel": "Köpet avbröts. Inget har debiterats.",
+      "error": "Något gick fel med betalningen. Försök igen eller kontakta oss.",
+      "unconfigured": "Betalningar är inte aktiverade i den här miljön än.",
+      "required": "Bevakningar är en Pro-funktion. Välj en plan nedan för att fortsätta.",
+      "nocustomer": "Du har inget köp att hantera än."
+    },
+    "yourPlan": "Din plan:",
+    "manage": "Hantera betalning",
+    "popular": "Populärast",
+    "extend": "Förläng",
+    "choose": "Välj",
+    "included": "Ingår i Pro",
+    "alwaysFree": "Alltid gratis",
+    "footer": "Betalningen hanteras av Stripe. Prenumerationer förnyas automatiskt tills du säger upp dem under “Hantera betalning”. Pass är en engångsbetalning och förnyas inte.",
+    "toWatches": "Till bevakningar",
+    "prices": {
+      "monthly": {
+        "title": "Månad",
+        "period": "per månad",
+        "description": "Förnyas automatiskt, säg upp när du vill."
+      },
+      "pass": {
+        "title": "3-månaderspass",
+        "period": "engångsbetalning",
+        "description": "Perfekt under en intensiv bostadsjakt. Ingen prenumeration."
+      },
+      "yearly": {
+        "title": "År",
+        "period": "per år",
+        "description": "Billigast per månad. Förnyas automatiskt."
+      }
+    },
+    "features": {
+      "pro": [
+        "Obegränsat antal bevakningar, även på adress och specifikt hus",
+        "Mail direkt när en ny annons matchar",
+        "Push-notis på dator och mobil",
+        "Full notishistorik"
+      ],
+      "free": [
+        "Alla annonser med filter, karta och sortering",
+        "Antal annonser per kommun och stadsdel",
+        "Chansmätare mot din egen kötid"
+      ]
+    },
+    "plan": {
+      "label": {
+        "admin": "Admin",
+        "free": "Gratis",
+        "trial": "Pro (provperiod)",
+        "pro": "Pro"
+      },
+      "detail": {
+        "admin": "Administratörer har alltid Pro.",
+        "lapsed": "Din Pro-period gick ut {date}.",
+        "free": "Bläddra, filtrera och se din chans. Bevakningar kräver Pro.",
+        "trial": "Provperioden gäller {days} {days, plural, =1 {dag} other {dagar}} till.",
+        "renewing": "Förnyas automatiskt {date}.",
+        "until": "Gäller till {date}.",
+        "indefinite": "Gäller tills vidare."
+      }
+    },
+    "gate": {
+      "title": "{what} kräver Pro",
+      "text": "Med Pro får du obegränsat med bevakningar och notiser via mail och push, från 49 kr per månad.",
+      "cta": "Se Pro"
+    }
+  },
+  "admin": {
+    "title": "Admin",
+    "lead": "Användare, körningar och systemstatus.",
+    "runPoll": "Hämta annonser nu",
+    "running": "Hämtar…",
+    "summary": "{total} annonser, {new} nya, {notified} notiser skickade",
+    "stats": {
+      "active": "Aktiva annonser",
+      "total": "Annonser totalt",
+      "watches": "Aktiva bevakningar",
+      "sent": "Skickade notiser"
+    },
+    "users": {
+      "title": "Användare ({count})",
+      "user": "Användare",
+      "role": "Roll",
+      "status": "Status",
+      "plan": "Plan",
+      "queueDate": "Ködatum",
+      "watches": "Bevakn.",
+      "notifications": "Notiser",
+      "push": "Push",
+      "created": "Skapad",
+      "actions": "Åtgärder",
+      "banned": "Avstängd",
+      "active": "Aktiv",
+      "you": "Du"
+    },
+    "actions": {
+      "givePro": "Ge Pro",
+      "removePro": "Ta bort Pro",
+      "confirmRemovePro": "Ta bort Pro från {name}?",
+      "promptMonths": "Ge {name} Pro i hur många månader? (tomt = tills vidare)",
+      "makeUser": "Gör till vanlig användare",
+      "makeAdmin": "Gör till admin",
+      "unban": "Häv avstängning",
+      "ban": "Stäng av",
+      "banPrompt": "Stäng av {name}? Ange gärna en anledning:",
+      "banDefault": "Avstängd av admin",
+      "delete": "Ta bort konto",
+      "confirmDelete": "Ta bort {name} permanent, inklusive bevakningar?"
+    },
+    "runs": {
+      "title": "Senaste hämtningar",
+      "lead": "Körs var 30:e minut via cron. Röd rad = fel.",
+      "started": "Startad",
+      "status": "Status",
+      "listings": "Annonser",
+      "new": "Nya",
+      "notifications": "Notiser",
+      "error": "Fel",
+      "none": "Ingen körning än.",
+      "running": "Pågår",
+      "ok": "OK",
+      "failed": "Fel"
+    }
+  },
+  "errors": {
+    "watchName": "Ge bevakningen ett namn.",
+    "watchNotFound": "Bevakningen hittades inte.",
+    "dateFormat": "Ange datum som ÅÅÅÅ-MM-DD.",
+    "dateFuture": "Datumet kan inte vara i framtiden.",
+    "nameMissing": "Namn saknas."
+  },
+  "email": {
+    "subjectSingle": "Ny lägenhet: {title}",
+    "subjectMulti": "{count} nya lägenheter matchar «{name}»",
+    "headingSingle": "Ny lägenhet matchar «{name}»",
+    "headingMulti": "{count} nya lägenheter matchar «{name}»",
+    "lead": "Annonserna kommer från Bostadsförmedlingen i Stockholm. Anmäl intresse snabbt, annonser ligger ofta bara ute några dagar.",
+    "newBuild": "Nyproduktion",
+    "lastDay": "Sista anmälningsdag {date}",
+    "footer": "Du får detta mail eftersom du har en bevakning på",
+    "manage": "Hantera bevakningar",
+    "perMonth": "/mån"
+  },
+  "pushMsg": {
+    "single": "Ny lägenhet: {address}",
+    "multi": "{count} nya lägenheter – {name}"
+  }
+}

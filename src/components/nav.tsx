@@ -1,19 +1,23 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NavLinks, SignOutButton } from "@/components/nav-client";
 
 /** Meny för utloggade besökare i det öppna listläget. */
-export function PublicNav() {
+export async function PublicNav() {
+  const t = await getTranslations("common");
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white/80 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo href="/" />
         <nav className="flex items-center gap-2">
+          <LocaleSwitcher compact />
           <Link href="/login" className="btn-ghost">
-            Logga in
+            {t("login")}
           </Link>
           <Link href="/register" className="btn-primary">
-            Skapa konto
+            {t("register")}
           </Link>
         </nav>
       </div>
@@ -21,13 +25,14 @@ export function PublicNav() {
   );
 }
 
-export function AppNav({ user }: { user: { name: string; email: string; role?: string | null } }) {
+export async function AppNav({ user }: { user: { name: string; email: string; role?: string | null } }) {
+  const t = await getTranslations("nav");
   const links = [
-    { href: "/app", label: "Lägenheter" },
-    { href: "/app/bevakningar", label: "Bevakningar" },
-    { href: "/app/konto", label: "Konto" },
-    { href: "/app/pro", label: "Pro" },
-    ...(user.role === "admin" ? [{ href: "/app/admin", label: "Admin" }] : []),
+    { href: "/app", label: t("listings") },
+    { href: "/app/bevakningar", label: t("watches") },
+    { href: "/app/konto", label: t("account") },
+    { href: "/app/pro", label: t("pro") },
+    ...(user.role === "admin" ? [{ href: "/app/admin", label: t("admin") }] : []),
   ];
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white/80 backdrop-blur">
@@ -36,7 +41,8 @@ export function AppNav({ user }: { user: { name: string; email: string; role?: s
           <Logo href="/" />
           <NavLinks links={links} />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <LocaleSwitcher compact />
           <Link href="/app/konto" className="hidden text-sm text-muted sm:block">
             {user.name}
           </Link>

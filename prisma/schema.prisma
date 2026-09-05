@@ -21,6 +21,9 @@ model User {
   // Datum då användaren ställde sig i Stockholms bostadskö (anges manuellt)
   queueRegisteredAt DateTime?
 
+  // Språk för gränssnitt, mail och push: "sv" eller "en"
+  locale String @default("sv")
+
   // Plan: "free" eller "pro". Pro gäller till planExpiresAt (null = tills vidare).
   plan                     String    @default("free")
   planExpiresAt            DateTime?

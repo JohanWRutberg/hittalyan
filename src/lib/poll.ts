@@ -112,8 +112,8 @@ async function notifyWatches(newListings: Listing[]): Promise<number> {
     const fresh = matches.filter((m) => !alreadyIds.has(m.id));
     if (!fresh.length) continue;
 
-    const emailSent = watch.notifyEmail ? await sendWatchEmail(watch.user.email, watch, fresh) : false;
-    const pushSent = watch.notifyPush ? await sendWatchPush(watch.user.pushSubscriptions, watch, fresh) : false;
+    const emailSent = watch.notifyEmail ? await sendWatchEmail(watch.user.email, watch, fresh, watch.user.locale) : false;
+    const pushSent = watch.notifyPush ? await sendWatchPush(watch.user.pushSubscriptions, watch, fresh, watch.user.locale) : false;
 
     await prisma.notification.createMany({
       data: fresh.map((l) => ({ userId: watch.userId, watchId: watch.id, listingId: l.id, emailSent, pushSent })),

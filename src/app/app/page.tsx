@@ -4,8 +4,11 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAreaCounts, getAreaMap } from "@/lib/areas";
 import { countActiveFilters, parseFilters, filtersToWhere, type SearchParams } from "@/lib/filters";
-import { dayAgo, formatDateTime, hoursAgo, queueTime } from "@/lib/format";
-import { formatYears, queueYears } from "@/lib/chance";
+import { getLocale, getTranslations } from "next-intl/server";
+import { dayAgo, formatDateTime, formatYearsShort, hoursAgo, queueTime } from "@/lib/format";
+import { queueYears } from "@/lib/chance";
+import { HoveredListingProvider } from "@/components/hovered-listing";
+import type { Locale } from "@/i18n/config";
 import { getSession } from "@/lib/session";
 import { watchToFilters } from "@/lib/watch-filters";
 import { FilterPanel } from "@/components/filter-panel";
@@ -15,12 +18,17 @@ import { SortBar } from "@/components/sort-bar";
 import { PushGuide } from "@/components/push-guide";
 import { parseSorts, sortsToOrderBy } from "@/lib/sort";
 
-export const metadata: Metadata = { title: "Lägenheter" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta.pages");
+  return { title: t("listings") };
+}
 
 const PAGE_SIZE = 60;
 
 export default async function ListingsPage({ searchParams }: PageProps<"/app">) {
   const sp = (await searchParams) as SearchParams;
+  const t = await getTranslations("listings");
+  const locale = (await getLocale()) as Locale;
   const session = await getSession();
   if (!session) return <PublicListings sp={sp} />;
 
@@ -89,11 +97,11 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lägenheter</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted">
-            {total} {total === 1 ? "annons" : "annonser"}
-            {activeCount > 0 && " matchar ditt filter"} · {newLast24h} nya senaste dygnet
-            {lastRun?.finishedAt && ` · uppdaterat ${formatDateTime(lastRun.finishedAt)}`}
+            {t("count", { count: total })}
+            {activeCount > 0 && t("matchFilter")} · {t("newLast24h", { count: newLast24h })}
+            {lastRun?.finishedAt && ` · ${t("updatedAt", { time: formatDateTime(lastRun.finishedAt, locale) })}`}
           </p>
         </div>
         <Link
@@ -106,14 +114,14 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
             {qt ? <Clock3 className="size-4.5" /> : <HelpCircle className="size-4.5" />}
           </span>
           <span className="leading-tight">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted">Din kötid</span>
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted">{t("queueBadge.label")}</span>
             {qt ? (
               <span className="block text-base font-bold text-ink">
-                {qt.years} år {qt.days} {qt.days === 1 ? "dag" : "dagar"}
-                <span className="ml-1.5 text-xs font-medium text-muted">≈ {formatYears(userYears!)}</span>
+                {t("queueBadge.value", { years: qt.years, days: qt.days })}
+                <span className="ml-1.5 text-xs font-medium text-muted">≈ {formatYearsShort(userYears!, locale)}</span>
               </span>
             ) : (
-              <span className="block text-sm font-semibold text-amber-800">Ange ködatum för att se din chans</span>
+              <span className="block text-sm font-semibold text-amber-800">{t("queueBadge.missing")}</span>
             )}
           </span>
         </Link>
@@ -123,21 +131,23 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
 
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} />
 
-      <ListingsMap points={mapPoints} userYears={userYears} />
+      <HoveredListingProvider>
+        <div className="space-y-6">
+          <ListingsMap points={mapPoints} userYears={userYears} />
 
-      <SortBar sorts={sorts} sp={sp} />
+          <SortBar sorts={sorts} sp={sp} />
 
-      {listings.length === 0 ? (
-        <div className="card p-12 text-center text-muted">
-          Inga annonser matchar just nu. Spara filtret som en bevakning så säger vi till när något dyker upp.
+          {listings.length === 0 ? (
+            <div className="card p-12 text-center text-muted">{t("empty")}</div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {listings.map((l, i) => (
+                <ListingCard key={l.id} listing={l} index={i} userYears={userYears} />
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {listings.map((l, i) => (
-            <ListingCard key={l.id} listing={l} index={i} userYears={userYears} />
-          ))}
-        </div>
-      )}
+      </HoveredListingProvider>
 
       {pages > 1 && (
         <nav className="flex items-center justify-center gap-2 text-sm">
@@ -165,6 +175,9 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
 const PUBLIC_DELAY_HOURS = Math.max(0, Number(process.env.PUBLIC_DELAY_HOURS ?? 24) || 0);
 
 async function PublicListings({ sp }: { sp: SearchParams }) {
+  const t = await getTranslations("listings");
+  const tc = await getTranslations("common");
+  const locale = (await getLocale()) as Locale;
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const delayCutoff = hoursAgo(PUBLIC_DELAY_HOURS);
   const base = filtersToWhere(parseFilters({}));
@@ -188,7 +201,7 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
   ]);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const cutoff = dayAgo();
-  const delayLabel = PUBLIC_DELAY_HOURS === 24 ? "senaste dygnet" : `senaste ${PUBLIC_DELAY_HOURS} timmarna`;
+  const delayLabel = PUBLIC_DELAY_HOURS === 24 ? t("public.delayLabel24") : t("public.delayLabelHours", { hours: PUBLIC_DELAY_HOURS });
   const mapPoints: MapPoint[] = mapRows.map((r) => ({
     id: r.id, lat: r.lat!, lng: r.lng!, gatuadress: r.gatuadress, stadsdel: r.stadsdel, kommun: r.kommun,
     antalRum: r.antalRum, yta: r.yta, hyra: r.hyra, vaning: r.vaning, url: r.url, nyproduktion: r.nyproduktion,
@@ -198,11 +211,11 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Lediga lägenheter</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("publicTitle")}</h1>
         <p className="mt-1 text-sm text-muted">
-          {total} annonser
-          {hiddenCount > 0 && ` · ${hiddenCount} nya ${delayLabel} visas för inloggade`}
-          {lastRun?.finishedAt && ` · uppdaterat ${formatDateTime(lastRun.finishedAt)}`}
+          {t("count", { count: total })}
+          {hiddenCount > 0 && ` · ${t("public.hiddenCount", { count: hiddenCount, label: delayLabel })}`}
+          {lastRun?.finishedAt && ` · ${t("updatedAt", { time: formatDateTime(lastRun.finishedAt, locale) })}`}
         </p>
       </div>
 
@@ -213,32 +226,38 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
           </span>
           <div>
             <p className="font-semibold">
-              {PUBLIC_DELAY_HOURS > 0 ? `Utloggad ser du annonser med ${PUBLIC_DELAY_HOURS === 24 ? "ett dygns" : `${PUBLIC_DELAY_HOURS} timmars`} fördröjning.` : "Du ser hela listan, nyast först."}
+              {PUBLIC_DELAY_HOURS > 0
+                ? t("public.bannerDelayed", {
+                    delay: PUBLIC_DELAY_HOURS === 24 ? t("public.delay24") : t("public.delayHours", { hours: PUBLIC_DELAY_HOURS }),
+                  })
+                : t("public.bannerFull")}
             </p>
-            <p className="text-sm text-muted">
-              Inloggade ser nya annonser direkt, och får filter på område, rum, yta och hyra, sortering, sin chans på varje lägenhet och bevakningar med notis.
-            </p>
+            <p className="text-sm text-muted">{t("public.bannerLead")}</p>
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
           <Link href="/login" className="btn-secondary">
-            <LogIn className="size-4" /> Logga in
+            <LogIn className="size-4" /> {tc("login")}
           </Link>
           <Link href="/register" className="btn-primary">
-            Skapa konto
+            {tc("register")}
           </Link>
         </div>
       </div>
 
-      <ListingsMap points={mapPoints} userYears={null} />
+      <HoveredListingProvider>
+        <div className="space-y-6">
+          <ListingsMap points={mapPoints} userYears={null} />
 
-      {hiddenCount > 0 && page === 1 && <HiddenTeaser count={hiddenCount} label={delayLabel} />}
+          {hiddenCount > 0 && page === 1 && <HiddenTeaser count={hiddenCount} label={delayLabel} />}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {listings.map((l, i) => (
-          <ListingCard key={l.id} listing={l} index={i} showChance={false} />
-        ))}
-      </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {listings.map((l, i) => (
+              <ListingCard key={l.id} listing={l} index={i} showChance={false} />
+            ))}
+          </div>
+        </div>
+      </HoveredListingProvider>
 
       {pages > 1 && (
         <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
@@ -254,7 +273,9 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
 }
 
 /** Låst teaser: suddade platshållarkort (ingen riktig data) och antal dolda nya annonser. */
-function HiddenTeaser({ count, label }: { count: number; label: string }) {
+async function HiddenTeaser({ count, label }: { count: number; label: string }) {
+  const t = await getTranslations("listings");
+  const tc = await getTranslations("common");
   const widths = [
     ["w-32", "w-40"],
     ["w-28", "w-48"],
@@ -266,7 +287,7 @@ function HiddenTeaser({ count, label }: { count: number; label: string }) {
         {widths.map(([a, b], i) => (
           <div key={i} className={`card select-none p-5 blur-[6px] ${i === 2 ? "hidden xl:block" : i === 1 ? "hidden sm:block" : ""}`}>
             <div className="flex items-center gap-2">
-              <span className="chip border-brand-200 bg-brand-50 text-brand-700">Ny</span>
+              <span className="chip border-brand-200 bg-brand-50 text-brand-700">{t("card.new")}</span>
               <span className={`h-3 rounded bg-slate-200 ${a}`} />
             </div>
             <div className={`mt-3 h-5 rounded bg-slate-300 ${b}`} />
@@ -288,13 +309,11 @@ function HiddenTeaser({ count, label }: { count: number; label: string }) {
           <span className="grid size-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-soft">
             <Lock className="size-5" />
           </span>
-          <p className="text-lg font-semibold">
-            {count} {count === 1 ? "ny annons" : "nya annonser"} {label}
-          </p>
-          <p className="text-sm text-muted">Visas bara för inloggade. Skapa ett gratis konto så ser du dem direkt, med din chans på varje lägenhet.</p>
+          <p className="text-lg font-semibold">{t("public.teaserTitle", { count, label })}</p>
+          <p className="text-sm text-muted">{t("public.teaserText")}</p>
           <div className="mt-1 flex gap-2">
-            <Link href="/login" className="btn-secondary">Logga in</Link>
-            <Link href="/register" className="btn-primary">Skapa konto</Link>
+            <Link href="/login" className="btn-secondary">{tc("login")}</Link>
+            <Link href="/register" className="btn-primary">{tc("register")}</Link>
           </div>
         </div>
       </div>

@@ -297,3 +297,17 @@ body {
   outline: 2px solid var(--color-brand-400);
   outline-offset: 1px;
 }
+
+/* Markören för den annons som hovras i listan */
+.lm-marker--active {
+  z-index: 5;
+}
+.lm-marker--active .lm-marker__pin {
+  background: linear-gradient(160deg, #2563eb, #1d4ed8);
+  transform: rotate(-45deg) scale(1.35);
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.35), 0 14px 30px -8px rgb(37 99 235 / 0.8);
+}
+.lm-marker--active .lm-marker__halo {
+  background: #3b82f6;
+  animation: lm-pulse 1.4s ease-out infinite;
+}

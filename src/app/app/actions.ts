@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { z } from "zod";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { parseFilters } from "@/lib/filters";
@@ -26,7 +27,8 @@ export async function saveWatch(_prev: ActionState, formData: FormData): Promise
   await requirePro(session.user.id);
   const id = String(formData.get("id") ?? "") || null;
   const name = String(formData.get("name") ?? "").trim();
-  if (!name) return { error: "Ge bevakningen ett namn." };
+  const t = await getTranslations("errors");
+  if (!name) return { error: t("watchName") };
 
   const f = parseFilters(formData);
   const data = {
@@ -55,7 +57,7 @@ export async function saveWatch(_prev: ActionState, formData: FormData): Promise
 
   if (id) {
     const existing = await prisma.watch.findFirst({ where: { id, userId: session.user.id } });
-    if (!existing) return { error: "Bevakningen hittades inte." };
+    if (!existing) return { error: t("watchNotFound") };
     await prisma.watch.update({ where: { id }, data });
   } else {
     await prisma.watch.create({ data: { ...data, userId: session.user.id } });
@@ -84,8 +86,9 @@ export async function updateQueueDate(_prev: ActionState, formData: FormData): P
   const raw = String(formData.get("queueRegisteredAt") ?? "").trim();
   const parsed = z.string().date().safeParse(raw);
   const date = raw ? (parsed.success ? new Date(raw + "T00:00:00Z") : null) : null;
-  if (raw && !date) return { error: "Ange datum som ÅÅÅÅ-MM-DD." };
-  if (date && date > new Date()) return { error: "Datumet kan inte vara i framtiden." };
+  const t = await getTranslations("errors");
+  if (raw && !date) return { error: t("dateFormat") };
+  if (date && date > new Date()) return { error: t("dateFuture") };
   await prisma.user.update({ where: { id: session.user.id }, data: { queueRegisteredAt: date } });
   revalidatePath("/app/konto");
   revalidatePath("/app");
@@ -95,7 +98,8 @@ export async function updateQueueDate(_prev: ActionState, formData: FormData): P
 export async function updateName(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await requireSession();
   const name = String(formData.get("name") ?? "").trim();
-  if (!name) return { error: "Namn saknas." };
+  const t = await getTranslations("errors");
+  if (!name) return { error: t("nameMissing") };
   await prisma.user.update({ where: { id: session.user.id }, data: { name } });
   revalidatePath("/app", "layout");
   return { ok: true };
@@ -119,7 +123,7 @@ export async function adminSetRole(userId: string, role: "user" | "admin") {
 export async function adminBan(userId: string, reason: string) {
   const session = await requireAdmin();
   if (userId === session.user.id) return;
-  await auth.api.banUser({ headers: await headers(), body: { userId, banReason: reason || "Avstängd av admin" } });
+  await auth.api.banUser({ headers: await headers(), body: { userId, banReason: reason || "Suspended by admin" } });
   revalidatePath("/app/admin");
 }
 
@@ -148,7 +152,8 @@ export async function adminRunPoll(): Promise<ActionState> {
   try {
     const r = await runPoll();
     revalidatePath("/app", "layout");
-    return { ok: true, summary: `${r.total} annonser, ${r.newCount} nya, ${r.notified} notiser skickade` };
+    const t = await getTranslations("admin");
+    return { ok: true, summary: t("summary", { total: r.total, new: r.newCount, notified: r.notified }) };
   } catch (e) {
     return { error: (e as Error).message };
   }

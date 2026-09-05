@@ -2,7 +2,9 @@ import webpush from "web-push";
 import { Resend } from "resend";
 import type { Listing, PushSubscription as PushSub, Watch } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
+import { formatDate, formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
+import { translatorFor, localeOf } from "@/i18n/messages";
+import type { Locale } from "@/i18n/config";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -21,8 +23,8 @@ export function listingTitle(l: Listing) {
   return `${l.gatuadress}, ${l.stadsdel} (${l.kommun})`;
 }
 
-export function listingSummary(l: Listing) {
-  return [formatRum(l.antalRum), formatYta(l.yta), formatKr(l.hyra) + "/mån", formatVaning(l.vaning)].join(" · ");
+export function listingSummary(l: Listing, locale: Locale, perMonth: string) {
+  return [formatRum(l.antalRum, locale), formatYta(l.yta), formatKr(l.hyra, locale) + perMonth, formatVaning(l.vaning, locale)].join(" · ");
 }
 
 // ---------- E-post ----------
@@ -31,45 +33,55 @@ function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-function renderEmailHtml(watch: Watch, listings: Listing[]) {
+function renderEmailHtml(watch: Watch, listings: Listing[], locale: Locale) {
+  const t = translatorFor(locale);
   const rows = listings
     .map(
       (l) => `
       <tr>
         <td style="padding:14px 16px;border-top:1px solid #e6eef2">
           <a href="${escapeHtml(l.url)}" style="font-weight:600;color:#0f766e;text-decoration:none;font-size:16px">${escapeHtml(listingTitle(l))}</a>
-          <div style="color:#475569;font-size:14px;margin-top:4px">${escapeHtml(listingSummary(l))}</div>
-          <div style="color:#94a3b8;font-size:12px;margin-top:4px">${l.nyproduktion ? "Nyproduktion · " : ""}${escapeHtml(l.koNamn ?? "")}${l.annonseradTill ? ` · Sista anmälningsdag ${l.annonseradTill.toISOString().slice(0, 10)}` : ""}</div>
+          <div style="color:#475569;font-size:14px;margin-top:4px">${escapeHtml(listingSummary(l, locale, t("email.perMonth")))}</div>
+          <div style="color:#94a3b8;font-size:12px;margin-top:4px">${l.nyproduktion ? `${escapeHtml(t("email.newBuild"))} · ` : ""}${escapeHtml(l.koNamn ?? "")}${
+            l.annonseradTill ? ` · ${escapeHtml(t("email.lastDay", { date: formatDate(l.annonseradTill, locale) }))}` : ""
+          }</div>
         </td>
       </tr>`,
     )
     .join("");
 
+  const heading =
+    listings.length === 1
+      ? t("email.headingSingle", { name: watch.name })
+      : t("email.headingMulti", { count: listings.length, name: watch.name });
+
   return `<!doctype html>
-<html lang="sv"><body style="margin:0;background:#f4f8fa;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+<html lang="${locale}"><body style="margin:0;background:#f4f8fa;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
   <div style="max-width:600px;margin:0 auto;padding:32px 16px">
     <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.08)">
       <div style="padding:24px 16px 8px">
         <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700">Hitta Lyan</div>
-        <h1 style="margin:8px 0 4px;font-size:22px">${listings.length === 1 ? "Ny lägenhet" : `${listings.length} nya lägenheter`} matchar «${escapeHtml(watch.name)}»</h1>
-        <p style="margin:0;color:#475569;font-size:14px">Annonserna kommer från Bostadsförmedlingen i Stockholm. Anmäl intresse snabbt, annonser ligger ofta bara ute några dagar.</p>
+        <h1 style="margin:8px 0 4px;font-size:22px">${escapeHtml(heading)}</h1>
+        <p style="margin:0;color:#475569;font-size:14px">${escapeHtml(t("email.lead"))}</p>
       </div>
       <table style="width:100%;border-collapse:collapse;margin-top:8px">${rows}</table>
       <div style="padding:16px;border-top:1px solid #e6eef2;font-size:12px;color:#94a3b8">
-        Du får detta mail eftersom du har en bevakning på <a href="${appUrl}" style="color:#0f766e">${appUrl.replace(/^https?:\/\//, "")}</a>.
-        <a href="${appUrl}/app/bevakningar" style="color:#0f766e">Hantera bevakningar</a>
+        ${escapeHtml(t("email.footer"))} <a href="${appUrl}" style="color:#0f766e">${appUrl.replace(/^https?:\/\//, "")}</a>.
+        <a href="${appUrl}/app/bevakningar" style="color:#0f766e">${escapeHtml(t("email.manage"))}</a>
       </div>
     </div>
   </div>
 </body></html>`;
 }
 
-export async function sendWatchEmail(to: string, watch: Watch, listings: Listing[]): Promise<boolean> {
+export async function sendWatchEmail(to: string, watch: Watch, listings: Listing[], rawLocale?: string | null): Promise<boolean> {
+  const locale = localeOf(rawLocale);
+  const t = translatorFor(locale);
   const subject =
     listings.length === 1
-      ? `Ny lägenhet: ${listingTitle(listings[0])}`
-      : `${listings.length} nya lägenheter matchar «${watch.name}»`;
-  const html = renderEmailHtml(watch, listings);
+      ? t("email.subjectSingle", { title: listingTitle(listings[0]) })
+      : t("email.subjectMulti", { count: listings.length, name: watch.name });
+  const html = renderEmailHtml(watch, listings, locale);
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     console.log(`[mail:dev] Till ${to} — ${subject}\n` + listings.map((l) => `  - ${listingTitle(l)} ${l.url}`).join("\n"));
@@ -91,15 +103,17 @@ export async function sendWatchEmail(to: string, watch: Watch, listings: Listing
 
 // ---------- Web Push ----------
 
-export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Listing[]): Promise<boolean> {
+export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Listing[], rawLocale?: string | null): Promise<boolean> {
   if (!subs.length || !ensureVapid()) return false;
+  const locale = localeOf(rawLocale);
+  const t = translatorFor(locale);
   const first = listings[0];
   const payload = JSON.stringify({
     title:
       listings.length === 1
-        ? `Ny lägenhet: ${first.gatuadress}, ${first.stadsdel}`
-        : `${listings.length} nya lägenheter – ${watch.name}`,
-    body: listings.length === 1 ? listingSummary(first) : listings.map((l) => l.gatuadress).slice(0, 4).join(", "),
+        ? t("pushMsg.single", { address: `${first.gatuadress}, ${first.stadsdel}` })
+        : t("pushMsg.multi", { count: listings.length, name: watch.name }),
+    body: listings.length === 1 ? listingSummary(first, locale, t("email.perMonth")) : listings.map((l) => l.gatuadress).slice(0, 4).join(", "),
     url: listings.length === 1 ? first.url : `${appUrl}/app`,
     tag: `watch-${watch.id}`,
   });

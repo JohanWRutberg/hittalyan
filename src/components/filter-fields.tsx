@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { AreaMap, Filters } from "@/lib/filters";
 import type { AreaCounts } from "@/lib/areas";
 
@@ -20,6 +21,7 @@ export function FilterFields({
   /** Antal annonser per område med övriga filter applicerade. Utan counts visas inga siffror. */
   counts?: AreaCounts;
 }) {
+  const t = useTranslations("filters");
   const [kommuner, setKommuner] = useState<string[]>(initial.kommuner ?? []);
   const [stadsdelar, setStadsdelar] = useState<string[]>(initial.stadsdelar ?? []);
 
@@ -60,7 +62,7 @@ export function FilterFields({
       <input type="hidden" name="stadsdelar" value={stadsdelar.join(",")} />
 
       <fieldset>
-        <legend className="label">Kommun</legend>
+        <legend className="label">{t("kommun")}</legend>
         <ChipPicker
           options={kommunOptions}
           showCounts={!!counts}
@@ -70,48 +72,48 @@ export function FilterFields({
             setKommuner(next);
             if (next.length) setStadsdelar(stadsdelar.filter((s) => next.some((k) => areas[k]?.includes(s))));
           }}
-          placeholder="Alla kommuner"
+          placeholder={t("allKommuner")}
         />
       </fieldset>
 
       <fieldset>
-        <legend className="label">Område / stadsdel</legend>
+        <legend className="label">{t("area")}</legend>
         <ChipPicker
           options={stadsdelOptions}
           showCounts={!!counts}
           selected={stadsdelar}
           onToggle={(v) => setStadsdelar(toggle(stadsdelar, v))}
-          placeholder={kommuner.length ? "Alla områden i valda kommuner" : counts ? "Alla områden med annonser" : "Välj gärna kommun först"}
+          placeholder={kommuner.length ? t("areaAllSelected") : counts ? t("areaWithListings") : t("areaPickKommun")}
           searchable
         />
       </fieldset>
 
       <div>
-        <label className="label" htmlFor="adress">Adress eller hus</label>
-        <input id="adress" name="adress" defaultValue={initial.adress ?? ""} placeholder="t.ex. Nya gatan, Värmdövägen 169, Nackabacken" className="input" />
-        <p className="mt-1 text-xs text-muted">Matchar del av gatuadress, stadsdel eller kommun. Flera adresser separeras med komma, då räcker det att en matchar.</p>
+        <label className="label" htmlFor="adress">{t("addressLabel")}</label>
+        <input id="adress" name="adress" defaultValue={initial.adress ?? ""} placeholder={t("addressPlaceholder")} className="input" />
+        <p className="mt-1 text-xs text-muted">{t("addressHelp")}</p>
       </div>
 
       <div className={`grid gap-3 ${compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4"}`}>
-        <Range label="Rum" name="Rum" min={initial.minRum} max={initial.maxRum} step="0.5" />
-        <Range label="Yta (m²)" name="Yta" min={initial.minYta} max={initial.maxYta} />
-        <Range label="Hyra (kr/mån)" name="Hyra" min={initial.minHyra} max={initial.maxHyra} step="100" />
-        <Range label="Våning" name="Vaning" min={initial.minVaning} max={initial.maxVaning} />
+        <Range label={t("rooms")} name="Rum" min={initial.minRum} max={initial.maxRum} step="0.5" />
+        <Range label={t("areaM2")} name="Yta" min={initial.minYta} max={initial.maxYta} />
+        <Range label={t("rentPerMonth")} name="Hyra" min={initial.minHyra} max={initial.maxHyra} step="100" />
+        <Range label={t("floor")} name="Vaning" min={initial.minVaning} max={initial.maxVaning} />
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <Check name="balkong" label="Balkong" checked={initial.balkong} />
-        <Check name="hiss" label="Hiss" checked={initial.hiss} />
-        <Check name="nyproduktion" label="Endast nyproduktion" checked={initial.nyproduktion} />
+        <Check name="balkong" label={t("balcony")} checked={initial.balkong} />
+        <Check name="hiss" label={t("elevator")} checked={initial.hiss} />
+        <Check name="nyproduktion" label={t("newBuildOnly")} checked={initial.nyproduktion} />
       </div>
 
       <details className="rounded-xl border border-line bg-canvas p-3">
-        <summary className="cursor-pointer text-sm font-medium text-muted">Specialköer (uteslutna som standard)</summary>
+        <summary className="cursor-pointer text-sm font-medium text-muted">{t("specialQueues")}</summary>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <Check name="inkluderaUngdom" label="Inkludera ungdomslägenheter" checked={initial.inkluderaUngdom} />
-          <Check name="inkluderaStudent" label="Inkludera studentlägenheter" checked={initial.inkluderaStudent} />
-          <Check name="inkluderaSenior" label="Inkludera seniorlägenheter" checked={initial.inkluderaSenior} />
-          <Check name="inkluderaKorttid" label="Inkludera korttidskontrakt" checked={initial.inkluderaKorttid} />
+          <Check name="inkluderaUngdom" label={t("includeYouth")} checked={initial.inkluderaUngdom} />
+          <Check name="inkluderaStudent" label={t("includeStudent")} checked={initial.inkluderaStudent} />
+          <Check name="inkluderaSenior" label={t("includeSenior")} checked={initial.inkluderaSenior} />
+          <Check name="inkluderaKorttid" label={t("includeShortTerm")} checked={initial.inkluderaKorttid} />
         </div>
       </details>
     </div>
@@ -133,6 +135,7 @@ function ChipPicker({
   searchable?: boolean;
   showCounts?: boolean;
 }) {
+  const t = useTranslations("filters");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(selected.length > 0);
   const visible = options.filter((o) => !q || o.name.toLocaleLowerCase("sv").includes(q.toLocaleLowerCase("sv")));
@@ -149,16 +152,16 @@ function ChipPicker({
           </button>
         ))}
         <button type="button" onClick={() => setOpen(!open)} className="chip hover:border-brand-300">
-          {selected.length ? (open ? "Stäng" : "Ändra") : placeholder}
+          {selected.length ? (open ? t("closePicker") : t("change")) : placeholder}
         </button>
       </div>
       {open && (
         <div className="mt-2 border-t border-line pt-2">
           {searchable && (
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Sök…" className="input mb-2 py-1.5" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("search")} className="input mb-2 py-1.5" />
           )}
           <div className="flex max-h-44 flex-wrap gap-1.5 overflow-y-auto">
-            {visible.length === 0 && <span className="px-1 text-xs text-muted">Inga träffar</span>}
+            {visible.length === 0 && <span className="px-1 text-xs text-muted">{t("noResults")}</span>}
             {visible.map((o) => {
               const on = selected.includes(o.name);
               const empty = showCounts && o.count === 0;
@@ -196,13 +199,14 @@ function CountBadge({ n, active }: { n: number; active?: boolean }) {
 }
 
 function Range({ label, name, min, max, step }: { label: string; name: string; min?: number; max?: number; step?: string }) {
+  const t = useTranslations("filters");
   return (
     <div>
       <span className="label">{label}</span>
       <div className="flex items-center gap-1.5">
-        <input type="number" name={`min${name}`} defaultValue={min ?? ""} placeholder="min" step={step} inputMode="decimal" className="input px-2.5 py-2" />
+        <input type="number" name={`min${name}`} defaultValue={min ?? ""} placeholder={t("min")} step={step} inputMode="decimal" className="input px-2.5 py-2" />
         <span className="text-muted">–</span>
-        <input type="number" name={`max${name}`} defaultValue={max ?? ""} placeholder="max" step={step} inputMode="decimal" className="input px-2.5 py-2" />
+        <input type="number" name={`max${name}`} defaultValue={max ?? ""} placeholder={t("max")} step={step} inputMode="decimal" className="input px-2.5 py-2" />
       </div>
     </div>
   );

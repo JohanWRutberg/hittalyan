@@ -1,0 +1,569 @@
+{
+  "meta": {
+    "title": "Hitta Lyan – track new rental apartments in Stockholm",
+    "template": "%s · Hitta Lyan",
+    "description": "Get an email and a push notification the moment a new rental apartment matching your criteria is listed by the Stockholm Housing Agency (Bostadsförmedlingen).",
+    "pages": {
+      "listings": "Apartments",
+      "watches": "Watches",
+      "newWatch": "New watch",
+      "editWatch": "Edit watch",
+      "account": "Account",
+      "admin": "Admin",
+      "pro": "Pro",
+      "login": "Log in",
+      "register": "Create account"
+    }
+  },
+  "common": {
+    "appName": "Hitta Lyan",
+    "login": "Log in",
+    "register": "Create account",
+    "logout": "Log out",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved!",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "show": "Show",
+    "hide": "Hide",
+    "toApp": "Open the app",
+    "viewListings": "View apartments",
+    "language": "Language",
+    "swedish": "Svenska",
+    "english": "English"
+  },
+  "nav": {
+    "listings": "Apartments",
+    "watches": "Watches",
+    "account": "Account",
+    "pro": "Pro",
+    "admin": "Admin"
+  },
+  "landing": {
+    "badge": "Checks the Housing Agency every 30 minutes",
+    "title": "Never miss a new rental apartment in Stockholm again.",
+    "lead": "Hitta Lyan keeps an eye on new listings from the Stockholm Housing Agency and sends you an email and a push notification the moment something matches your area, room count, rent – or a specific building you have your heart set on.",
+    "cta": "Get started for free",
+    "activeNow": "<strong>{count}</strong> active listings right now",
+    "updatedAt": " · last updated {time}",
+    "features": {
+      "filter": {
+        "title": "Filter precisely",
+        "text": "Municipality, district, address, rooms, m², rent, floor, balcony and elevator."
+      },
+      "push": {
+        "title": "Desktop notifications",
+        "text": "A browser push notification as soon as a matching listing is published."
+      },
+      "mail": {
+        "title": "Instant email",
+        "text": "A clean email with a link straight to the listing so you can register interest."
+      },
+      "queue": {
+        "title": "Your queue time",
+        "text": "See how many years and days you have been in the housing queue, always up to date."
+      }
+    },
+    "footer": "Hitta Lyan is an independent service and is not affiliated with Bostadsförmedlingen i Stockholm AB."
+  },
+  "auth": {
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "passwordMin": "Password (at least 8 characters)"
+    },
+    "login": {
+      "title": "Welcome back",
+      "lead": "Log in to see your watches.",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "noAccount": "No account yet?",
+      "createHere": "Create one here",
+      "errorBanned": "Your account has been suspended. Contact the administrator.",
+      "errorInvalid": "Wrong email or password."
+    },
+    "register": {
+      "title": "Create account",
+      "lead": "Notifications are sent to the email you enter here.",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "errorExists": "There is already an account with that email.",
+      "errorGeneric": "Something went wrong.",
+      "passwordShort": "The password must be at least 8 characters."
+    }
+  },
+  "listings": {
+    "title": "Apartments",
+    "publicTitle": "Available apartments",
+    "count": "{count} {count, plural, =1 {listing} other {listings}}",
+    "matchFilter": " match your filter",
+    "newLast24h": "{count} new in the last 24 hours",
+    "updatedAt": "updated {time}",
+    "queueBadge": {
+      "label": "Your queue time",
+      "value": "{years} {years, plural, =1 {year} other {years}} {days} {days, plural, =1 {day} other {days}}",
+      "missing": "Enter your queue date to see your odds"
+    },
+    "empty": "No listings match right now. Save the filter as a watch and we will tell you when something turns up.",
+    "public": {
+      "hiddenCount": "{count} new {label} are shown to logged-in users only",
+      "delayLabel24": "in the last 24 hours",
+      "delayLabelHours": "in the last {hours} hours",
+      "bannerDelayed": "Logged out, you see listings with {delay} delay.",
+      "delay24": "a 24-hour",
+      "delayHours": "a {hours}-hour",
+      "bannerFull": "You are seeing the full list, newest first.",
+      "bannerLead": "Logged-in users see new listings immediately and get filters for area, rooms, size and rent, sorting, their odds on every apartment, and watches with notifications.",
+      "teaserTitle": "{count} new {count, plural, =1 {listing} other {listings}} {label}",
+      "teaserText": "Only shown to logged-in users. Create a free account to see them right away, with your odds on every apartment."
+    },
+    "card": {
+      "new": "New",
+      "rooms": "Rooms",
+      "area": "Size",
+      "rentKr": "Rent kr",
+      "floor": "Floor",
+      "lastDay": "Deadline {date}",
+      "loginForChance": "to see your odds",
+      "similarRequired": " · similar ones required {q1}–{q3} years in the queue"
+    },
+    "tags": {
+      "nyproduktion": "New build",
+      "ungdom": "Youth",
+      "student": "Student",
+      "senior": "Senior",
+      "korttid": "Short-term",
+      "bostadssnabben": "Bostadssnabben",
+      "balkong": "Balcony",
+      "hiss": "Elevator"
+    },
+    "map": {
+      "title": "Map",
+      "summary": "{listings} {listings, plural, =1 {apartment} other {apartments}} in {buildings} {buildings, plural, =1 {building} other {buildings}}",
+      "showing": " (showing {max})",
+      "larger": "Larger",
+      "smaller": "Smaller",
+      "loading": "Loading map…",
+      "failed": "The map could not be loaded right now.",
+      "popupMore": "+ {count} more at the same address",
+      "popupNew": "New",
+      "popupChanceTitle": "Similar apartments: {q1}–{q3} years in the queue",
+      "etAl": "et al."
+    }
+  },
+  "filters": {
+    "title": "Filter",
+    "clear": "Clear",
+    "watchThis": "Watch this filter",
+    "watchThisShort": "Watch",
+    "submit": "Show apartments",
+    "submitting": "Searching…",
+    "onlyNew": "Only show new (last 24 h)",
+    "kommun": "Municipality",
+    "allKommuner": "All municipalities",
+    "area": "Area / district",
+    "areaAllSelected": "All areas in the selected municipalities",
+    "areaWithListings": "All areas with listings",
+    "areaPickKommun": "Pick a municipality first",
+    "addressLabel": "Address or building",
+    "addressPlaceholder": "e.g. Nya gatan, Värmdövägen 169, Nackabacken",
+    "addressHelp": "Matches part of the street address, district or municipality. Separate several addresses with commas; any one of them matching is enough.",
+    "rooms": "Rooms",
+    "areaM2": "Size (m²)",
+    "rentPerMonth": "Rent (kr/month)",
+    "floor": "Floor",
+    "min": "min",
+    "max": "max",
+    "balcony": "Balcony",
+    "elevator": "Elevator",
+    "newBuildOnly": "New builds only",
+    "specialQueues": "Special queues (excluded by default)",
+    "includeYouth": "Include youth apartments",
+    "includeStudent": "Include student apartments",
+    "includeSenior": "Include senior apartments",
+    "includeShortTerm": "Include short-term contracts",
+    "search": "Search…",
+    "noResults": "No matches",
+    "change": "Change",
+    "closePicker": "Close",
+    "hide": "Hide",
+    "show": "Show"
+  },
+  "sort": {
+    "label": "Sort",
+    "reset": "Reset",
+    "switchTo": "Switch to: {dir}",
+    "add": "Add: {dir}",
+    "removeLevel": "Remove this level",
+    "removeAria": "Remove sorting by {label}",
+    "order": "Sorting by: {list}.",
+    "options": {
+      "nyast": {
+        "label": "Listed",
+        "desc": "Newest first",
+        "asc": "Oldest first"
+      },
+      "hyra": {
+        "label": "Rent",
+        "asc": "Lowest first",
+        "desc": "Highest first"
+      },
+      "rum": {
+        "label": "Rooms",
+        "desc": "Most first",
+        "asc": "Fewest first"
+      },
+      "yta": {
+        "label": "Size",
+        "desc": "Largest first",
+        "asc": "Smallest first"
+      },
+      "vaning": {
+        "label": "Floor",
+        "desc": "Top floor first",
+        "asc": "Lowest first"
+      },
+      "sistadag": {
+        "label": "Deadline",
+        "asc": "Soonest first",
+        "desc": "Latest first"
+      },
+      "kotid": {
+        "label": "Queue time required",
+        "asc": "Shortest first",
+        "desc": "Longest first"
+      }
+    }
+  },
+  "chance": {
+    "excellent": {
+      "label": "Excellent odds",
+      "hint": "Your queue time is longer than 75% of those who got similar apartments."
+    },
+    "great": {
+      "label": "Very good odds",
+      "hint": "You are at the upper end of the range for those who got similar apartments."
+    },
+    "good": {
+      "label": "Good odds",
+      "hint": "You are in the middle of the range for those who got similar apartments."
+    },
+    "some": {
+      "label": "Some odds",
+      "hint": "You are at the lower end of the range. Roughly one in four who got similar apartments had less queue time than that."
+    },
+    "slim": {
+      "label": "Slim odds",
+      "hint": "Your queue time is up to two years short of the lower end of the range."
+    },
+    "low": {
+      "label": "Low odds",
+      "hint": "Your queue time is more than two years short of the lower end of the range."
+    },
+    "unknown": {
+      "label": "Unknown odds",
+      "hint": "The Housing Agency has no statistics for this listing, or you have not entered your queue date."
+    },
+    "meterTitle": "{hint} Similar apartments: {q1}–{q3} years in the queue{user}.",
+    "meterUser": ". Your queue time: {years}",
+    "range": "{q1}–{q3} yrs"
+  },
+  "watches": {
+    "title": "Watches",
+    "lead": "Each watch is a saved filter. A new matching listing triggers an email and a push notification.",
+    "new": "New watch",
+    "getPro": "Get Pro",
+    "gateWhat": "Watches",
+    "keptNotice": "Your {count} saved watches are kept but will not send notifications until Pro is active again.",
+    "empty": {
+      "title": "You have no watches yet",
+      "lead": "Create one for a specific building, an area or a rent range, for example.",
+      "cta": "Create your first watch"
+    },
+    "form": {
+      "titleNew": "New watch",
+      "titleEdit": "Edit watch",
+      "leadNew": "Empty fields mean \"doesn't matter\".",
+      "name": "Name of the watch",
+      "namePlaceholder": "e.g. Nacka Grace, 3 rooms",
+      "notifications": "Notifications",
+      "email": "Send email",
+      "emailDesc": "To your account address",
+      "push": "Send browser notification",
+      "pushReady": "Enabled on at least one device",
+      "pushNotReady": "Enable under Account to receive notifications",
+      "saveChanges": "Save changes",
+      "create": "Create watch",
+      "footer": "We check the Housing Agency every 30 minutes and get in touch as soon as a new listing matches."
+    },
+    "card": {
+      "all": "All listings (regular queue)",
+      "active": "Active",
+      "paused": "Paused",
+      "mail": "Email {state}",
+      "push": "Push {state}",
+      "on": "on",
+      "off": "off",
+      "hits": "· {count} {count, plural, =1 {match} other {matches}} right now",
+      "showHits": "Show matches",
+      "pause": "Pause",
+      "enable": "Enable",
+      "confirmDelete": "Delete the watch \"{name}\"?",
+      "rooms": "{min}–{max} rooms",
+      "floor": "floor {min}–{max}",
+      "balcony": "balcony",
+      "elevator": "elevator",
+      "newBuild": "new build"
+    }
+  },
+  "account": {
+    "title": "Account",
+    "adminSuffix": " · administrator",
+    "welcome": {
+      "title": "Welcome to Hitta Lyan!",
+      "lead": "Three quick steps: enter your queue date below, enable notifications, and <link>create your first watch</link>."
+    },
+    "queue": {
+      "title": "Your time in the Housing Agency queue",
+      "value": "{years} {years, plural, =1 {year} other {years}} {days} {days, plural, =1 {day} other {days}}",
+      "since": "{total} days since {date}",
+      "missing": "Enter the date you registered in the housing queue and we will work out your queue time. You can find it under My pages at bostad.stockholm.se.",
+      "note": "Unfortunately the Housing Agency offers no OAuth login, so the queue time cannot be fetched automatically. The date is only stored here.",
+      "label": "Registration date in the housing queue"
+    },
+    "notifications": {
+      "title": "Notifications on desktop and mobile",
+      "lead": "Push notifications are sent to every device where you have enabled them.",
+      "enabledOn": "Enabled on {count} {count, plural, =1 {device} other {devices}}.",
+      "none": "Not enabled on any device yet.",
+      "guide": "How notifications work on iPhone, Android and desktop"
+    },
+    "profile": {
+      "title": "Profile",
+      "name": "Name",
+      "update": "Update"
+    },
+    "history": {
+      "title": "Sent notifications",
+      "lead": "The latest listings we have told you about.",
+      "empty": "No notifications sent yet.",
+      "mail": "Email",
+      "push": "Push"
+    }
+  },
+  "push": {
+    "unsupported": "Your browser does not support push notifications (or VAPID keys are missing in this environment).",
+    "denied": "You have blocked notifications for this site. Allow them in your browser settings and reload.",
+    "activeHere": "Enabled on this device",
+    "disable": "Turn off",
+    "enable": "Enable browser notifications",
+    "wait": "Please wait…",
+    "welcomeBody": "Notifications are enabled on this device.",
+    "saveFailed": "Could not save the subscription",
+    "iosInstall": {
+      "title": "On iPhone, Hitta Lyan needs to be on your home screen",
+      "steps": [
+        "Tap the Share button in Safari (the square with the arrow).",
+        "Choose <b>Add to Home Screen</b>.",
+        "Open Hitta Lyan from the home screen and enable notifications here."
+      ]
+    },
+    "banner": {
+      "ios": "On iPhone you get notifications if you add Hitta Lyan to your home screen: Share → Add to Home Screen, open it from there and enable under Account.",
+      "iosInstalled": "Enable notifications under Account and we will get in touch the moment something matches.",
+      "android": "Enable notifications under Account to get a notification on your phone when something matches.",
+      "link": "Go to Account",
+      "dismiss": "Dismiss"
+    },
+    "guide": {
+      "installed": "Hitta Lyan is installed on your home screen. Tap the button above to enable notifications.",
+      "yourDevice": "Your device",
+      "ios": {
+        "title": "iPhone and iPad",
+        "steps": [
+          "Open Hitta Lyan in Safari and tap the Share button (the square with the arrow).",
+          "Choose “Add to Home Screen”, then “Add”.",
+          "Open Hitta Lyan from the home screen, go to Account and tap “Enable notifications”.",
+          "Allow notifications when iPhone asks."
+        ],
+        "note": "Requires iOS 16.4 or later. Notifications only work in the home-screen version, not in regular Safari. Not getting notifications? Settings → Notifications → Hitta Lyan."
+      },
+      "android": {
+        "title": "Android",
+        "steps": [
+          "Open Hitta Lyan in Chrome, Edge, Samsung Internet or Firefox.",
+          "Go to Account and tap “Enable notifications”, allow when the phone asks.",
+          "Optional: add to the home screen via the browser menu for quicker access."
+        ],
+        "note": "Not getting notifications? Check Settings → Apps → your browser → Notifications, and that battery saver is not restricting the browser."
+      },
+      "desktop": {
+        "title": "Desktop",
+        "steps": [
+          "Chrome, Edge, Firefox and Safari (macOS 13 or later) are supported.",
+          "Go to Account and click “Enable notifications”, allow in the browser prompt.",
+          "Notifications also appear when the tab is closed, as long as the browser is running."
+        ],
+        "note": "On Mac: System Settings → Notifications → your browser must be allowed. On Windows: Settings → System → Notifications."
+      }
+    }
+  },
+  "pro": {
+    "title": "Hitta Lyan Pro",
+    "lead": "Watches with email and push, so you never miss a matching listing.",
+    "status": {
+      "success": "Thank you! Your payment went through. It may take a few seconds before Pro shows up here; reload the page if it takes a while.",
+      "cancel": "The purchase was cancelled. Nothing has been charged.",
+      "error": "Something went wrong with the payment. Try again or contact us.",
+      "unconfigured": "Payments are not enabled in this environment yet.",
+      "required": "Watches are a Pro feature. Pick a plan below to continue.",
+      "nocustomer": "You have no purchase to manage yet."
+    },
+    "yourPlan": "Your plan:",
+    "manage": "Manage billing",
+    "popular": "Most popular",
+    "extend": "Extend",
+    "choose": "Choose",
+    "included": "Included in Pro",
+    "alwaysFree": "Always free",
+    "footer": "Payments are handled by Stripe. Subscriptions renew automatically until you cancel them under “Manage billing”. Passes are a one-off payment and do not renew.",
+    "toWatches": "Go to watches",
+    "prices": {
+      "monthly": {
+        "title": "Monthly",
+        "period": "per month",
+        "description": "Renews automatically, cancel any time."
+      },
+      "pass": {
+        "title": "3-month pass",
+        "period": "one-off payment",
+        "description": "Perfect for an intense apartment hunt. No subscription."
+      },
+      "yearly": {
+        "title": "Yearly",
+        "period": "per year",
+        "description": "Cheapest per month. Renews automatically."
+      }
+    },
+    "features": {
+      "pro": [
+        "Unlimited watches, including by address and specific building",
+        "Instant email when a new listing matches",
+        "Push notifications on desktop and mobile",
+        "Full notification history"
+      ],
+      "free": [
+        "All listings with filters, map and sorting",
+        "Listing counts per municipality and district",
+        "Odds meter against your own queue time"
+      ]
+    },
+    "plan": {
+      "label": {
+        "admin": "Admin",
+        "free": "Free",
+        "trial": "Pro (trial)",
+        "pro": "Pro"
+      },
+      "detail": {
+        "admin": "Administrators always have Pro.",
+        "lapsed": "Your Pro period ended {date}.",
+        "free": "Browse, filter and see your odds. Watches require Pro.",
+        "trial": "The trial runs for {days} more {days, plural, =1 {day} other {days}}.",
+        "renewing": "Renews automatically {date}.",
+        "until": "Valid until {date}.",
+        "indefinite": "Valid indefinitely."
+      }
+    },
+    "gate": {
+      "title": "{what} require Pro",
+      "text": "With Pro you get unlimited watches and notifications by email and push, from 49 kr per month.",
+      "cta": "See Pro"
+    }
+  },
+  "admin": {
+    "title": "Admin",
+    "lead": "Users, runs and system status.",
+    "runPoll": "Fetch listings now",
+    "running": "Fetching…",
+    "summary": "{total} listings, {new} new, {notified} notifications sent",
+    "stats": {
+      "active": "Active listings",
+      "total": "Listings in total",
+      "watches": "Active watches",
+      "sent": "Notifications sent"
+    },
+    "users": {
+      "title": "Users ({count})",
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "plan": "Plan",
+      "queueDate": "Queue date",
+      "watches": "Watches",
+      "notifications": "Notif.",
+      "push": "Push",
+      "created": "Created",
+      "actions": "Actions",
+      "banned": "Suspended",
+      "active": "Active",
+      "you": "You"
+    },
+    "actions": {
+      "givePro": "Grant Pro",
+      "removePro": "Remove Pro",
+      "confirmRemovePro": "Remove Pro from {name}?",
+      "promptMonths": "Grant {name} Pro for how many months? (empty = indefinitely)",
+      "makeUser": "Make regular user",
+      "makeAdmin": "Make admin",
+      "unban": "Lift suspension",
+      "ban": "Suspend",
+      "banPrompt": "Suspend {name}? Optionally give a reason:",
+      "banDefault": "Suspended by admin",
+      "delete": "Delete account",
+      "confirmDelete": "Delete {name} permanently, including watches?"
+    },
+    "runs": {
+      "title": "Latest fetches",
+      "lead": "Runs every 30 minutes via cron. Red row = error.",
+      "started": "Started",
+      "status": "Status",
+      "listings": "Listings",
+      "new": "New",
+      "notifications": "Notif.",
+      "error": "Error",
+      "none": "No runs yet.",
+      "running": "Running",
+      "ok": "OK",
+      "failed": "Error"
+    }
+  },
+  "errors": {
+    "watchName": "Give the watch a name.",
+    "watchNotFound": "The watch was not found.",
+    "dateFormat": "Enter the date as YYYY-MM-DD.",
+    "dateFuture": "The date cannot be in the future.",
+    "nameMissing": "Name is missing."
+  },
+  "email": {
+    "subjectSingle": "New apartment: {title}",
+    "subjectMulti": "{count} new apartments match “{name}”",
+    "headingSingle": "New apartment matches “{name}”",
+    "headingMulti": "{count} new apartments match “{name}”",
+    "lead": "The listings come from the Stockholm Housing Agency. Register interest quickly – listings are often only open for a few days.",
+    "newBuild": "New build",
+    "lastDay": "Deadline {date}",
+    "footer": "You are receiving this email because you have a watch on",
+    "manage": "Manage watches",
+    "perMonth": "/month"
+  },
+  "pushMsg": {
+    "single": "New apartment: {address}",
+    "multi": "{count} new apartments – {name}"
+  }
+}

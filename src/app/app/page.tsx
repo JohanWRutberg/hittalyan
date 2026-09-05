@@ -133,7 +133,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
 
       <HoveredListingProvider>
         <div className="space-y-6">
-          <ListingsMap points={mapPoints} userYears={userYears} />
+          <ListingsMap points={mapPoints} userYears={userYears} sticky />
 
           <SortBar sorts={sorts} sp={sp} />
 
@@ -247,7 +247,7 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
 
       <HoveredListingProvider>
         <div className="space-y-6">
-          <ListingsMap points={mapPoints} userYears={null} />
+          <ListingsMap points={mapPoints} userYears={null} sticky />
 
           {hiddenCount > 0 && page === 1 && <HiddenTeaser count={hiddenCount} label={delayLabel} />}
 

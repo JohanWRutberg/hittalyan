@@ -139,7 +139,7 @@ function markerElement(g: Group, index: number) {
   return el;
 }
 
-export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; userYears?: number | null }) {
+export function ListingsMap({ points, userYears = null, sticky = false }: { points: MapPoint[]; userYears?: number | null; sticky?: boolean }) {
   const t = useTranslations("listings.map");
   const tChance = useTranslations("chance");
   const tListing = useTranslations("listings");
@@ -151,6 +151,7 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
   const [ready, setReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [failed, setFailed] = useState(false);
+  const stuck = sticky && !expanded;
 
   // Initiera kartan en gång
   useEffect(() => {
@@ -263,12 +264,16 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
   useEffect(() => {
     const t = setTimeout(() => mapRef.current?.resize(), 320);
     return () => clearTimeout(t);
-  }, [expanded]);
+  }, [expanded, stuck]);
 
   const buildings = groupPoints(points).length;
 
   return (
-    <div className="card overflow-hidden">
+    <div
+      className={`card overflow-hidden ${stuck ? "sticky z-20 transition-[top] duration-300 ease-out motion-reduce:transition-none" : ""}`}
+      // Tätt mot menyn, annars skymtar kort som scrollar förbi i springan
+      style={stuck ? { top: "var(--nav-h, 0px)" } : undefined}
+    >
       <div className="flex items-center justify-between gap-3 px-5 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <MapPin className="size-4 text-brand-600" />
@@ -283,7 +288,7 @@ export function ListingsMap({ points, userYears = null }: { points: MapPoint[]; 
           {expanded ? t("smaller") : t("larger")}
         </button>
       </div>
-      <div className={`relative border-t border-line bg-canvas transition-[height] duration-300 ease-out ${expanded ? "h-[70vh] min-h-[420px]" : "h-72"}`}>
+      <div className={`relative border-t border-line bg-canvas transition-[height] duration-300 ease-out ${expanded ? "h-[70vh] min-h-[420px]" : "h-44 sm:h-72"}`}>
         <div ref={containerRef} className="h-full w-full" style={{ position: "absolute", inset: 0 }} />
         {!ready && !failed && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted">

@@ -3,12 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NavLinks, SignOutButton } from "@/components/nav-client";
+import { AutoHideHeader } from "@/components/auto-hide-header";
 
 /** Meny för utloggade besökare i det öppna listläget. */
 export async function PublicNav() {
   const t = await getTranslations("common");
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-white/80 backdrop-blur">
+    <AutoHideHeader>
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo href="/" />
         <nav className="flex items-center gap-2">
@@ -21,7 +22,7 @@ export async function PublicNav() {
           </Link>
         </nav>
       </div>
-    </header>
+    </AutoHideHeader>
   );
 }
 
@@ -35,7 +36,7 @@ export async function AppNav({ user }: { user: { name: string; email: string; ro
     ...(user.role === "admin" ? [{ href: "/app/admin", label: t("admin") }] : []),
   ];
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-white/80 backdrop-blur">
+    <AutoHideHeader>
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-center gap-6">
           <Logo href="/" />
@@ -54,6 +55,6 @@ export async function AppNav({ user }: { user: { name: string; email: string; ro
           <NavLinks links={links} mobile />
         </div>
       </div>
-    </header>
+    </AutoHideHeader>
   );
 }

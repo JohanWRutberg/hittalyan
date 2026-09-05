@@ -311,3 +311,33 @@ body {
   background: #3b82f6;
   animation: lm-pulse 1.4s ease-out infinite;
 }
+
+/* Mindre markörer på små skärmar, där kartan också är lägre */
+@media (max-width: 639px) {
+  .lm-marker {
+    width: 20px;
+    height: 26px;
+  }
+  .lm-marker__pin {
+    width: 20px;
+    height: 20px;
+    margin-left: -10px;
+    border-width: 2px;
+  }
+  .lm-marker__pin::after {
+    width: 6px;
+    height: 6px;
+  }
+  .lm-marker__count {
+    font-size: 9px;
+  }
+  .lm-marker__halo {
+    top: 10px;
+    width: 20px;
+    height: 20px;
+  }
+  .maplibregl-ctrl-group button {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}

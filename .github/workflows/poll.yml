@@ -15,6 +15,6 @@ jobs:
     steps:
       - name: Trigger poll
         run: |
-          curl --fail --silent --show-error --max-time 120 \
+          curl --fail --silent --show-error --max-time 120 --location \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.APP_URL }}/api/cron/poll"

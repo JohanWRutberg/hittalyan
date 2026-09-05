@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Better Auth ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Datum då användaren ställde sig i Stockholms bostadskö (anges manuellt)
+  queueRegisteredAt DateTime?
+
+  // Better Auth admin-plugin
+  role       String?   @default("user")
+  banned     Boolean?  @default(false)
+  banReason  String?
+  banExpires DateTime?
+
+  sessions          Session[]
+  accounts          Account[]
+  watches           Watch[]
+  pushSubscriptions PushSubscription[]
+  notifications     Notification[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  issuer                String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------- Ledigt ----------
+
+/// En annons från bostad.stockholm.se (/AllaAnnonser/)
+model Listing {
+  id            Int       @id // AnnonsId
+  apartmentId   Int       // LägenhetId
+  projectId     Int?
+  kommun        String
+  stadsdel      String
+  gatuadress    String
+  vaning        Int?
+  antalRum      Float?
+  yta           Int?
+  hyra          Int?
+  annonseradFran DateTime?
+  annonseradTill DateTime?
+  lat           Float?
+  lng           Float?
+  url           String
+  balkong       Boolean   @default(false)
+  hiss          Boolean   @default(false)
+  nyproduktion  Boolean   @default(false)
+  ungdom        Boolean   @default(false)
+  student       Boolean   @default(false)
+  senior        Boolean   @default(false)
+  korttid       Boolean   @default(false)
+  vanlig        Boolean   @default(false)
+  bostadssnabben Boolean  @default(false)
+  koNamn        String?
+  lagenhetstyp  String?
+  kotidQ1       Int?
+  kotidQ3       Int?
+
+  firstSeenAt   DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+  active        Boolean   @default(true)
+
+  notifications Notification[]
+
+  @@index([kommun, stadsdel])
+  @@index([firstSeenAt])
+  @@index([active])
+}
+
+/// En bevakning = ett sparat filter som ska ge notiser
+model Watch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  enabled   Boolean  @default(true)
+
+  kommuner   String[] @default([])
+  stadsdelar String[] @default([])
+  adress     String?  // fritext, matchar del av gatuadress (t.ex. "Grace")
+  minRum     Float?
+  maxRum     Float?
+  minYta     Int?
+  maxYta     Int?
+  minHyra    Int?
+  maxHyra    Int?
+  minVaning  Int?
+  maxVaning  Int?
+  balkong    Boolean? // null = spelar ingen roll
+  hiss       Boolean?
+  nyproduktion Boolean?
+  inkluderaUngdom  Boolean @default(false)
+  inkluderaStudent Boolean @default(false)
+  inkluderaSenior  Boolean @default(false)
+  inkluderaKorttid Boolean @default(false)
+
+  notifyEmail Boolean @default(true)
+  notifyPush  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notifications Notification[]
+
+  @@index([userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Logg över skickade notiser, så samma annons inte skickas två gånger per bevakning
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watchId   String
+  watch     Watch    @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  listingId Int
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  emailSent Boolean  @default(false)
+  pushSent  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([watchId, listingId])
+  @@index([userId, createdAt])
+}
+
+model PollRun {
+  id          String   @id @default(cuid())
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  ok          Boolean  @default(false)
+  total       Int      @default(0)
+  newCount    Int      @default(0)
+  notified    Int      @default(0)
+  error       String?
+}

@@ -35,7 +35,8 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
-    prisma.listing.count({ where: { active: true, firstSeenAt: { gte: dayAgo() } } }),
+    // Samma filter som listan, så "nya" alltid är en delmängd av totalen
+    prisma.listing.count({ where: { AND: [where, { firstSeenAt: { gte: dayAgo() } }] } }),
     prisma.pollRun.findFirst({ where: { ok: true }, orderBy: { startedAt: "desc" } }),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { queueRegisteredAt: true } }),
     prisma.listing.findMany({

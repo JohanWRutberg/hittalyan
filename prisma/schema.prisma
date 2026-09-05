@@ -21,6 +21,15 @@ model User {
   // Datum då användaren ställde sig i Stockholms bostadskö (anges manuellt)
   queueRegisteredAt DateTime?
 
+  // Plan: "free" eller "pro". Pro gäller till planExpiresAt (null = tills vidare).
+  plan                     String    @default("free")
+  planExpiresAt            DateTime?
+  planSource               String?   // trial | stripe | admin
+  stripeCustomerId         String?   @unique
+  stripeSubscriptionId     String?   @unique
+  stripeSubscriptionStatus String?
+  stripePriceId            String?
+
   // Better Auth admin-plugin
   role       String?   @default("user")
   banned     Boolean?  @default(false)
@@ -195,6 +204,13 @@ model Notification {
 
   @@unique([watchId, listingId])
   @@index([userId, createdAt])
+}
+
+/// Betalningshändelser från Stripe (idempotens + spårbarhet)
+model StripeEvent {
+  id         String   @id // Stripe event id
+  type       String
+  receivedAt DateTime @default(now())
 }
 
 model PollRun {

@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
+import { TRIAL_DAYS } from "@/lib/plan";
 
 /** E-postadresser (kommaseparerade i ADMIN_EMAILS) som automatiskt blir admin. */
 export function adminEmails(): string[] {
@@ -34,7 +35,12 @@ export const auth = betterAuth({
       create: {
         before: async (user) => {
           const isAdmin = adminEmails().includes(user.email.toLowerCase());
-          return { data: { ...user, role: isAdmin ? "admin" : "user" } };
+          // Ny användare får Pro som provperiod (TRIAL_DAYS, 0 stänger av)
+          const trial =
+            TRIAL_DAYS > 0
+              ? { plan: "pro", planSource: "trial", planExpiresAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000) }
+              : {};
+          return { data: { ...user, role: isAdmin ? "admin" : "user", ...trial } };
         },
       },
     },

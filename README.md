@@ -72,6 +72,19 @@ Skapa ett konto med en e-post som finns i `ADMIN_EMAILS` så blir det admin auto
 | `npm run db:migrate` | `prisma migrate deploy` (produktion) |
 | `npm run db:studio` | Prisma Studio |
 
+## Planer och betalning (Stripe)
+
+- **Gratis:** bläddra, filtrera, karta, sortering, antal per område, chansmätare.
+- **Pro:** bevakningar med mail och push. Nya konton får Pro som provperiod i `TRIAL_DAYS` dagar (0 stänger av).
+- Admin har alltid Pro och kan ge/ta Pro manuellt i adminportalen (kronan i användarlistan).
+- Stripe: skapa produkten "Ledigt Pro" med tre priser (månad recurring, år recurring, 3-månaderspass one-time) och
+  lägg `price_…`-ID:n i `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `STRIPE_PRICE_PASS`. Visningspriserna i UI:t
+  styrs av `PRICE_LABEL_*`. Webhook-endpoint: `POST /api/stripe/webhook` med händelserna `checkout.session.completed`,
+  `customer.subscription.created/updated/deleted` och `invoice.paid`; hemligheten i `STRIPE_WEBHOOK_SECRET`.
+- Kunden hanterar kort och uppsägning via Stripe Customer Portal (knappen "Hantera betalning" under Pro). Aktivera
+  portalen i Stripe Dashboard → Settings → Billing → Customer portal.
+- Lokalt test: `stripe listen --forward-to localhost:3000/api/stripe/webhook` med Stripe CLI och testnycklar.
+
 ## Kartan
 
 Lägenhetslistan visar en karta (MapLibre GL, vektorkartor från [OpenFreeMap](https://openfreemap.org), stil "Positron").

@@ -9,13 +9,21 @@ import { requireSession } from "@/lib/session";
 import { parseFilters } from "@/lib/filters";
 import { auth } from "@/lib/auth";
 import { runPoll } from "@/lib/poll";
+import { hasPro } from "@/lib/plan";
 
 export type ActionState = { error?: string; ok?: boolean; summary?: string } | undefined;
 
 // ---------- Bevakningar ----------
 
+async function requirePro(userId: string) {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  if (!hasPro(user)) redirect("/app/pro?status=required");
+  return user;
+}
+
 export async function saveWatch(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await requireSession();
+  await requirePro(session.user.id);
   const id = String(formData.get("id") ?? "") || null;
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ge bevakningen ett namn." };
@@ -58,6 +66,7 @@ export async function saveWatch(_prev: ActionState, formData: FormData): Promise
 
 export async function toggleWatch(id: string, enabled: boolean) {
   const session = await requireSession();
+  if (enabled) await requirePro(session.user.id);
   await prisma.watch.updateMany({ where: { id, userId: session.user.id }, data: { enabled } });
   revalidatePath("/app/bevakningar");
 }
@@ -124,6 +133,13 @@ export async function adminDeleteUser(userId: string) {
   const session = await requireAdmin();
   if (userId === session.user.id) return;
   await auth.api.removeUser({ headers: await headers(), body: { userId } });
+  revalidatePath("/app/admin");
+}
+
+export async function adminSetPlan(userId: string, plan: "free" | "pro", months: number | null) {
+  await requireAdmin();
+  const planExpiresAt = plan === "pro" && months ? new Date(Date.now() + months * 30 * 86_400_000) : null;
+  await prisma.user.update({ where: { id: userId }, data: { plan, planSource: "admin", planExpiresAt } });
   revalidatePath("/app/admin");
 }
 

@@ -2,7 +2,8 @@
 
 import { useActionState, useTransition } from "react";
 import { RefreshCw, ShieldOff, ShieldCheck, Trash2, UserCog } from "lucide-react";
-import { adminBan, adminDeleteUser, adminRunPoll, adminSetRole, adminUnban } from "@/app/app/actions";
+import { adminBan, adminDeleteUser, adminRunPoll, adminSetPlan, adminSetRole, adminUnban } from "@/app/app/actions";
+import { Crown } from "lucide-react";
 
 export function RunPollButton() {
   const [state, action, pending] = useActionState(adminRunPoll, undefined);
@@ -17,12 +18,27 @@ export function RunPollButton() {
   );
 }
 
-export function UserActions({ user, isSelf }: { user: { id: string; name: string; role: string | null; banned: boolean | null }; isSelf: boolean }) {
+export function UserActions({ user, isSelf }: { user: { id: string; name: string; role: string | null; banned: boolean | null; plan: string }; isSelf: boolean }) {
   const [pending, start] = useTransition();
   if (isSelf) return <span className="text-xs text-muted">Du</span>;
   const admin = user.role === "admin";
   return (
     <div className={`flex items-center justify-end gap-1 ${pending ? "opacity-50" : ""}`}>
+      <button
+        type="button"
+        className="btn-ghost px-2 py-1.5"
+        title={user.plan === "pro" ? "Ta bort Pro" : "Ge Pro"}
+        onClick={() => {
+          if (user.plan === "pro") {
+            if (confirm(`Ta bort Pro från ${user.name}?`)) start(() => adminSetPlan(user.id, "free", null));
+          } else {
+            const m = prompt(`Ge ${user.name} Pro i hur många månader? (tomt = tills vidare)`, "3");
+            if (m !== null) start(() => adminSetPlan(user.id, "pro", m.trim() ? Number(m) : null));
+          }
+        }}
+      >
+        <Crown className={`size-4 ${user.plan === "pro" ? "text-amber-500" : ""}`} />
+      </button>
       <button type="button" className="btn-ghost px-2 py-1.5" title={admin ? "Gör till vanlig användare" : "Gör till admin"} onClick={() => start(() => adminSetRole(user.id, admin ? "user" : "admin"))}>
         <UserCog className={`size-4 ${admin ? "text-brand-600" : ""}`} />
       </button>

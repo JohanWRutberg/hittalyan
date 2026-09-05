@@ -3,6 +3,7 @@ import { fetchAllListings } from "@/lib/bostad";
 import { listingMatches } from "@/lib/matching";
 import { sendWatchEmail, sendWatchPush } from "@/lib/notify";
 import type { Listing } from "@/generated/prisma/client";
+import { hasPro } from "@/lib/plan";
 
 export interface PollResult {
   total: number;
@@ -98,6 +99,7 @@ async function notifyWatches(newListings: Listing[]): Promise<number> {
 
   let notified = 0;
   for (const watch of watches) {
+    if (!hasPro(watch.user)) continue; // bevakningar är en Pro-funktion
     const matches = newListings.filter((l) => listingMatches(l, watch));
     if (!matches.length) continue;
 

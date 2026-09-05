@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getAreaCounts, getAreaMap } from "@/lib/areas";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { watchToFilters } from "@/lib/watch-filters";
 import { filtersToWhere, parseFilters } from "@/lib/filters";
 import { WatchForm } from "@/components/watch-form";
+import { notFound, redirect } from "next/navigation";
+import { hasPro } from "@/lib/plan";
 
 export const metadata: Metadata = { title: "Redigera bevakning" };
 
 export default async function EditWatchPage({ params }: PageProps<"/app/bevakningar/[id]">) {
   const { id } = await params;
   const session = await requireSession();
+  const me = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
+  if (!hasPro(me)) redirect("/app/pro?status=required");
   const [watch, areas, counts, pushCount] = await Promise.all([
     prisma.watch.findFirst({ where: { id, userId: session.user.id } }),
     getAreaMap(),

@@ -7,6 +7,7 @@ export function AppNav({ user }: { user: { name: string; email: string; role?: s
     { href: "/app", label: "Lägenheter" },
     { href: "/app/bevakningar", label: "Bevakningar" },
     { href: "/app/konto", label: "Konto" },
+    { href: "/app/pro", label: "Pro" },
     ...(user.role === "admin" ? [{ href: "/app/admin", label: "Admin" }] : []),
   ];
   return (

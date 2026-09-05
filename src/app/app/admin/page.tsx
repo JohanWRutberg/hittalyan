@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/session";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { RunPollButton, UserActions } from "@/components/admin-client";
 import { FadeIn } from "@/components/motion";
+import { planInfo } from "@/lib/plan";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -62,6 +63,7 @@ export default async function AdminPage() {
                 <th className="px-6 py-3">Användare</th>
                 <th className="px-3 py-3">Roll</th>
                 <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Plan</th>
                 <th className="px-3 py-3">Ködatum</th>
                 <th className="px-3 py-3 text-right">Bevakn.</th>
                 <th className="px-3 py-3 text-right">Notiser</th>
@@ -83,13 +85,24 @@ export default async function AdminPage() {
                   <td className="px-3 py-3">
                     {u.banned ? <span className="chip border-red-200 bg-red-50 text-red-700" title={u.banReason ?? ""}>Avstängd</span> : <span className="chip">Aktiv</span>}
                   </td>
+                  <td className="px-3 py-3">
+                    {(() => {
+                      const pi = planInfo(u);
+                      return (
+                        <span className={`chip ${pi.active ? "border-amber-200 bg-amber-50 text-amber-800" : ""}`} title={pi.detail}>
+                          {pi.label}
+                          {pi.expiresAt && pi.active && <span className="font-normal text-muted">· {formatDate(pi.expiresAt)}</span>}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-3 py-3 text-muted">{u.queueRegisteredAt ? formatDate(u.queueRegisteredAt) : "–"}</td>
                   <td className="px-3 py-3 text-right">{u._count.watches}</td>
                   <td className="px-3 py-3 text-right">{u._count.notifications}</td>
                   <td className="px-3 py-3 text-right">{u._count.pushSubscriptions}</td>
                   <td className="px-3 py-3 text-muted">{formatDate(u.createdAt)}</td>
                   <td className="px-6 py-3">
-                    <UserActions user={{ id: u.id, name: u.name, role: u.role, banned: u.banned }} isSelf={u.id === session.user.id} />
+                    <UserActions user={{ id: u.id, name: u.name, role: u.role, banned: u.banned, plan: planInfo(u).active && u.role !== "admin" ? "pro" : u.plan === "pro" ? "pro" : "free" }} isSelf={u.id === session.user.id} />
                   </td>
                 </tr>
               ))}

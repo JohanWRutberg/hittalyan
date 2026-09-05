@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Clock3, HelpCircle, LogIn, Sparkles } from "lucide-react";
+import { Clock3, HelpCircle, LogIn, Lock, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAreaCounts, getAreaMap } from "@/lib/areas";
 import { countActiveFilters, parseFilters, filtersToWhere, type SearchParams } from "@/lib/filters";
-import { dayAgo, formatDateTime, queueTime } from "@/lib/format";
+import { dayAgo, formatDateTime, hoursAgo, queueTime } from "@/lib/format";
 import { formatYears, queueYears } from "@/lib/chance";
 import { getSession } from "@/lib/session";
 import { watchToFilters } from "@/lib/watch-filters";
@@ -161,13 +161,19 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
  * med sidbläddring. Filter, sortering, karta, chans och bevakningar kräver inloggning,
  * och eventuella filter-/sorteringsparametrar i adressen ignoreras här.
  */
+/** Utloggade ser annonser först efter så här många timmar (PUBLIC_DELAY_HOURS, standard 24). */
+const PUBLIC_DELAY_HOURS = Math.max(0, Number(process.env.PUBLIC_DELAY_HOURS ?? 24) || 0);
+
 async function PublicListings({ sp }: { sp: SearchParams }) {
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
-  const where = filtersToWhere(parseFilters({}));
-  const [total, listings, newLast24h, lastRun, mapRows] = await Promise.all([
+  const delayCutoff = hoursAgo(PUBLIC_DELAY_HOURS);
+  const base = filtersToWhere(parseFilters({}));
+  const where = { AND: [base, { firstSeenAt: { lte: delayCutoff } }] };
+  const hiddenWhere = { AND: [base, { firstSeenAt: { gt: delayCutoff } }] };
+  const [total, listings, hiddenCount, lastRun, mapRows] = await Promise.all([
     prisma.listing.count({ where }),
     prisma.listing.findMany({ where, orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }], skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
-    prisma.listing.count({ where: { AND: [where, { firstSeenAt: { gte: dayAgo() } }] } }),
+    prisma.listing.count({ where: hiddenWhere }),
     prisma.pollRun.findFirst({ where: { ok: true }, orderBy: { startedAt: "desc" } }),
     prisma.listing.findMany({
       where: { ...where, lat: { not: null }, lng: { not: null } },
@@ -182,6 +188,7 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
   ]);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const cutoff = dayAgo();
+  const delayLabel = PUBLIC_DELAY_HOURS === 24 ? "senaste dygnet" : `senaste ${PUBLIC_DELAY_HOURS} timmarna`;
   const mapPoints: MapPoint[] = mapRows.map((r) => ({
     id: r.id, lat: r.lat!, lng: r.lng!, gatuadress: r.gatuadress, stadsdel: r.stadsdel, kommun: r.kommun,
     antalRum: r.antalRum, yta: r.yta, hyra: r.hyra, vaning: r.vaning, url: r.url, nyproduktion: r.nyproduktion,
@@ -193,7 +200,8 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Lediga lägenheter</h1>
         <p className="mt-1 text-sm text-muted">
-          {total} annonser · {newLast24h} nya senaste dygnet
+          {total} annonser
+          {hiddenCount > 0 && ` · ${hiddenCount} nya ${delayLabel} visas för inloggade`}
           {lastRun?.finishedAt && ` · uppdaterat ${formatDateTime(lastRun.finishedAt)}`}
         </p>
       </div>
@@ -204,9 +212,11 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
             <Sparkles className="size-5" />
           </span>
           <div>
-            <p className="font-semibold">Du ser hela listan, nyast först.</p>
+            <p className="font-semibold">
+              {PUBLIC_DELAY_HOURS > 0 ? `Utloggad ser du annonser med ${PUBLIC_DELAY_HOURS === 24 ? "ett dygns" : `${PUBLIC_DELAY_HOURS} timmars`} fördröjning.` : "Du ser hela listan, nyast först."}
+            </p>
             <p className="text-sm text-muted">
-              Logga in för filter på område, rum, yta och hyra, sortering, din chans på varje lägenhet och bevakningar med notis.
+              Inloggade ser nya annonser direkt, och får filter på område, rum, yta och hyra, sortering, sin chans på varje lägenhet och bevakningar med notis.
             </p>
           </div>
         </div>
@@ -221,6 +231,8 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
       </div>
 
       <ListingsMap points={mapPoints} userYears={null} />
+
+      {hiddenCount > 0 && page === 1 && <HiddenTeaser count={hiddenCount} label={delayLabel} />}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {listings.map((l, i) => (
@@ -237,6 +249,55 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
           ))}
         </nav>
       )}
+    </div>
+  );
+}
+
+/** Låst teaser: suddade platshållarkort (ingen riktig data) och antal dolda nya annonser. */
+function HiddenTeaser({ count, label }: { count: number; label: string }) {
+  const widths = [
+    ["w-32", "w-40"],
+    ["w-28", "w-48"],
+    ["w-36", "w-44"],
+  ];
+  return (
+    <div className="grid">
+      <div className="grid gap-4 [grid-area:1/1] sm:grid-cols-2 xl:grid-cols-3" aria-hidden>
+        {widths.map(([a, b], i) => (
+          <div key={i} className={`card select-none p-5 blur-[6px] ${i === 2 ? "hidden xl:block" : i === 1 ? "hidden sm:block" : ""}`}>
+            <div className="flex items-center gap-2">
+              <span className="chip border-brand-200 bg-brand-50 text-brand-700">Ny</span>
+              <span className={`h-3 rounded bg-slate-200 ${a}`} />
+            </div>
+            <div className={`mt-3 h-5 rounded bg-slate-300 ${b}`} />
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              {[0, 1, 2, 3].map((k) => (
+                <div key={k} className="h-12 rounded-xl bg-canvas" />
+              ))}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <span className="h-6 w-16 rounded-full bg-slate-100" />
+              <span className="h-6 w-12 rounded-full bg-slate-100" />
+            </div>
+            <div className="mt-4 h-3 w-full rounded bg-slate-100" />
+          </div>
+        ))}
+      </div>
+      <div className="relative z-10 flex items-center justify-center p-2 [grid-area:1/1] sm:p-4">
+        <div className="card flex max-w-md flex-col items-center gap-3 border-brand-200 p-5 text-center shadow-lift sm:p-6">
+          <span className="grid size-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-soft">
+            <Lock className="size-5" />
+          </span>
+          <p className="text-lg font-semibold">
+            {count} {count === 1 ? "ny annons" : "nya annonser"} {label}
+          </p>
+          <p className="text-sm text-muted">Visas bara för inloggade. Skapa ett gratis konto så ser du dem direkt, med din chans på varje lägenhet.</p>
+          <div className="mt-1 flex gap-2">
+            <Link href="/login" className="btn-secondary">Logga in</Link>
+            <Link href="/register" className="btn-primary">Skapa konto</Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

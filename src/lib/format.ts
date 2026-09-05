@@ -47,3 +47,7 @@ export function isRecent(d: Date | string, hours = 24): boolean {
   const t = typeof d === "string" ? new Date(d).getTime() : d.getTime();
   return Date.now() - t < hours * 3_600_000;
 }
+
+export function hoursAgo(hours: number): Date {
+  return new Date(Date.now() - hours * 3_600_000);
+}

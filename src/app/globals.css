@@ -262,8 +262,10 @@ body {
   border: 1px solid transparent;
   white-space: nowrap;
 }
+.lm-popup__chance--excellent { color: #065f46; background: #d1fae5; border-color: #6ee7b7; }
 .lm-popup__chance--great { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
 .lm-popup__chance--good { color: var(--color-brand-700); background: var(--color-brand-50); border-color: var(--color-brand-200); }
+.lm-popup__chance--some { color: #4d7c0f; background: #f7fee7; border-color: #d9f99d; }
 .lm-popup__chance--slim { color: #b45309; background: #fffbeb; border-color: #fde68a; }
 .lm-popup__chance--low { color: #64748b; background: #f8fafc; border-color: #e2e8f0; }
 .lm-popup__more {

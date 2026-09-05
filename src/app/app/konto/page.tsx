@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { formatDate, formatDateTime, queueTime } from "@/lib/format";
 import { PushToggle } from "@/components/push-toggle";
+import { PushGuide } from "@/components/push-guide";
 import { NameForm, QueueDateForm } from "@/components/account-forms";
 import { FadeIn } from "@/components/motion";
 
@@ -76,6 +77,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/app/kont
               Push-notiser skickas till varje enhet där du aktiverat dem. {pushCount > 0 ? `Aktiverat på ${pushCount} ${pushCount === 1 ? "enhet" : "enheter"}.` : "Inte aktiverat på någon enhet än."}
             </p>
             <div className="mt-4"><PushToggle /></div>
+            <details className="mt-4 group">
+              <summary className="cursor-pointer text-sm font-medium text-brand-700 hover:underline">Så fungerar notiser på iPhone, Android och dator</summary>
+              <div className="mt-3"><PushGuide variant="full" /></div>
+            </details>
           </div>
         </div>
       </FadeIn>

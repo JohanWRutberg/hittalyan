@@ -13,7 +13,7 @@ export function AppNav({ user }: { user: { name: string; email: string; role?: s
     <header className="sticky top-0 z-30 border-b border-line bg-white/80 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-center gap-6">
-          <Logo href="/app" />
+          <Logo href="/" />
           <NavLinks links={links} />
         </div>
         <div className="flex items-center gap-3">

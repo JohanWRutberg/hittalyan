@@ -27,7 +27,7 @@ export function FilterPanel({ areas, filters, activeCount, counts }: { areas: Ar
     const f = parseFilters(new FormData(e.currentTarget));
     const q = new URLSearchParams(filtersToQuery(f));
     const cur = new URLSearchParams(window.location.search);
-    for (const k of ["sort", "dir"]) if (cur.get(k)) q.set(k, cur.get(k)!);
+    if (cur.get("sort")) q.set("sort", cur.get("sort")!);
     start(() => router.push(`/app?${q}`));
   }
 

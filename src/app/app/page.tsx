@@ -12,7 +12,8 @@ import { FilterPanel } from "@/components/filter-panel";
 import { ListingCard } from "@/components/listing-card";
 import { ListingsMap, type MapPoint } from "@/components/listings-map";
 import { SortBar } from "@/components/sort-bar";
-import { parseSort, sortToOrderBy } from "@/lib/sort";
+import { PushGuide } from "@/components/push-guide";
+import { parseSorts, sortsToOrderBy } from "@/lib/sort";
 
 export const metadata: Metadata = { title: "Lägenheter" };
 
@@ -28,7 +29,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
   }
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const where = filtersToWhere(filters);
-  const sort = parseSort(sp);
+  const sorts = parseSorts(sp);
   // Antal per område: samma filter som listan, men utan valda kommuner/stadsdelar
   const areaWhere = filtersToWhere({ ...filters, kommuner: [], stadsdelar: [] });
 
@@ -37,7 +38,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
     prisma.listing.count({ where }),
     prisma.listing.findMany({
       where,
-      orderBy: sortToOrderBy(sort),
+      orderBy: sortsToOrderBy(sorts),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
@@ -116,11 +117,13 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
         </Link>
       </div>
 
+      <PushGuide variant="banner" />
+
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} />
 
       <ListingsMap points={mapPoints} userYears={userYears} />
 
-      <SortBar sort={sort} sp={sp} />
+      <SortBar sorts={sorts} sp={sp} />
 
       {listings.length === 0 ? (
         <div className="card p-12 text-center text-muted">

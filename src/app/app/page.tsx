@@ -9,6 +9,7 @@ import { requireSession } from "@/lib/session";
 import { watchToFilters } from "@/lib/watch-filters";
 import { FilterPanel } from "@/components/filter-panel";
 import { ListingCard } from "@/components/listing-card";
+import { ListingsMap, type MapPoint } from "@/components/listings-map";
 
 export const metadata: Metadata = { title: "Lägenheter" };
 
@@ -25,7 +26,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const where = filtersToWhere(filters);
 
-  const [areas, total, listings, newLast24h, lastRun, user] = await Promise.all([
+  const [areas, total, listings, newLast24h, lastRun, user, mapRows] = await Promise.all([
     getAreaMap(),
     prisma.listing.count({ where }),
     prisma.listing.findMany({
@@ -37,7 +38,33 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
     prisma.listing.count({ where: { active: true, firstSeenAt: { gte: dayAgo() } } }),
     prisma.pollRun.findFirst({ where: { ok: true }, orderBy: { startedAt: "desc" } }),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { queueRegisteredAt: true } }),
+    prisma.listing.findMany({
+      where: { ...where, lat: { not: null }, lng: { not: null } },
+      orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }],
+      take: 1500,
+      select: {
+        id: true, lat: true, lng: true, gatuadress: true, stadsdel: true, kommun: true,
+        antalRum: true, yta: true, hyra: true, vaning: true, url: true, nyproduktion: true, firstSeenAt: true,
+      },
+    }),
   ]);
+
+  const cutoff = dayAgo();
+  const mapPoints: MapPoint[] = mapRows.map((r) => ({
+    id: r.id,
+    lat: r.lat!,
+    lng: r.lng!,
+    gatuadress: r.gatuadress,
+    stadsdel: r.stadsdel,
+    kommun: r.kommun,
+    antalRum: r.antalRum,
+    yta: r.yta,
+    hyra: r.hyra,
+    vaning: r.vaning,
+    url: r.url,
+    nyproduktion: r.nyproduktion,
+    isNew: r.firstSeenAt >= cutoff,
+  }));
 
   const activeCount = countActiveFilters(filters);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -61,6 +88,8 @@ export default async function ListingsPage({ searchParams }: PageProps<"/app">) 
       </div>
 
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} />
+
+      <ListingsMap points={mapPoints} />
 
       {listings.length === 0 ? (
         <div className="card p-12 text-center text-muted">

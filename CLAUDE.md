@@ -23,9 +23,8 @@ Web Push (VAPID) · MapLibre GL + OpenFreeMap · Stripe.
 | `npm run db:studio` | Prisma Studio |
 | `npx prisma migrate dev --name x` | Ny migrering lokalt |
 
-Lokal databas körs i Docker: `docker start ledigt-postgres` (port **5433**). Container,
-användare och databas heter fortfarande `ledigt` sedan projektet bytte namn. Det är bara
-interna namn utan koppling till produktion, så de är medvetet orörda.
+Lokal databas körs i Docker: `docker start hittalyan-postgres` (port **5433**, användare,
+lösenord och databas heter alla `hittalyan`).
 
 Kör alltid `npx tsc --noEmit -p .` och `npx eslint src` innan commit. `npx next build`
 fångar dessutom fel som bara syns vid produktionsbygge.

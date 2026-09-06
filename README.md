@@ -19,8 +19,8 @@ Resend (mail), Web Push (VAPID), MapLibre GL + OpenFreeMap (karta, ingen API-nyc
 
 ```bash
 npm install
-docker run -d --name ledigt-postgres -e POSTGRES_USER=ledigt -e POSTGRES_PASSWORD=ledigt \
-  -e POSTGRES_DB=ledigt -p 5433:5432 postgres:17-alpine
+docker run -d --name hittalyan-postgres -e POSTGRES_USER=hittalyan -e POSTGRES_PASSWORD=hittalyan \
+  -e POSTGRES_DB=hittalyan -p 5433:5432 postgres:17-alpine
 cp .env.example .env          # fyll i värden, se nedan
 npx prisma migrate dev        # skapar tabellerna och genererar klienten
 npm run poll                  # första import av annonser

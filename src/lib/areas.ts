@@ -1,27 +1,32 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import { KNOWN_KOMMUNER, type AreaMap } from "@/lib/filters";
+import type { Market } from "@/lib/markets";
 import omradenJson from "@/data/omraden.json";
 
 const STATIC: Record<string, string[]> = omradenJson;
 
 /**
- * Kommun -> stadsdelar. Grunden är Bostadsförmedlingens kompletta register
- * (src/data/omraden.json, uppdateras med scripts/fetch-omraden.mjs), kompletterat
- * med namn som förekommit i annonser men saknas i registret.
+ * Kommun -> stadsdelar för en förmedling. Stockholm har ett komplett register
+ * (src/data/omraden.json, uppdateras med scripts/fetch-omraden.mjs). Övriga
+ * förmedlingar publicerar inget register, så deras områden byggs av de namn som
+ * faktiskt förekommit i annonserna.
  */
-export async function getAreaMap(): Promise<AreaMap> {
+export async function getAreaMap(market: Market): Promise<AreaMap> {
   const rows = await prisma.listing.findMany({
+    where: { market },
     distinct: ["kommun", "stadsdel"],
     select: { kommun: true, stadsdel: true },
   });
   // Registret innehåller även kommuner utanför länet (Kiruna, Uppsala …). Visa bara
   // Stockholms län plus kommuner som faktiskt förekommit i annonser.
   const map: Record<string, Set<string>> = {};
-  for (const [k, list] of Object.entries(STATIC)) if (KNOWN_KOMMUNER.includes(k)) map[k] = new Set(list);
+  if (market === "stockholm") {
+    for (const [k, list] of Object.entries(STATIC)) if (KNOWN_KOMMUNER.includes(k)) map[k] = new Set(list);
+  }
   for (const r of rows) {
     if (!r.kommun) continue;
-    (map[r.kommun] ??= new Set(STATIC[r.kommun] ?? []));
+    (map[r.kommun] ??= new Set(market === "stockholm" ? (STATIC[r.kommun] ?? []) : []));
     if (r.stadsdel) map[r.kommun].add(r.stadsdel);
   }
   return Object.fromEntries(

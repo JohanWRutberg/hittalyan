@@ -9,6 +9,7 @@ import { formatDate, formatNumber, formatVaning, formatYta, isRecent } from "@/l
 import { ChanceMeter } from "@/components/chance-meter";
 import { useHoveredListing } from "@/components/hovered-listing";
 import type { Locale } from "@/i18n/config";
+import { marketInfo, marketOf } from "@/lib/markets";
 
 type ListingLike = Omit<Listing, "annonseradFran" | "annonseradTill" | "firstSeenAt" | "lastSeenAt"> & {
   annonseradFran: Date | string | null;
@@ -30,6 +31,11 @@ export function ListingCard({
   const t = useTranslations("listings");
   const tc = useTranslations("common");
   const locale = useLocale() as Locale;
+  const market = marketOf(l.market);
+  const info = marketInfo(market);
+  // Momentum-plattformen (Syd, Uppsala) lämnar inte ut våningsplan, men anger
+  // antal sökande. Där tar sökandena våningens plats bland nyckeltalen.
+  const showsChance = info.chance !== "applicants";
   const { setHovered, armedId, setArmedId } = useHoveredListing();
   // Pekskärm utan hover: första trycket visar huset på kartan, andra öppnar annonsen.
   // iOS simulerar mouseenter vid tryck, så på sådana enheter ignoreras hover-händelserna helt.
@@ -42,7 +48,7 @@ export function ListingCard({
     l.student && { key: "student", cls: "" },
     l.senior && { key: "senior", cls: "" },
     l.korttid && { key: "korttid", cls: "" },
-    l.bostadssnabben && { key: "bostadssnabben", cls: "border-sky-200 bg-sky-50 text-sky-700" },
+    l.bostadssnabben && info.quickLetTagKey && { key: info.quickLetTagKey, cls: "border-sky-200 bg-sky-50 text-sky-700" },
     l.balkong && { key: "balkong", cls: "" },
     l.hiss && { key: "hiss", cls: "" },
   ].filter(Boolean) as { key: string; cls: string }[];
@@ -96,7 +102,11 @@ export function ListingCard({
         <Stat label={t("card.rooms")} value={l.antalRum == null ? "–" : formatNumber(l.antalRum, locale)} />
         <Stat label={t("card.area")} value={formatYta(l.yta)} />
         <Stat label={t("card.rentKr")} value={l.hyra == null ? "–" : formatNumber(l.hyra, locale)} />
-        <Stat label={t("card.floor")} value={formatVaning(l.vaning, locale).replace(/^\D+\s/, "")} />
+        {info.hasFloor ? (
+          <Stat label={t("card.floor")} value={formatVaning(l.vaning, locale).replace(/^\D+\s/, "")} />
+        ) : (
+          <Stat label={t("card.applicantsShort")} value={l.sokande == null ? "–" : formatNumber(l.sokande, locale)} />
+        )}
       </dl>
 
       {tagKeys.length > 0 && (
@@ -110,14 +120,18 @@ export function ListingCard({
       )}
 
       <div className="mt-auto space-y-2.5 border-t border-line pt-3">
-        {showChance ? (
-          <ChanceMeter userYears={userYears} q1={l.kotidQ1} q3={l.kotidQ3} />
-        ) : (
-          <p className="text-xs text-muted">
-            <span className="font-medium text-brand-700">{tc("login")}</span> {t("card.loginForChance")}
-            {l.kotidQ1 != null && l.kotidQ3 != null && t("card.similarRequired", { q1: l.kotidQ1, q3: l.kotidQ3 })}
-          </p>
-        )}
+        {showsChance &&
+          (showChance ? (
+            <div className="space-y-1.5">
+              <ChanceMeter userYears={userYears} listing={l} />
+              {l.sokande != null && <p className="text-xs text-muted">{t("card.applicants", { count: l.sokande })}</p>}
+            </div>
+          ) : (
+            <p className="text-xs text-muted">
+              <span className="font-medium text-brand-700">{tc("login")}</span> {t("card.loginForChance")}
+              {l.kotidQ1 != null && l.kotidQ3 != null && t("card.similarRequired", { q1: l.kotidQ1, q3: l.kotidQ3 })}
+            </p>
+          ))}
         {armed && (
           <p id={`tap-${l.id}`} className="rounded-lg bg-blue-50 px-2 py-1 text-center text-[11px] font-medium text-blue-700 sm:hidden">
             {t("card.tapAgain")}
@@ -128,7 +142,7 @@ export function ListingCard({
             <DoorOpen className="size-3.5" /> {t("card.lastDay", { date: formatDate(l.annonseradTill, locale) })}
           </span>
           <span className="inline-flex items-center gap-1">
-            <Building2 className="size-3.5" /> {l.koNamn ?? "Bostadskön"}
+            <Building2 className="size-3.5" /> {l.koNamn ?? l.hyresvard ?? info.name}
           </span>
         </div>
       </div>

@@ -6,11 +6,15 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { signUp } from "@/lib/auth-client";
 import { FadeIn } from "@/components/motion";
+import { MarketPicker } from "@/components/market-picker";
+import type { Market } from "@/lib/markets";
 
-export function RegisterForm() {
+export function RegisterForm({ initialMarket }: { initialMarket: Market }) {
   const t = useTranslations("auth");
+  const tm = useTranslations("markets");
   const locale = useLocale();
   const router = useRouter();
+  const [market, setMarket] = useState<Market>(initialMarket);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -30,6 +34,8 @@ export function RegisterForm() {
       password,
       // Nya konton får språket de registrerade sig på, används i mail och push
       locale,
+      // Kön kontot tillhör. Går att byta under Konto.
+      market,
     } as Parameters<typeof signUp.email>[0]);
     setLoading(false);
     if (error) {
@@ -56,6 +62,11 @@ export function RegisterForm() {
         <div>
           <label className="label" htmlFor="password">{t("fields.passwordMin")}</label>
           <input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required className="input" />
+        </div>
+        <div>
+          <span className="label">{tm("chooseLabel")}</span>
+          <p className="-mt-1 mb-2 text-xs text-muted">{tm("chooseHelp")}</p>
+          <MarketPicker value={market} onSelect={setMarket} disabled={loading} />
         </div>
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full">

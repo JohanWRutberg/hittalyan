@@ -1,8 +1,14 @@
 /**
- * Bedömning av chansen att få en lägenhet, baserat på användarens kötid jämfört med
- * Bostadsförmedlingens statistik för liknande lägenheter (kvartil 1 och 3 i år).
- * Q1–Q3 är spannet där hälften av dem som fått liknande lägenheter låg.
- * Etiketterna översätts i UI:t via nycklarna chance.<level>.
+ * Bedömning av chansen att få en lägenhet, baserat på användarens kötid jämfört
+ * med förmedlingens statistik. Etiketterna översätts i UI:t via chance.<level>.
+ *
+ * Underlaget skiljer sig åt mellan förmedlingarna:
+ * - Stockholm anger kvartil 1 och 3 för liknande lägenheter. Q1–Q3 är spannet där
+ *   hälften av dem som fått en liknande lägenhet låg.
+ * - Boplats Väst anger bara en genomsnittlig kötid för området. Den läggs i mitten
+ *   av ett antaget spann, så att mätaren kan visas på samma sätt.
+ * - Boplats Syd och Uppsala har ingen kötidsstatistik alls, bara antal sökande.
+ *   Där visas antalet i stället för en bedömning.
  */
 
 export type ChanceLevel = "excellent" | "great" | "good" | "some" | "slim" | "low" | "unknown";
@@ -26,6 +32,28 @@ const STYLES: Record<ChanceLevel, Omit<Chance, "level">> = {
   low: { pill: "border-slate-200 bg-slate-50 text-slate-500", dot: "bg-slate-400", rank: 0 },
   unknown: { pill: "border-line bg-white text-muted", dot: "bg-slate-300", rank: -1 },
 };
+
+/** Fälten en annons bidrar med till bedömningen. */
+export interface ChanceSource {
+  kotidQ1: number | null;
+  kotidQ3: number | null;
+  kotidSnitt: number | null;
+}
+
+/**
+ * Hur brett spann ett enskilt snitt får representera. Boplats Väst redovisar en
+ * genomsnittlig kötid, inte en spridning, så mätaren visar snittet ±25 %.
+ */
+const AVERAGE_SPREAD = 0.25;
+
+/** Spannet att visa i mätaren, eller null när förmedlingen saknar kötidsstatistik. */
+export function chanceRange(l: ChanceSource): { q1: number; q3: number } | null {
+  if (l.kotidQ1 != null && l.kotidQ3 != null) return { q1: l.kotidQ1, q3: l.kotidQ3 };
+  if (l.kotidSnitt != null) {
+    return { q1: l.kotidSnitt * (1 - AVERAGE_SPREAD), q3: l.kotidSnitt * (1 + AVERAGE_SPREAD) };
+  }
+  return null;
+}
 
 /** Kötid i år (decimal) från registreringsdatum. */
 export function queueYears(registeredAt: Date | string, now = new Date()): number {

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate, formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
 import { translatorFor, localeOf } from "@/i18n/messages";
 import type { Locale } from "@/i18n/config";
+import { marketInfo, marketOf } from "@/lib/markets";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -35,6 +36,7 @@ function escapeHtml(s: string) {
 
 function renderEmailHtml(watch: Watch, listings: Listing[], locale: Locale) {
   const t = translatorFor(locale);
+  const source = marketInfo(marketOf(watch.market)).name;
   const rows = listings
     .map(
       (l) => `
@@ -63,6 +65,7 @@ function renderEmailHtml(watch: Watch, listings: Listing[], locale: Locale) {
         <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#0f766e;font-weight:700">Hitta Lyan</div>
         <h1 style="margin:8px 0 4px;font-size:22px">${escapeHtml(heading)}</h1>
         <p style="margin:0;color:#475569;font-size:14px">${escapeHtml(t("email.lead"))}</p>
+        <p style="margin:6px 0 0;color:#94a3b8;font-size:12px">${escapeHtml(t("email.source", { source }))}</p>
       </div>
       <table style="width:100%;border-collapse:collapse;margin-top:8px">${rows}</table>
       <div style="padding:16px;border-top:1px solid #e6eef2;font-size:12px;color:#94a3b8">
@@ -108,12 +111,14 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
   const locale = localeOf(rawLocale);
   const t = translatorFor(locale);
   const first = listings[0];
+  // Vilken kö annonsen gäller, så att notisen går att placera direkt.
+  const city = marketInfo(marketOf(watch.market)).city;
   const payload = JSON.stringify({
     title:
       listings.length === 1
         ? t("pushMsg.single", { address: `${first.gatuadress}, ${first.stadsdel}` })
         : t("pushMsg.multi", { count: listings.length, name: watch.name }),
-    body: listings.length === 1 ? listingSummary(first, locale, t("email.perMonth")) : listings.map((l) => l.gatuadress).slice(0, 4).join(", "),
+    body: `${city} · ${listings.length === 1 ? listingSummary(first, locale, t("email.perMonth")) : listings.map((l) => l.gatuadress).slice(0, 4).join(", ")}`,
     url: listings.length === 1 ? first.url : `${appUrl}/lagenheter`,
     tag: `watch-${watch.id}`,
   });

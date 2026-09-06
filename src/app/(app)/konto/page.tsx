@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, Mail, ShieldCheck } from "lucide-react";
+import { Building2, CalendarClock, Mail, ShieldCheck } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
@@ -9,6 +9,9 @@ import type { Locale } from "@/i18n/config";
 import { PushToggle } from "@/components/push-toggle";
 import { PushGuide } from "@/components/push-guide";
 import { NameForm, QueueDateForm } from "@/components/account-forms";
+import { MarketSwitcher } from "@/components/market-switcher";
+import { getCurrentMarket, getQueueDate } from "@/lib/market-context";
+import { marketInfo, marketOf } from "@/lib/markets";
 import { EmailChangeForm } from "@/components/email-change-form";
 import { FadeIn } from "@/components/motion";
 
@@ -19,11 +22,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AccountPage({ searchParams }: PageProps<"/konto">) {
   const t = await getTranslations("account");
+  const tm = await getTranslations("markets");
   const locale = (await getLocale()) as Locale;
   const sp = await searchParams;
   const session = await requireSession();
-  const [user, notifications, pushCount] = await Promise.all([
+  const market = await getCurrentMarket();
+  const info = marketInfo(market);
+  const [user, queueDate, notifications, pushCount] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
+    getQueueDate(session.user.id, market),
     prisma.notification.findMany({
       where: { userId: session.user.id },
       include: { listing: true, watch: { select: { name: true } } },
@@ -32,7 +39,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
     }),
     prisma.pushSubscription.count({ where: { userId: session.user.id } }),
   ]);
-  const qt = user.queueRegisteredAt ? queueTime(user.queueRegisteredAt) : null;
+  const qt = queueDate ? queueTime(queueDate) : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -61,20 +68,33 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><CalendarClock className="size-5" /></span>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{t("queue.title")}</h2>
+            <p className="text-sm text-muted">{info.name}</p>
             {qt ? (
               <p className="mt-1 text-3xl font-bold tracking-tight text-brand-700">
                 {t("queue.value", { years: qt.years, days: qt.days })}
                 <span className="mt-0.5 block text-sm font-medium text-muted sm:ml-2 sm:inline sm:text-base">
-                  {t("queue.since", { total: formatNumber(qt.totalDays, locale), date: formatDate(user.queueRegisteredAt, locale) })}
+                  {t("queue.since", { total: formatNumber(qt.totalDays, locale), date: formatDate(queueDate, locale) })}
                 </span>
               </p>
             ) : (
-              <p className="mt-1 text-sm text-muted">{t("queue.missing")}</p>
+              <p className="mt-1 text-sm text-muted">{t("queue.missing", { source: info.name })}</p>
             )}
             <div className="mt-4">
-              <QueueDateForm value={user.queueRegisteredAt ? user.queueRegisteredAt.toISOString().slice(0, 10) : ""} />
+              <QueueDateForm key={market} value={queueDate ? queueDate.toISOString().slice(0, 10) : ""} />
             </div>
             <p className="mt-3 text-xs text-muted">{t("queue.note")}</p>
+          </div>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={0.03} className="card p-6">
+        <div className="flex items-start gap-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><Building2 className="size-5" /></span>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold">{tm("accountTitle")}</h2>
+            <p className="mt-1 text-sm text-muted">{tm("accountLead")}</p>
+            <div className="mt-4"><MarketSwitcher current={market} /></div>
+            <p className="mt-3 text-xs text-muted">{tm("accountNote")}</p>
           </div>
         </div>
       </FadeIn>
@@ -125,7 +145,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
                   <a href={n.listing.url} target="_blank" rel="noreferrer" className="truncate font-medium text-brand-700 hover:underline">
                     {n.listing.gatuadress}, {n.listing.stadsdel}
                   </a>
-                  <p className="text-xs text-muted">{n.watch.name} · {formatDateTime(n.createdAt, locale)}</p>
+                  <p className="text-xs text-muted">{n.watch.name} · {marketInfo(marketOf(n.listing.market)).city} · {formatDateTime(n.createdAt, locale)}</p>
                 </div>
                 <div className="flex shrink-0 gap-1.5 text-xs text-muted">
                   {n.emailSent && <span className="chip">{t("history.mail")}</span>}

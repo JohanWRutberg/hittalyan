@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { TRIAL_DAYS } from "@/lib/plan";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/i18n/config";
+import { DEFAULT_MARKET, MARKET_COOKIE, isMarket } from "@/lib/markets";
 import { sendOtpEmail } from "@/lib/notify";
 
 /** E-postadresser (kommaseparerade i ADMIN_EMAILS) som automatiskt blir admin. */
@@ -44,8 +45,11 @@ export const auth = betterAuth({
   user: {
     changeEmail: { enabled: true },
     additionalFields: {
-      queueRegisteredAt: {
-        type: "date",
+      // Vilken bostadsförmedling kontot tillhör. Väljs i registreringsformuläret
+      // och byts under Konto. Inget defaultValue här: Prisma-schemat har
+      // @default("stockholm") och cookie-fallbacken nedan ska få gälla.
+      market: {
+        type: "string",
         required: false,
         input: true,
       },
@@ -68,12 +72,19 @@ export const auth = betterAuth({
           // annars språkcookien, annars svenska.
           const passed = (user as { locale?: string }).locale;
           let locale = isLocale(passed) ? passed : DEFAULT_LOCALE;
-          if (!isLocale(passed)) {
+          // Kön kontot tillhör: fältet från formuläret, annars den kö besökaren
+          // tittat på som utloggad, annars Stockholm.
+          const passedMarket = (user as { market?: string }).market;
+          let market = isMarket(passedMarket) ? passedMarket : DEFAULT_MARKET;
+          if (!isLocale(passed) || !isMarket(passedMarket)) {
             try {
-              const fromCookie = (await cookies()).get(LOCALE_COOKIE)?.value;
-              if (isLocale(fromCookie)) locale = fromCookie;
+              const jar = await cookies();
+              const fromCookie = jar.get(LOCALE_COOKIE)?.value;
+              if (!isLocale(passed) && isLocale(fromCookie)) locale = fromCookie;
+              const marketCookie = jar.get(MARKET_COOKIE)?.value;
+              if (!isMarket(passedMarket) && isMarket(marketCookie)) market = marketCookie;
             } catch {
-              /* utanför request-kontext: behåll standardspråket */
+              /* utanför request-kontext: behåll standardvärdena */
             }
           }
           // Ny användare får Pro som provperiod (TRIAL_DAYS, 0 stänger av)
@@ -81,7 +92,7 @@ export const auth = betterAuth({
             TRIAL_DAYS > 0
               ? { plan: "pro", planSource: "trial", planExpiresAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000) }
               : {};
-          return { data: { ...user, locale, role: isAdmin ? "admin" : "user", ...trial } };
+          return { data: { ...user, locale, market, role: isAdmin ? "admin" : "user", ...trial } };
         },
       },
     },

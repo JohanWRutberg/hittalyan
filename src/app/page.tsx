@@ -8,16 +8,19 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
+import { MARKETS, marketInfo } from "@/lib/markets";
 
 export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tc = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
-  const [session, activeCount, lastRun] = await Promise.all([
+  const [session, activeCount, lastRun, perMarket] = await Promise.all([
     getSession(),
     prisma.listing.count({ where: { active: true } }),
     prisma.pollRun.findFirst({ where: { ok: true }, orderBy: { startedAt: "desc" } }),
+    prisma.listing.groupBy({ by: ["market"], where: { active: true }, _count: { _all: true } }),
   ]);
+  const activeByMarket = new Map(perMarket.map((r) => [r.market, r._count._all]));
 
   const features = [
     { icon: Filter, key: "filter" },
@@ -74,7 +77,31 @@ export default async function LandingPage() {
           </FadeIn>
         </section>
 
-        <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mt-10">
+          <FadeIn className="card p-6">
+            <h2 className="text-lg font-semibold">{t("cities.title")}</h2>
+            <p className="mt-1 text-sm text-muted">{t("cities.lead")}</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {MARKETS.map((m) => {
+                const info = marketInfo(m);
+                return (
+                  <div key={m} className="rounded-2xl border border-line bg-canvas px-4 py-3">
+                    <p className="font-semibold">{info.city}</p>
+                    <p className="truncate text-xs text-muted">{info.name}</p>
+                    <p className="mt-1 text-sm text-brand-700">
+                      {t.rich("activeNow", {
+                        count: formatNumber(activeByMarket.get(m) ?? 0, locale),
+                        strong: (c) => <strong>{c}</strong>,
+                      })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </FadeIn>
+        </section>
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f, i) => (
             <FadeIn key={f.key} delay={0.1 + i * 0.06} className="card p-6">
               <span className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-700">

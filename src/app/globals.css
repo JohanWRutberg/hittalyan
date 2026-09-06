@@ -285,6 +285,17 @@ body {
 .lm-popup__chance--some { color: #4d7c0f; background: #f7fee7; border-color: #d9f99d; }
 .lm-popup__chance--slim { color: #b45309; background: #fffbeb; border-color: #fde68a; }
 .lm-popup__chance--low { color: #64748b; background: #f8fafc; border-color: #e2e8f0; }
+/* Boplats Syd och Uppsala saknar kötidsstatistik; där visas antalet sökande i stället. */
+.lm-popup__applicants {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
 .lm-popup__more {
   margin-top: 6px;
   font-size: 11px;

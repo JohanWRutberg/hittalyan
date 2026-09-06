@@ -11,8 +11,21 @@ import type { AreaCounts } from "@/lib/areas";
 import { filtersToQuery, parseFilters } from "@/lib/filters";
 import { FilterFields, Check } from "@/components/filter-fields";
 import { useIsDesktop } from "@/lib/use-media-query";
+import type { Market } from "@/lib/markets";
 
-export function FilterPanel({ areas, filters, activeCount, counts }: { areas: AreaMap; filters: Filters; activeCount: number; counts?: AreaCounts }) {
+export function FilterPanel({
+  areas,
+  filters,
+  activeCount,
+  counts,
+  market,
+}: {
+  areas: AreaMap;
+  filters: Filters;
+  activeCount: number;
+  counts?: AreaCounts;
+  market: Market;
+}) {
   const t = useTranslations("filters");
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -65,7 +78,7 @@ export function FilterPanel({ areas, filters, activeCount, counts }: { areas: Ar
             className="overflow-hidden border-t border-line"
           >
             <div className="space-y-5 p-5">
-              <FilterFields areas={areas} initial={filters} counts={counts} />
+              <FilterFields areas={areas} initial={filters} counts={counts} market={market} />
               <Check name="nya" label={t("onlyNew")} checked={filters.nya} />
               <div className="flex justify-end gap-2">
                 <button type="submit" disabled={pending} className="btn-primary">

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { dayAgo } from "@/lib/format";
 import { splitAddressTerms } from "@/lib/matching";
+import type { Market } from "@/lib/markets";
 
 const num = z.preprocess((v) => {
   if (v === "" || v == null) return undefined;
@@ -71,8 +72,9 @@ export function countActiveFilters(f: Filters): number {
   return Object.entries(f).filter(([, v]) => v != null && v !== false && !(Array.isArray(v) && !v.length)).length;
 }
 
-export function filtersToWhere(f: Filters): Prisma.ListingWhereInput {
-  const and: Prisma.ListingWhereInput[] = [{ active: true }];
+/** Villkor för en förmedlings aktiva annonser. Marknaden är alltid med: man ser en kö i taget. */
+export function filtersToWhere(f: Filters, market: Market): Prisma.ListingWhereInput {
+  const and: Prisma.ListingWhereInput[] = [{ market }, { active: true }];
   if (f.kommuner.length) and.push({ kommun: { in: f.kommuner, mode: "insensitive" } });
   if (f.stadsdelar.length) and.push({ stadsdel: { in: f.stadsdelar, mode: "insensitive" } });
   if (f.adress) {
@@ -109,6 +111,10 @@ export function filtersToWhere(f: Filters): Prisma.ListingWhereInput {
 /** Kommun -> sorterade stadsdelar, från aktiva annonser + kända kommuner. */
 export type AreaMap = Record<string, string[]>;
 
+/**
+ * Stockholms register (src/data/omraden.json) innehåller även kommuner utanför
+ * länet. De här är de som hör till Bostadsförmedlingen i Stockholm.
+ */
 export const KNOWN_KOMMUNER = [
   "Botkyrka", "Danderyd", "Ekerö", "Haninge", "Huddinge", "Järfälla", "Lidingö", "Nacka", "Norrtälje", "Nykvarn",
   "Nynäshamn", "Salem", "Sigtuna", "Sollentuna", "Solna", "Stockholm", "Sundbyberg", "Södertälje", "Tyresö", "Täby",

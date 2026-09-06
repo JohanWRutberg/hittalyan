@@ -8,6 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { parseFilters } from "@/lib/filters";
+import { getCurrentMarket } from "@/lib/market-context";
 import { auth } from "@/lib/auth";
 import { runPoll } from "@/lib/poll";
 import { hasPro } from "@/lib/plan";
@@ -56,11 +57,13 @@ export async function saveWatch(_prev: ActionState, formData: FormData): Promise
   };
 
   if (id) {
+    // Bevakningen behåller sin förmedling: den fortsätter notifiera även om
+    // användaren bytt kö sedan den skapades.
     const existing = await prisma.watch.findFirst({ where: { id, userId: session.user.id } });
     if (!existing) return { error: t("watchNotFound") };
     await prisma.watch.update({ where: { id }, data });
   } else {
-    await prisma.watch.create({ data: { ...data, userId: session.user.id } });
+    await prisma.watch.create({ data: { ...data, userId: session.user.id, market: await getCurrentMarket() } });
   }
   revalidatePath("/bevakningar");
   redirect("/bevakningar");
@@ -81,15 +84,30 @@ export async function deleteWatch(id: string) {
 
 // ---------- Konto ----------
 
+/**
+ * Registreringsdatum i den kö användaren står i just nu. Datumet sparas per
+ * förmedling, så det finns kvar om man byter kö och sedan byter tillbaka.
+ */
 export async function updateQueueDate(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await requireSession();
+  const market = await getCurrentMarket();
   const raw = String(formData.get("queueRegisteredAt") ?? "").trim();
   const parsed = z.string().date().safeParse(raw);
   const date = raw ? (parsed.success ? new Date(raw + "T00:00:00Z") : null) : null;
   const t = await getTranslations("errors");
   if (raw && !date) return { error: t("dateFormat") };
   if (date && date > new Date()) return { error: t("dateFuture") };
-  await prisma.user.update({ where: { id: session.user.id }, data: { queueRegisteredAt: date } });
+
+  const where = { userId_market: { userId: session.user.id, market } };
+  if (date) {
+    await prisma.userQueue.upsert({
+      where,
+      create: { userId: session.user.id, market, registeredAt: date },
+      update: { registeredAt: date },
+    });
+  } else {
+    await prisma.userQueue.deleteMany({ where: { userId: session.user.id, market } });
+  }
   revalidatePath("/konto");
   revalidatePath("/lagenheter");
   return { ok: true };

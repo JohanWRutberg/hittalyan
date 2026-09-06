@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Bell, Mail, Save } from "lucide-react";
 import type { Watch } from "@/generated/prisma/client";
 import type { AreaMap, Filters } from "@/lib/filters";
+import { marketInfo, type Market } from "@/lib/markets";
 import type { AreaCounts } from "@/lib/areas";
 import { FilterFields, Check } from "@/components/filter-fields";
 import { saveWatch } from "@/app/(app)/actions";
@@ -17,14 +18,18 @@ export function WatchForm({
   initialFilters,
   pushReady,
   counts,
+  market,
 }: {
   areas: AreaMap;
   watch?: Watch | null;
   initialFilters: Partial<Filters>;
   pushReady: boolean;
   counts?: AreaCounts;
+  /** Förmedlingen bevakningen gäller */
+  market: Market;
 }) {
   const t = useTranslations("watches.form");
+  const info = marketInfo(market);
   const tc = useTranslations("common");
   const [state, action, pending] = useActionState(saveWatch, undefined);
 
@@ -32,12 +37,13 @@ export function WatchForm({
     <FadeIn>
       <form action={action} className="card space-y-6 p-6">
         {watch && <input type="hidden" name="id" value={watch.id} />}
+        <p className="text-sm text-muted">{t("marketNote", { source: info.name })}</p>
         <div>
           <label className="label" htmlFor="name">{t("name")}</label>
           <input id="name" name="name" defaultValue={watch?.name ?? ""} required placeholder={t("namePlaceholder")} className="input" />
         </div>
 
-        <FilterFields areas={areas} initial={initialFilters} compact counts={counts} />
+        <FilterFields areas={areas} initial={initialFilters} compact counts={counts} market={market} />
 
         <div>
           <span className="label">{t("notifications")}</span>
@@ -62,10 +68,10 @@ export function WatchForm({
             <Save className="size-4" /> {pending ? tc("saving") : watch ? t("saveChanges") : t("create")}
           </button>
         </div>
-        <p className="flex items-center gap-3 text-xs text-muted">
+        <p className="flex flex-wrap items-center gap-3 text-xs text-muted">
           <span className="inline-flex items-center gap-1"><Mail className="size-3.5" /> Mail</span>
           <span className="inline-flex items-center gap-1"><Bell className="size-3.5" /> Push</span>
-          Vi kollar Bostadsförmedlingen varje timme och hör av oss så fort en ny annons matchar.
+          {t("pollNote", { source: info.name })}
         </p>
       </form>
     </FadeIn>

@@ -5,6 +5,7 @@ import { filtersToWhere, parseFilters, type SearchParams } from "@/lib/filters";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { WatchForm } from "@/components/watch-form";
+import { getCurrentMarket } from "@/lib/market-context";
 import { redirect } from "next/navigation";
 import { hasPro } from "@/lib/plan";
 
@@ -19,9 +20,11 @@ export default async function NewWatchPage({ searchParams }: PageProps<"/bevakni
   const me = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
   if (!hasPro(me)) redirect("/pro?status=required");
   const sp = (await searchParams) as SearchParams;
+  // Nya bevakningar gäller den kö man står i just nu.
+  const market = await getCurrentMarket();
   const [areas, counts, pushCount] = await Promise.all([
-    getAreaMap(),
-    getAreaCounts(filtersToWhere(parseFilters({}))),
+    getAreaMap(market),
+    getAreaCounts(filtersToWhere(parseFilters({}), market)),
     prisma.pushSubscription.count({ where: { userId: session.user.id } }),
   ]);
   return (
@@ -30,7 +33,7 @@ export default async function NewWatchPage({ searchParams }: PageProps<"/bevakni
         <h1 className="text-3xl font-bold tracking-tight">{t("titleNew")}</h1>
         <p className="mt-1 text-sm text-muted">{t("leadNew")}</p>
       </div>
-      <WatchForm areas={areas} initialFilters={parseFilters(sp)} pushReady={pushCount > 0} counts={counts} />
+      <WatchForm areas={areas} initialFilters={parseFilters(sp)} pushReady={pushCount > 0} counts={counts} market={market} />
     </div>
   );
 }

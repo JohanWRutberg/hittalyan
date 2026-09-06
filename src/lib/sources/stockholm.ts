@@ -1,7 +1,11 @@
 /**
- * Hämtar alla aktuella annonser från Bostadsförmedlingen i Stockholm.
- * Endpointen är samma JSON som deras egen söksida använder.
+ * Bostadsförmedlingen i Stockholm. Endpointen är samma JSON som deras egen
+ * söksida hämtar: ett anrop ger alla aktuella annonser, med kötidsstatistik.
  */
+
+import { listingId } from "@/lib/markets";
+import type { Source, SourceListing, SourceResult } from "@/lib/sources/types";
+import { USER_AGENT } from "@/lib/sources/types";
 
 export const BOSTAD_BASE_URL = "https://bostad.stockholm.se";
 const LIST_URL = `${BOSTAD_BASE_URL}/AllaAnnonser/`;
@@ -39,47 +43,18 @@ export interface RawAnnons {
   } | null;
 }
 
-export interface NormalizedListing {
-  id: number;
-  apartmentId: number;
-  projectId: number | null;
-  kommun: string;
-  stadsdel: string;
-  gatuadress: string;
-  vaning: number | null;
-  antalRum: number | null;
-  yta: number | null;
-  hyra: number | null;
-  annonseradFran: Date | null;
-  annonseradTill: Date | null;
-  lat: number | null;
-  lng: number | null;
-  url: string;
-  balkong: boolean;
-  hiss: boolean;
-  nyproduktion: boolean;
-  ungdom: boolean;
-  student: boolean;
-  senior: boolean;
-  korttid: boolean;
-  vanlig: boolean;
-  bostadssnabben: boolean;
-  koNamn: string | null;
-  lagenhetstyp: string | null;
-  kotidQ1: number | null;
-  kotidQ3: number | null;
-}
-
 function parseDate(value: string | null): Date | null {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export function normalize(raw: RawAnnons): NormalizedListing {
+export function normalize(raw: RawAnnons): SourceListing {
   return {
-    id: raw.AnnonsId,
-    apartmentId: raw.LägenhetId,
+    id: listingId("stockholm", raw.AnnonsId),
+    market: "stockholm",
+    externalId: String(raw.AnnonsId),
+    apartmentId: raw.LägenhetId ?? null,
     projectId: raw.ProjektId || null,
     kommun: (raw.Kommun ?? "").trim(),
     stadsdel: (raw.Stadsdel ?? "").trim(),
@@ -103,20 +78,22 @@ export function normalize(raw: RawAnnons): NormalizedListing {
     vanlig: !!raw.Vanlig,
     bostadssnabben: !!raw.Bostadssnabben,
     koNamn: raw.KoNamn ?? null,
+    hyresvard: null,
     lagenhetstyp: raw.Lagenhetstyp ?? null,
     kotidQ1: raw.LiknadeLagenhetStatistik?.KotidFordelningQ1 ?? null,
     kotidQ3: raw.LiknadeLagenhetStatistik?.KotidFordelningQ3 ?? null,
+    kotidSnitt: null,
+    sokande: null, // finns inte i flödet från Stockholm
   };
 }
 
-export async function fetchAllListings(): Promise<NormalizedListing[]> {
+export async function fetchAllListings(): Promise<SourceListing[]> {
   const res = await fetch(LIST_URL, {
     headers: {
       Accept: "application/json",
       "X-Requested-With": "XMLHttpRequest",
       Referer: `${BOSTAD_BASE_URL}/bostad`,
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36",
+      "User-Agent": USER_AGENT,
     },
     cache: "no-store",
     signal: AbortSignal.timeout(30_000),
@@ -130,3 +107,12 @@ export async function fetchAllListings(): Promise<NormalizedListing[]> {
   }
   return (data as RawAnnons[]).filter((a) => typeof a?.AnnonsId === "number").map(normalize);
 }
+
+/** Ett anrop ger allt, så varje körning hämtar om alla annonser. */
+export const stockholmSource: Source = {
+  market: "stockholm",
+  async fetchListings(): Promise<SourceResult> {
+    const listings = await fetchAllListings();
+    return { activeIds: listings.map((l) => l.id), listings };
+  },
+};

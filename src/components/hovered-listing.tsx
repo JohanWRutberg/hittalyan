@@ -11,15 +11,15 @@ import { createContext, useContext, useMemo, useState } from "react";
  * så att ett tryck på ett annat kort alltid räknas som ett första tryck.
  */
 const HoveredListingContext = createContext<{
-  hovered: number | null;
-  setHovered: (id: number | null) => void;
-  armedId: number | null;
-  setArmedId: (id: number | null) => void;
+  hovered: string | null;
+  setHovered: (id: string | null) => void;
+  armedId: string | null;
+  setArmedId: (id: string | null) => void;
 }>({ hovered: null, setHovered: () => {}, armedId: null, setArmedId: () => {} });
 
 export function HoveredListingProvider({ children }: { children: React.ReactNode }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const [armedId, setArmedId] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [armedId, setArmedId] = useState<string | null>(null);
   const value = useMemo(() => ({ hovered, setHovered, armedId, setArmedId }), [hovered, armedId]);
   return <HoveredListingContext value={value}>{children}</HoveredListingContext>;
 }

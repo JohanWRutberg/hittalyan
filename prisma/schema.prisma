@@ -18,8 +18,9 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Datum då användaren ställde sig i Stockholms bostadskö (anges manuellt)
-  queueRegisteredAt DateTime?
+  // Vilken bostadsförmedling användaren tillhör: stockholm | vast | syd | uppsala.
+  // Väljs vid registrering, byts under Konto. Man ser en kö i taget.
+  market String @default("stockholm")
 
   // Språk för gränssnitt, mail och push: "sv" eller "en"
   locale String @default("sv")
@@ -41,6 +42,7 @@ model User {
 
   sessions          Session[]
   accounts          Account[]
+  queues            UserQueue[]
   watches           Watch[]
   pushSubscriptions PushSubscription[]
   notifications     Notification[]
@@ -99,10 +101,27 @@ model Verification {
 
 // ---------- Hitta Lyan ----------
 
-/// En annons från bostad.stockholm.se (/AllaAnnonser/)
+/// Datum då användaren ställde sig i en viss kö (anges manuellt). Ett datum per
+/// förmedling, så att det finns kvar om man byter kö och sedan byter tillbaka.
+model UserQueue {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market       String
+  registeredAt DateTime
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, market])
+  @@index([userId])
+}
+
+/// En annons hos någon av förmedlingarna. Id:t är "<marknad>:<id hos källan>",
+/// eftersom förmedlingarna har var sin id-serie i olika format.
 model Listing {
-  id            Int       @id // AnnonsId
-  apartmentId   Int       // LägenhetId
+  id            String    @id
+  market        String
+  externalId    String
+  apartmentId   Int?      // LägenhetId (bara Stockholm)
   projectId     Int?
   kommun        String
   stadsdel      String
@@ -126,19 +145,29 @@ model Listing {
   vanlig        Boolean   @default(false)
   bostadssnabben Boolean  @default(false)
   koNamn        String?
+  hyresvard     String?
   lagenhetstyp  String?
+  /// Kötidens kvartiler för liknande lägenheter, i år (Stockholm)
   kotidQ1       Int?
   kotidQ3       Int?
+  /// Genomsnittlig kötid i området senaste 12 månaderna, i år (Boplats Väst)
+  kotidSnitt    Float?
+  /// Antal sökande just nu (Boplats Väst, Boplats Syd, Uppsala)
+  sokande       Int?
 
   firstSeenAt   DateTime  @default(now())
   lastSeenAt    DateTime  @default(now())
+  /// När annonsen senast hämtades i sin helhet. Källor som behöver ett anrop per
+  /// annons använder den för att turas om att fräscha upp.
+  refreshedAt   DateTime  @default(now())
   active        Boolean   @default(true)
 
   notifications Notification[]
 
-  @@index([kommun, stadsdel])
+  @@unique([market, externalId])
+  @@index([market, kommun, stadsdel])
+  @@index([market, active, firstSeenAt])
   @@index([firstSeenAt])
-  @@index([active])
 }
 
 /// En bevakning = ett sparat filter som ska ge notiser
@@ -148,6 +177,9 @@ model Watch {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   enabled   Boolean  @default(true)
+  /// Vilken förmedling bevakningen gäller. Bevakningar fortsätter notifiera även
+  /// om användaren byter kö, eftersom man kan stå i flera köer.
+  market    String   @default("stockholm")
 
   kommuner   String[] @default([])
   stadsdelar String[] @default([])
@@ -177,6 +209,7 @@ model Watch {
   notifications Notification[]
 
   @@index([userId])
+  @@index([market])
 }
 
 model PushSubscription {
@@ -199,7 +232,7 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   watchId   String
   watch     Watch    @relation(fields: [watchId], references: [id], onDelete: Cascade)
-  listingId Int
+  listingId String
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   emailSent Boolean  @default(false)
   pushSent  Boolean  @default(false)
@@ -218,6 +251,7 @@ model StripeEvent {
 
 model PollRun {
   id          String   @id @default(cuid())
+  market      String   @default("stockholm")
   startedAt   DateTime @default(now())
   finishedAt  DateTime?
   ok          Boolean  @default(false)
@@ -225,4 +259,6 @@ model PollRun {
   newCount    Int      @default(0)
   notified    Int      @default(0)
   error       String?
+
+  @@index([market, startedAt])
 }

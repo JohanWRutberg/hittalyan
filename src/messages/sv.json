@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Hitta Lyan – bevaka nya hyresrätter i Stockholm",
+    "title": "Hitta Lyan – bevaka nya hyresrätter i Stockholm, Göteborg, Malmö och Uppsala",
     "template": "%s · Hitta Lyan",
-    "description": "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm.",
+    "description": "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd eller Uppsala bostadsförmedling.",
     "pages": {
       "listings": "Lägenheter",
       "watches": "Bevakningar",
@@ -42,9 +42,9 @@
     "admin": "Admin"
   },
   "landing": {
-    "badge": "Bevakar Bostadsförmedlingen var 30:e minut",
-    "title": "Missa aldrig en ny hyresrätt i Stockholm igen.",
-    "lead": "Hitta Lyan håller koll på Bostadsförmedlingens nya annonser och skickar mail och notis direkt när något dyker upp som matchar ditt område, dina rum, din hyra – eller ett specifikt hus du drömmer om.",
+    "badge": "Bevakar fyra bostadsförmedlingar var 30:e minut",
+    "title": "Missa aldrig en ny hyresrätt igen.",
+    "lead": "Hitta Lyan håller koll på nya annonser hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd och Uppsala bostadsförmedling, och skickar mail och notis direkt när något dyker upp som matchar ditt område, dina rum, din hyra – eller ett specifikt hus du drömmer om.",
     "cta": "Kom igång gratis",
     "activeNow": "Just nu <strong>{count}</strong> aktiva annonser",
     "updatedAt": " · senast uppdaterat {time}",
@@ -63,10 +63,14 @@
       },
       "queue": {
         "title": "Din kötid",
-        "text": "Se hur många år och dagar du stått i bostadskön, alltid uppdaterat."
+        "text": "Se hur många år och dagar du stått i din bostadskö, alltid uppdaterat."
       }
     },
-    "footer": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB."
+    "footer": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB eller Uppsala bostadsförmedling.",
+    "cities": {
+      "title": "Fyra köer, en tjänst",
+      "lead": "Du väljer vilken bostadsförmedling du står i kö hos, och ser den. Byt när du vill."
+    }
   },
   "auth": {
     "fields": {
@@ -150,7 +154,9 @@
       "lastDay": "Sista dag {date}",
       "loginForChance": "för att se din chans",
       "similarRequired": " · liknande har krävt {q1}–{q3} års kötid",
-      "tapAgain": "Tryck igen för att öppna annonsen"
+      "tapAgain": "Tryck igen för att öppna annonsen",
+      "applicants": "{count} sökande just nu",
+      "applicantsShort": "Sökande"
     },
     "tags": {
       "nyproduktion": "Nyproduktion",
@@ -160,7 +166,8 @@
       "korttid": "Korttid",
       "bostadssnabben": "Bostadssnabben",
       "balkong": "Balkong",
-      "hiss": "Hiss"
+      "hiss": "Hiss",
+      "bostadDirekt": "Bostad Direkt"
     },
     "map": {
       "title": "Karta",
@@ -173,7 +180,8 @@
       "popupMore": "+ {count} till på samma adress",
       "popupNew": "Ny",
       "popupChanceTitle": "Liknande lägenheter: {q1}–{q3} års kötid",
-      "etAl": "m.fl."
+      "etAl": "m.fl.",
+      "popupAverageTitle": "Liknande bostäder i området har krävt {years} kötid i snitt."
     }
   },
   "filters": {
@@ -257,6 +265,11 @@
         "label": "Kötid som krävs",
         "asc": "Kortast först",
         "desc": "Längst först"
+      },
+      "sokande": {
+        "label": "Sökande",
+        "asc": "färst först",
+        "desc": "flest först"
       }
     }
   },
@@ -287,11 +300,33 @@
     },
     "unknown": {
       "label": "Okänd chans",
-      "hint": "Bostadsförmedlingen saknar statistik för den här annonsen, eller så har du inte angett ködatum."
+      "hint": "Förmedlingen saknar kötidsstatistik för den här annonsen, eller så har du inte angett ditt ködatum."
     },
     "meterTitle": "{hint} Liknande lägenheter: {q1}–{q3} års kötid{user}.",
     "meterUser": ". Din kötid: {years}",
-    "range": "{q1}–{q3} år"
+    "range": "{q1}–{q3} år",
+    "averageTitle": "{hint} Liknande bostäder i området: {years} kötid i snitt{user}.",
+    "average": "≈ {years} i snitt",
+    "avg": {
+      "excellent": {
+        "hint": "Din kötid är längre än snittet i området, med god marginal."
+      },
+      "great": {
+        "hint": "Din kötid ligger en bit över snittet i området."
+      },
+      "good": {
+        "hint": "Din kötid ligger kring snittet i området."
+      },
+      "some": {
+        "hint": "Din kötid ligger strax under snittet i området."
+      },
+      "slim": {
+        "hint": "Din kötid är kortare än snittet i området."
+      },
+      "low": {
+        "hint": "Din kötid är betydligt kortare än snittet i området."
+      }
+    }
   },
   "watches": {
     "title": "Bevakningar",
@@ -319,7 +354,8 @@
       "pushNotReady": "Aktivera under Konto för att få notiser",
       "saveChanges": "Spara ändringar",
       "create": "Skapa bevakning",
-      "footer": "Vi kollar Bostadsförmedlingen var 30:e minut och hör av oss så fort en ny annons matchar."
+      "marketNote": "Bevakningen gäller {source}.",
+      "pollNote": "Vi kollar {source} var 30:e minut och hör av oss så fort en ny annons matchar."
     },
     "card": {
       "all": "Alla annonser (vanliga kön)",
@@ -349,11 +385,11 @@
       "lead": "Tre snabba steg: ange ditt ködatum nedan, aktivera notiser, och <link>skapa din första bevakning</link>."
     },
     "queue": {
-      "title": "Din kötid hos Bostadsförmedlingen",
+      "title": "Din kötid",
       "value": "{years} år {days} {days, plural, =1 {dag} other {dagar}}",
       "since": "{total} dagar sedan {date}",
-      "missing": "Ange datumet du registrerade dig i bostadskön så räknar vi ut din kötid. Du hittar det på Mina sidor hos bostad.stockholm.se.",
-      "note": "Bostadsförmedlingen erbjuder tyvärr ingen inloggning via OAuth, så kötiden kan inte hämtas automatiskt. Datumet sparas bara här.",
+      "missing": "Ange datumet du registrerade dig i kön så räknar vi ut din kötid. Du hittar det på Mina sidor hos {source}.",
+      "note": "Förmedlingarna erbjuder ingen inloggning via OAuth, så kötiden kan inte hämtas automatiskt. Datumet sparas bara här, och separat för varje kö.",
       "label": "Registreringsdatum i bostadskön"
     },
     "notifications": {
@@ -532,7 +568,8 @@
       "active": "Aktiva annonser",
       "total": "Annonser totalt",
       "watches": "Aktiva bevakningar",
-      "sent": "Skickade notiser"
+      "sent": "Skickade notiser",
+      "perMarket": "Aktiva annonser per förmedling"
     },
     "users": {
       "title": "Användare ({count})",
@@ -548,7 +585,8 @@
       "actions": "Åtgärder",
       "banned": "Avstängd",
       "active": "Aktiv",
-      "you": "Du"
+      "you": "Du",
+      "market": "Kö"
     },
     "actions": {
       "givePro": "Ge Pro",
@@ -591,12 +629,13 @@
     "subjectMulti": "{count} nya lägenheter matchar «{name}»",
     "headingSingle": "Ny lägenhet matchar «{name}»",
     "headingMulti": "{count} nya lägenheter matchar «{name}»",
-    "lead": "Annonserna kommer från Bostadsförmedlingen i Stockholm. Anmäl intresse snabbt, annonser ligger ofta bara ute några dagar.",
+    "lead": "Anmäl intresse snabbt – annonser ligger ofta bara ute några dagar.",
     "newBuild": "Nyproduktion",
     "lastDay": "Sista anmälningsdag {date}",
     "footer": "Du får detta mail eftersom du har en bevakning på",
     "manage": "Hantera bevakningar",
-    "perMonth": "/mån"
+    "perMonth": "/mån",
+    "source": "Annonsen kommer från {source}."
   },
   "pushMsg": {
     "single": "Ny lägenhet: {address}",
@@ -622,5 +661,15 @@
       "lead": "Ange koden nedan på Hitta Lyan.",
       "ignore": "Har du inte begärt detta kan du strunta i mailet."
     }
+  },
+  "markets": {
+    "chooseLabel": "Vilken bostadsförmedling står du i kö hos?",
+    "chooseHelp": "Du ser en kö i taget. Valet går att ändra under Konto.",
+    "switching": "Byter kö …",
+    "publicTitle": "Välj bostadsförmedling",
+    "publicLead": "Annonserna nedan kommer från den förmedling du väljer här.",
+    "accountTitle": "Din bostadskö",
+    "accountLead": "Du ser annonser från en förmedling i taget. Byt när du vill.",
+    "accountNote": "Kötiden sparas för varje kö, så den finns kvar om du byter tillbaka. Bevakningar du redan skapat fortsätter skicka notiser för sin egen kö, oavsett vilken du står i nu."
   }
 }

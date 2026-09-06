@@ -9,12 +9,15 @@ import type { Watch } from "@/generated/prisma/client";
 import { deleteWatch, toggleWatch } from "@/app/(app)/actions";
 import { formatKr } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
+import { marketInfo, marketOf } from "@/lib/markets";
 
 export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: number; index: number }) {
   const t = useTranslations("watches.card");
   const tc = useTranslations("common");
   const locale = useLocale() as Locale;
   const [pending, start] = useTransition();
+  // Bevakningar fortsätter notifiera även efter ett kösbyte, så staden står med.
+  const info = marketInfo(marketOf(w.market));
   const parts: string[] = [];
   if (w.kommuner.length) parts.push(w.kommuner.join(", "));
   if (w.stadsdelar.length) parts.push(w.stadsdelar.join(", "));
@@ -37,10 +40,13 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-lg font-semibold">{w.name}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-lg font-semibold">{w.name}</h3>
+            <span className="chip">{info.city}</span>
+          </div>
           <p className="mt-0.5 text-sm text-muted">{parts.length ? parts.join(" · ") : t("all")}</p>
         </div>
-        <span className={`chip ${w.enabled ? "border-brand-200 bg-brand-50 text-brand-700" : ""}`}>
+        <span className={`chip shrink-0 ${w.enabled ? "border-brand-200 bg-brand-50 text-brand-700" : ""}`}>
           {w.enabled ? t("active") : t("paused")}
         </span>
       </div>

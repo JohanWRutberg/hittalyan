@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Hitta Lyan – track new rental apartments in Stockholm",
+    "title": "Hitta Lyan – track new rental apartments in Stockholm, Gothenburg, Malmö and Uppsala",
     "template": "%s · Hitta Lyan",
-    "description": "Get an email and a push notification the moment a new rental apartment matching your criteria is listed by the Stockholm Housing Agency (Bostadsförmedlingen).",
+    "description": "Get an email and a push notification the moment a new rental apartment matching your criteria is listed by Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd or Uppsala bostadsförmedling.",
     "pages": {
       "listings": "Apartments",
       "watches": "Watches",
@@ -42,9 +42,9 @@
     "admin": "Admin"
   },
   "landing": {
-    "badge": "Checks the Housing Agency every 30 minutes",
-    "title": "Never miss a new rental apartment in Stockholm again.",
-    "lead": "Hitta Lyan keeps an eye on new listings from the Stockholm Housing Agency and sends you an email and a push notification the moment something matches your area, room count, rent – or a specific building you have your heart set on.",
+    "badge": "Checks four housing agencies every 30 minutes",
+    "title": "Never miss a new rental apartment again.",
+    "lead": "Hitta Lyan keeps an eye on new listings from Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd and Uppsala bostadsförmedling, and sends you an email and a push notification the moment something matches your area, room count, rent – or a specific building you have your heart set on.",
     "cta": "Get started for free",
     "activeNow": "<strong>{count}</strong> active listings right now",
     "updatedAt": " · last updated {time}",
@@ -63,10 +63,14 @@
       },
       "queue": {
         "title": "Your queue time",
-        "text": "See how many years and days you have been in the housing queue, always up to date."
+        "text": "See how many years and days you have been in your housing queue, always up to date."
       }
     },
-    "footer": "Hitta Lyan is an independent service and is not affiliated with Bostadsförmedlingen i Stockholm AB."
+    "footer": "Hitta Lyan is an independent service and is not affiliated with Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB or Uppsala bostadsförmedling.",
+    "cities": {
+      "title": "Four queues, one service",
+      "lead": "Choose the housing agency you are queuing with, and that is what you see. Switch whenever you like."
+    }
   },
   "auth": {
     "fields": {
@@ -150,7 +154,9 @@
       "lastDay": "Deadline {date}",
       "loginForChance": "to see your odds",
       "similarRequired": " · similar ones required {q1}–{q3} years in the queue",
-      "tapAgain": "Tap again to open the listing"
+      "tapAgain": "Tap again to open the listing",
+      "applicants": "{count} applicants so far",
+      "applicantsShort": "Applicants"
     },
     "tags": {
       "nyproduktion": "New build",
@@ -160,7 +166,8 @@
       "korttid": "Short-term",
       "bostadssnabben": "Bostadssnabben",
       "balkong": "Balcony",
-      "hiss": "Elevator"
+      "hiss": "Elevator",
+      "bostadDirekt": "Bostad Direkt"
     },
     "map": {
       "title": "Map",
@@ -173,7 +180,8 @@
       "popupMore": "+ {count} more at the same address",
       "popupNew": "New",
       "popupChanceTitle": "Similar apartments: {q1}–{q3} years in the queue",
-      "etAl": "et al."
+      "etAl": "et al.",
+      "popupAverageTitle": "Similar homes in this area required {years} in the queue on average."
     }
   },
   "filters": {
@@ -257,6 +265,11 @@
         "label": "Queue time required",
         "asc": "Shortest first",
         "desc": "Longest first"
+      },
+      "sokande": {
+        "label": "Applicants",
+        "asc": "fewest first",
+        "desc": "most first"
       }
     }
   },
@@ -287,11 +300,33 @@
     },
     "unknown": {
       "label": "Unknown odds",
-      "hint": "The Housing Agency has no statistics for this listing, or you have not entered your queue date."
+      "hint": "The agency has no queue-time statistics for this listing, or you have not entered your queue date."
     },
     "meterTitle": "{hint} Similar apartments: {q1}–{q3} years in the queue{user}.",
     "meterUser": ". Your queue time: {years}",
-    "range": "{q1}–{q3} yrs"
+    "range": "{q1}–{q3} yrs",
+    "averageTitle": "{hint} Similar homes in this area: {years} in the queue on average{user}.",
+    "average": "≈ {years} on average",
+    "avg": {
+      "excellent": {
+        "hint": "Your queue time is comfortably above the area average."
+      },
+      "great": {
+        "hint": "Your queue time is somewhat above the area average."
+      },
+      "good": {
+        "hint": "Your queue time is around the area average."
+      },
+      "some": {
+        "hint": "Your queue time is just below the area average."
+      },
+      "slim": {
+        "hint": "Your queue time is shorter than the area average."
+      },
+      "low": {
+        "hint": "Your queue time is well below the area average."
+      }
+    }
   },
   "watches": {
     "title": "Watches",
@@ -319,7 +354,8 @@
       "pushNotReady": "Enable under Account to receive notifications",
       "saveChanges": "Save changes",
       "create": "Create watch",
-      "footer": "We check the Housing Agency every 30 minutes and get in touch as soon as a new listing matches."
+      "marketNote": "This watch covers {source}.",
+      "pollNote": "We check {source} every 30 minutes and let you know as soon as a new listing matches."
     },
     "card": {
       "all": "All listings (regular queue)",
@@ -349,11 +385,11 @@
       "lead": "Three quick steps: enter your queue date below, enable notifications, and <link>create your first watch</link>."
     },
     "queue": {
-      "title": "Your time in the Housing Agency queue",
+      "title": "Your queue time",
       "value": "{years} {years, plural, =1 {year} other {years}} {days} {days, plural, =1 {day} other {days}}",
       "since": "{total} days since {date}",
-      "missing": "Enter the date you registered in the housing queue and we will work out your queue time. You can find it under My pages at bostad.stockholm.se.",
-      "note": "Unfortunately the Housing Agency offers no OAuth login, so the queue time cannot be fetched automatically. The date is only stored here.",
+      "missing": "Enter the date you registered in the queue and we will work out your queue time. You can find it under My pages at {source}.",
+      "note": "The agencies offer no OAuth login, so the queue time cannot be fetched automatically. The date is stored only here, and separately for each queue.",
       "label": "Registration date in the housing queue"
     },
     "notifications": {
@@ -532,7 +568,8 @@
       "active": "Active listings",
       "total": "Listings in total",
       "watches": "Active watches",
-      "sent": "Notifications sent"
+      "sent": "Notifications sent",
+      "perMarket": "Active listings per agency"
     },
     "users": {
       "title": "Users ({count})",
@@ -548,7 +585,8 @@
       "actions": "Actions",
       "banned": "Suspended",
       "active": "Active",
-      "you": "You"
+      "you": "You",
+      "market": "Queue"
     },
     "actions": {
       "givePro": "Grant Pro",
@@ -591,12 +629,13 @@
     "subjectMulti": "{count} new apartments match “{name}”",
     "headingSingle": "New apartment matches “{name}”",
     "headingMulti": "{count} new apartments match “{name}”",
-    "lead": "The listings come from the Stockholm Housing Agency. Register interest quickly – listings are often only open for a few days.",
+    "lead": "Register interest quickly – listings are often only open for a few days.",
     "newBuild": "New build",
     "lastDay": "Deadline {date}",
     "footer": "You are receiving this email because you have a watch on",
     "manage": "Manage watches",
-    "perMonth": "/month"
+    "perMonth": "/month",
+    "source": "This listing comes from {source}."
   },
   "pushMsg": {
     "single": "New apartment: {address}",
@@ -622,5 +661,15 @@
       "lead": "Enter the code below on Hitta Lyan.",
       "ignore": "If you did not request this, you can ignore this email."
     }
+  },
+  "markets": {
+    "chooseLabel": "Which housing agency are you queuing with?",
+    "chooseHelp": "You see one queue at a time. You can change this under Account.",
+    "switching": "Switching queue …",
+    "publicTitle": "Choose a housing agency",
+    "publicLead": "The listings below come from the agency you pick here.",
+    "accountTitle": "Your housing queue",
+    "accountLead": "You see listings from one agency at a time. Switch whenever you like.",
+    "accountNote": "Your queue time is saved per queue, so it is still there if you switch back. Watches you have already created keep notifying you about their own queue, whichever one you are in now."
   }
 }

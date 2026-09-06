@@ -7,13 +7,15 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Maximize2, Minimize2, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
-import { chanceFor } from "@/lib/chance";
+import { chanceFor, chanceRange } from "@/lib/chance";
+import { formatYearsShort } from "@/lib/format";
 import { useHoveredListing } from "@/components/hovered-listing";
+import { marketInfo, type Market } from "@/lib/markets";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { Locale } from "@/i18n/config";
 
 export interface MapPoint {
-  id: number;
+  id: string;
   lat: number;
   lng: number;
   gatuadress: string;
@@ -27,6 +29,8 @@ export interface MapPoint {
   nyproduktion: boolean;
   kotidQ1: number | null;
   kotidQ3: number | null;
+  kotidSnitt: number | null;
+  sokande: number | null;
   isNew: boolean;
 }
 
@@ -40,7 +44,7 @@ interface Group {
 
 // OpenFreeMap: fria vektorkartor utan API-nyckel. Positron är den ljusa, rena stilen.
 const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
-const STOCKHOLM: [number, number] = [18.07, 59.33];
+
 const MAX_MARKERS = 1500;
 const MIN_FIT_ZOOM = 8.3;
 
@@ -87,6 +91,8 @@ interface PopupText {
   newBuild: string;
   chanceLabel: (level: string) => string;
   chanceTitle: (q1: number, q3: number) => string;
+  averageTitle: (years: string) => string;
+  applicants: (count: number) => string;
   etAl: string;
   locale: Locale;
 }
@@ -96,11 +102,21 @@ function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
   const rows = g.items
     .slice(0, 6)
     .map((p) => {
-      const c = chanceFor(userYears, p.kotidQ1, p.kotidQ3);
+      // Väst har bara ett områdessnitt, Syd och Uppsala ingen kötidsstatistik alls.
+      const range = chanceRange(p);
+      const c = chanceFor(userYears, range?.q1, range?.q3);
+      const title =
+        p.kotidQ1 != null && p.kotidQ3 != null
+          ? tx.chanceTitle(p.kotidQ1, p.kotidQ3)
+          : p.kotidSnitt != null
+            ? tx.averageTitle(formatYearsShort(p.kotidSnitt, tx.locale))
+            : "";
       const chance =
-        c.level === "unknown"
-          ? ""
-          : `<span class="lm-popup__chance lm-popup__chance--${c.level}" title="${escapeHtml(tx.chanceTitle(p.kotidQ1!, p.kotidQ3!))}">${escapeHtml(tx.chanceLabel(c.level))}</span>`;
+        c.level !== "unknown"
+          ? `<span class="lm-popup__chance lm-popup__chance--${c.level}" title="${escapeHtml(title)}">${escapeHtml(tx.chanceLabel(c.level))}</span>`
+          : p.sokande != null
+            ? `<span class="lm-popup__applicants">${escapeHtml(tx.applicants(p.sokande))}</span>`
+            : "";
       return `
       <a class="lm-popup__row" href="${escapeHtml(p.url)}" target="_blank" rel="noreferrer">
         <span class="lm-popup__main">${escapeHtml(formatRum(p.antalRum, tx.locale))} · ${escapeHtml(formatYta(p.yta))} · ${escapeHtml(formatVaning(p.vaning, tx.locale))}</span>
@@ -140,7 +156,20 @@ function markerElement(g: Group, index: number) {
   return el;
 }
 
-export function ListingsMap({ points, userYears = null, sticky = false }: { points: MapPoint[]; userYears?: number | null; sticky?: boolean }) {
+export function ListingsMap({
+  points,
+  market,
+  userYears = null,
+  sticky = false,
+}: {
+  points: MapPoint[];
+  /** Förmedlingen som visas; dess stad är kartans utgångsläge */
+  market: Market;
+  userYears?: number | null;
+  sticky?: boolean;
+}) {
+  const { lat, lng } = marketInfo(market).center;
+  const center: [number, number] = [lng, lat];
   const t = useTranslations("listings.map");
   const tChance = useTranslations("chance");
   const tListing = useTranslations("listings");
@@ -179,7 +208,7 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
         const m = new maplibregl.Map({
           container: containerRef.current,
           style: STYLE_URL,
-          center: STOCKHOLM,
+          center,
           zoom: 9,
           attributionControl: { compact: true },
           cooperativeGestures: true,
@@ -210,6 +239,7 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
       map?.remove();
       mapRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- kartan skapas en gång; byte av förmedling flyttar kameran i effekten nedan i stället för att bygga om kartan
   }, []);
 
   // Uppdatera markörer när annonserna ändras (nytt filter)
@@ -233,6 +263,8 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
             newBuild: tListing("tags.nyproduktion"),
             chanceLabel: (level) => tChance(`${level}.label`),
             chanceTitle: (q1, q3) => t("popupChanceTitle", { q1, q3 }),
+            averageTitle: (years) => t("popupAverageTitle", { years }),
+            applicants: (count) => tListing("card.applicants", { count }),
             etAl: t("etAl"),
             locale,
           }),
@@ -247,22 +279,22 @@ export function ListingsMap({ points, userYears = null, sticky = false }: { poin
 
       if (groups.length > 0) {
         // Enstaka annonser långt bort (Eskilstuna, Norrtälje) ska inte zooma ut hela kartan;
-        // då hamnar vi hellre på Stockholm och låter användaren zooma själv.
+        // då hamnar vi hellre på stadens centrum och låter användaren zooma själv.
         const camera = map.cameraForBounds(bounds, { padding: 48, maxZoom: 15 });
         if (camera && (camera.zoom ?? 0) < MIN_FIT_ZOOM) {
-          map.easeTo({ center: STOCKHOLM, zoom: MIN_FIT_ZOOM, duration: 900, essential: true });
+          map.easeTo({ center, zoom: MIN_FIT_ZOOM, duration: 900, essential: true });
         } else {
           map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 900, essential: true });
         }
       } else {
-        map.easeTo({ center: STOCKHOLM, zoom: 9, duration: 600 });
+        map.easeTo({ center, zoom: 9, duration: 600 });
       }
     })();
     return () => {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- översättarna är stabila per språk, locale räcker som beroende
-  }, [points, ready, userYears, locale]);
+  }, [points, ready, userYears, locale, market]);
 
   // Markera markören för det kort som hovras i listan
   useEffect(() => {

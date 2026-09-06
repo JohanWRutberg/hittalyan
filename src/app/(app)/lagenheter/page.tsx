@@ -10,6 +10,9 @@ import { queueYears } from "@/lib/chance";
 import { HoveredListingProvider } from "@/components/hovered-listing";
 import type { Locale } from "@/i18n/config";
 import { getSession } from "@/lib/session";
+import { getCurrentMarket, getQueueDate } from "@/lib/market-context";
+import { marketInfo, type Market } from "@/lib/markets";
+import { MarketSwitcher } from "@/components/market-switcher";
 import { watchToFilters } from "@/lib/watch-filters";
 import { FilterPanel } from "@/components/filter-panel";
 import { ListingCard } from "@/components/listing-card";
@@ -30,32 +33,40 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
   const t = await getTranslations("listings");
   const locale = (await getLocale()) as Locale;
   const session = await getSession();
-  if (!session) return <PublicListings sp={sp} />;
+  const current = await getCurrentMarket();
+  if (!session) return <PublicListings sp={sp} market={current} />;
 
   let filters = parseFilters(sp);
+  // En bevakning kan gälla en annan förmedling än den man står i just nu; dess
+  // träffar visas då i den förmedlingen.
+  let market: Market = current;
   if (typeof sp.bevakning === "string") {
     const w = await prisma.watch.findFirst({ where: { id: sp.bevakning, userId: session.user.id } });
-    if (w) filters = watchToFilters(w);
+    if (w) {
+      filters = watchToFilters(w);
+      market = w.market as Market;
+    }
   }
+  const info = marketInfo(market);
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
-  const where = filtersToWhere(filters);
-  const sorts = parseSorts(sp);
+  const where = filtersToWhere(filters, market);
+  const sorts = parseSorts(sp, market);
   // Antal per område: samma filter som listan, men utan valda kommuner/stadsdelar
-  const areaWhere = filtersToWhere({ ...filters, kommuner: [], stadsdelar: [] });
+  const areaWhere = filtersToWhere({ ...filters, kommuner: [], stadsdelar: [] }, market);
 
-  const [areas, total, listings, newLast24h, lastRun, user, mapRows, areaCounts] = await Promise.all([
-    getAreaMap(),
+  const [areas, total, listings, newLast24h, lastRun, queueDate, mapRows, areaCounts] = await Promise.all([
+    getAreaMap(market),
     prisma.listing.count({ where }),
     prisma.listing.findMany({
       where,
-      orderBy: sortsToOrderBy(sorts),
+      orderBy: sortsToOrderBy(sorts, market),
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
     // Samma filter som listan, så "nya" alltid är en delmängd av totalen
     prisma.listing.count({ where: { AND: [where, { firstSeenAt: { gte: dayAgo() } }] } }),
-    prisma.pollRun.findFirst({ where: { ok: true }, orderBy: { startedAt: "desc" } }),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { queueRegisteredAt: true } }),
+    prisma.pollRun.findFirst({ where: { ok: true, market }, orderBy: { startedAt: "desc" } }),
+    getQueueDate(session.user.id, market),
     prisma.listing.findMany({
       where: { ...where, lat: { not: null }, lng: { not: null } },
       orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }],
@@ -63,7 +74,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
       select: {
         id: true, lat: true, lng: true, gatuadress: true, stadsdel: true, kommun: true,
         antalRum: true, yta: true, hyra: true, vaning: true, url: true, nyproduktion: true, firstSeenAt: true,
-        kotidQ1: true, kotidQ3: true,
+        kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
       },
     }),
     getAreaCounts(areaWhere),
@@ -85,19 +96,22 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
     nyproduktion: r.nyproduktion,
     kotidQ1: r.kotidQ1,
     kotidQ3: r.kotidQ3,
+    kotidSnitt: r.kotidSnitt,
+    sokande: r.sokande,
     isNew: r.firstSeenAt >= cutoff,
   }));
 
   const activeCount = countActiveFilters(filters);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const qt = user?.queueRegisteredAt ? queueTime(user.queueRegisteredAt) : null;
-  const userYears = user?.queueRegisteredAt ? queueYears(user.queueRegisteredAt) : null;
+  const qt = queueDate ? queueTime(queueDate) : null;
+  const userYears = queueDate ? queueYears(queueDate) : null;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-sm font-medium text-brand-700">{info.name}</p>
           <p className="mt-1 text-sm text-muted">
             {t("count", { count: total })}
             {activeCount > 0 && t("matchFilter")} · {t("newLast24h", { count: newLast24h })}
@@ -129,13 +143,13 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
 
       <PushGuide variant="banner" />
 
-      <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} />
+      <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} market={market} />
 
       <HoveredListingProvider>
         <div className="space-y-6">
-          <ListingsMap points={mapPoints} userYears={userYears} sticky />
+          <ListingsMap points={mapPoints} market={market} userYears={userYears} sticky />
 
-          <SortBar sorts={sorts} sp={sp} />
+          <SortBar sorts={sorts} sp={sp} market={market} />
 
           {listings.length === 0 ? (
             <div className="card p-12 text-center text-muted">{t("empty")}</div>
@@ -174,20 +188,22 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
 /** Utloggade ser annonser först efter så här många timmar (PUBLIC_DELAY_HOURS, standard 24). */
 const PUBLIC_DELAY_HOURS = Math.max(0, Number(process.env.PUBLIC_DELAY_HOURS ?? 24) || 0);
 
-async function PublicListings({ sp }: { sp: SearchParams }) {
+async function PublicListings({ sp, market }: { sp: SearchParams; market: Market }) {
   const t = await getTranslations("listings");
   const tc = await getTranslations("common");
+  const tm = await getTranslations("markets");
   const locale = (await getLocale()) as Locale;
+  const info = marketInfo(market);
   const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const delayCutoff = hoursAgo(PUBLIC_DELAY_HOURS);
-  const base = filtersToWhere(parseFilters({}));
+  const base = filtersToWhere(parseFilters({}), market);
   const where = { AND: [base, { firstSeenAt: { lte: delayCutoff } }] };
   const hiddenWhere = { AND: [base, { firstSeenAt: { gt: delayCutoff } }] };
   const [total, listings, hiddenCount, lastRun, mapRows] = await Promise.all([
     prisma.listing.count({ where }),
     prisma.listing.findMany({ where, orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }], skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
     prisma.listing.count({ where: hiddenWhere }),
-    prisma.pollRun.findFirst({ where: { ok: true }, orderBy: { startedAt: "desc" } }),
+    prisma.pollRun.findFirst({ where: { ok: true, market }, orderBy: { startedAt: "desc" } }),
     prisma.listing.findMany({
       where: { ...where, lat: { not: null }, lng: { not: null } },
       orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }],
@@ -195,7 +211,7 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
       select: {
         id: true, lat: true, lng: true, gatuadress: true, stadsdel: true, kommun: true,
         antalRum: true, yta: true, hyra: true, vaning: true, url: true, nyproduktion: true, firstSeenAt: true,
-        kotidQ1: true, kotidQ3: true,
+        kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
       },
     }),
   ]);
@@ -205,18 +221,26 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
   const mapPoints: MapPoint[] = mapRows.map((r) => ({
     id: r.id, lat: r.lat!, lng: r.lng!, gatuadress: r.gatuadress, stadsdel: r.stadsdel, kommun: r.kommun,
     antalRum: r.antalRum, yta: r.yta, hyra: r.hyra, vaning: r.vaning, url: r.url, nyproduktion: r.nyproduktion,
-    kotidQ1: r.kotidQ1, kotidQ3: r.kotidQ3, isNew: r.firstSeenAt >= cutoff,
+    kotidQ1: r.kotidQ1, kotidQ3: r.kotidQ3, kotidSnitt: r.kotidSnitt, sokande: r.sokande,
+    isNew: r.firstSeenAt >= cutoff,
   }));
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t("publicTitle")}</h1>
+        <p className="text-sm font-medium text-brand-700">{info.name}</p>
         <p className="mt-1 text-sm text-muted">
           {t("count", { count: total })}
           {hiddenCount > 0 && ` · ${t("public.hiddenCount", { count: hiddenCount, label: delayLabel })}`}
           {lastRun?.finishedAt && ` · ${t("updatedAt", { time: formatDateTime(lastRun.finishedAt, locale) })}`}
         </p>
+      </div>
+
+      <div className="card p-5">
+        <h2 className="font-semibold">{tm("publicTitle")}</h2>
+        <p className="mt-0.5 mb-3 text-sm text-muted">{tm("publicLead")}</p>
+        <MarketSwitcher current={market} />
       </div>
 
       <div className="card flex flex-col gap-4 border-brand-200 bg-gradient-to-br from-brand-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -247,7 +271,7 @@ async function PublicListings({ sp }: { sp: SearchParams }) {
 
       <HoveredListingProvider>
         <div className="space-y-6">
-          <ListingsMap points={mapPoints} userYears={null} sticky />
+          <ListingsMap points={mapPoints} market={market} userYears={null} sticky />
 
           {hiddenCount > 0 && page === 1 && <HiddenTeaser count={hiddenCount} label={delayLabel} />}
 

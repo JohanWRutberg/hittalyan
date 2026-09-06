@@ -1,11 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { fetchAllListings } from "@/lib/bostad";
 import { listingMatches } from "@/lib/matching";
 import { sendWatchEmail, sendWatchPush } from "@/lib/notify";
 import type { Listing } from "@/generated/prisma/client";
 import { hasPro } from "@/lib/plan";
+import { MARKETS, marketInfo, type Market } from "@/lib/markets";
+import { SOURCES } from "@/lib/sources";
+import type { KnownListing } from "@/lib/sources";
 
-export interface PollResult {
+export interface MarketPollResult {
+  market: Market;
   total: number;
   newCount: number;
   updated: number;
@@ -14,46 +17,104 @@ export interface PollResult {
   runId: string;
 }
 
+export interface PollResult {
+  total: number;
+  newCount: number;
+  updated: number;
+  deactivated: number;
+  notified: number;
+  runId: string;
+  markets: MarketPollResult[];
+  /** Förmedlingar som inte gick att hämta, med felmeddelande */
+  failed: { market: Market; error: string }[];
+}
+
 /**
- * Hämtar alla annonser, sparar nya, avaktiverar borttagna och skickar notiser
- * till bevakningar som matchar de nya annonserna.
+ * Kör en hämtning för varje förmedling. Körningarna är oberoende: går Boplats Väst
+ * ned ska Stockholm ändå uppdateras. Fel samlas i `failed` och kastas bara om
+ * ingen enda förmedling gick att hämta.
  */
 export async function runPoll(): Promise<PollResult> {
-  const run = await prisma.pollRun.create({ data: {} });
+  const markets: MarketPollResult[] = [];
+  const failed: { market: Market; error: string }[] = [];
+
+  for (const market of MARKETS) {
+    try {
+      markets.push(await runMarketPoll(market));
+    } catch (err) {
+      failed.push({ market, error: (err as Error).message });
+      console.error(`[poll:${market}]`, (err as Error).message);
+    }
+  }
+
+  if (!markets.length) {
+    throw new Error(failed.map((f) => `${marketInfo(f.market).name}: ${f.error}`).join(" · ") || "Ingen förmedling kunde hämtas");
+  }
+
+  const sum = (pick: (m: MarketPollResult) => number) => markets.reduce((a, m) => a + pick(m), 0);
+  return {
+    total: sum((m) => m.total),
+    newCount: sum((m) => m.newCount),
+    updated: sum((m) => m.updated),
+    deactivated: sum((m) => m.deactivated),
+    notified: sum((m) => m.notified),
+    runId: markets[markets.length - 1].runId,
+    markets,
+    failed,
+  };
+}
+
+/**
+ * Hämtar en förmedlings annonser, sparar nya, uppdaterar ändrade, avaktiverar
+ * borttagna och notifierar bevakningar som matchar de nya annonserna.
+ */
+export async function runMarketPoll(market: Market): Promise<MarketPollResult> {
+  const run = await prisma.pollRun.create({ data: { market } });
   try {
-    const listings = await fetchAllListings();
+    const existing = await prisma.listing.findMany({
+      where: { market },
+      select: {
+        id: true, refreshedAt: true, kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
+        hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true, active: true,
+      },
+    });
+    const existingById = new Map(existing.map((e) => [e.id, e]));
+    const isFirstRun = existing.length === 0;
+
+    const known: Map<string, KnownListing> = new Map(
+      existing.map((e) => [e.id, { refreshedAt: e.refreshedAt, kotidSnitt: e.kotidSnitt }]),
+    );
+    const { activeIds, listings } = await SOURCES[market].fetchListings(known);
+    // Ett tomt svar är nästan alltid ett fel hos källan, inte en tom bostadskö.
+    // Utan den här spärren hade en sådan körning avaktiverat allt vi har.
+    if (!activeIds.length) throw new Error(`${marketInfo(market).name} gav inga annonser`);
     const now = new Date();
 
-    const existing = await prisma.listing.findMany({
-      select: { id: true, kotidQ1: true, kotidQ3: true, hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true },
-    });
-    const existingIds = new Set(existing.map((e) => e.id));
-    const existingById = new Map(existing.map((e) => [e.id, e]));
-    const isFirstRun = existingIds.size === 0;
-
     // Få frågor i stället för en per annons: serverless-funktioner har kort tidsgräns.
-    const incomingNew = listings.filter((l) => !existingIds.has(l.id));
-    const currentIds = listings.map((l) => l.id);
-
+    const incomingNew = listings.filter((l) => !existingById.has(l.id));
     if (incomingNew.length) {
       await prisma.listing.createMany({
-        data: incomingNew.map((l) => ({ ...l, firstSeenAt: now, lastSeenAt: now, active: true })),
+        data: incomingNew.map((l) => ({ ...l, firstSeenAt: now, lastSeenAt: now, refreshedAt: now, active: true })),
         skipDuplicates: true,
       });
     }
-    await prisma.listing.updateMany({
-      where: { id: { in: currentIds } },
-      data: { lastSeenAt: now, active: true },
-    });
+    if (activeIds.length) {
+      await prisma.listing.updateMany({
+        where: { id: { in: activeIds } },
+        data: { lastSeenAt: now, active: true },
+      });
+    }
 
-    // Befintliga annonser vars uppgifter ändrats (t.ex. kötidsstatistik eller sista dag)
-    // uppdateras individuellt. Det är sällan, så det kostar lite.
+    // Befintliga annonser vars uppgifter ändrats (t.ex. kötidsstatistik, antal
+    // sökande eller sista dag) uppdateras individuellt. Det är sällan, så det kostar lite.
     const changed = listings.filter((l) => {
       const e = existingById.get(l.id);
       if (!e) return false;
       return (
         e.kotidQ1 !== l.kotidQ1 ||
         e.kotidQ3 !== l.kotidQ3 ||
+        e.kotidSnitt !== l.kotidSnitt ||
+        e.sokande !== l.sokande ||
         e.hyra !== l.hyra ||
         e.vaning !== l.vaning ||
         e.yta !== l.yta ||
@@ -61,11 +122,22 @@ export async function runPoll(): Promise<PollResult> {
         (e.annonseradTill?.getTime() ?? null) !== (l.annonseradTill?.getTime() ?? null)
       );
     });
+    const changedIds = new Set(changed.map((l) => l.id));
     for (const l of changed) {
-      await prisma.listing.update({ where: { id: l.id }, data: { ...l, lastSeenAt: now, active: true } });
+      await prisma.listing.update({
+        where: { id: l.id },
+        data: { ...l, lastSeenAt: now, refreshedAt: now, active: true },
+      });
     }
+    // Annonser vi hämtat om utan att något ändrats räknas ändå som färska, så att
+    // källor som turas om att fräscha upp går vidare till nästa annons.
+    const unchangedIds = listings.filter((l) => existingById.has(l.id) && !changedIds.has(l.id)).map((l) => l.id);
+    if (unchangedIds.length) {
+      await prisma.listing.updateMany({ where: { id: { in: unchangedIds } }, data: { refreshedAt: now } });
+    }
+
     const { count: deactivated } = await prisma.listing.updateMany({
-      where: { active: true, id: { notIn: currentIds } },
+      where: { market, active: true, id: { notIn: activeIds } },
       data: { active: false },
     });
 
@@ -73,14 +145,23 @@ export async function runPoll(): Promise<PollResult> {
       ? await prisma.listing.findMany({ where: { id: { in: incomingNew.map((l) => l.id) } } })
       : [];
 
-    // Första körningen fyller bara databasen – annars skulle alla få 700 notiser.
-    const notified = isFirstRun ? 0 : await notifyWatches(newListings);
+    // Första körningen mot en tom marknad fyller bara databasen – annars skulle
+    // alla med en bevakning där få hundratals notiser på en gång.
+    const notified = isFirstRun ? 0 : await notifyWatches(market, newListings);
 
     await prisma.pollRun.update({
       where: { id: run.id },
-      data: { finishedAt: new Date(), ok: true, total: listings.length, newCount: newListings.length, notified },
+      data: { finishedAt: new Date(), ok: true, total: activeIds.length, newCount: newListings.length, notified },
     });
-    return { total: listings.length, newCount: newListings.length, updated: changed.length, deactivated, notified, runId: run.id };
+    return {
+      market,
+      total: activeIds.length,
+      newCount: newListings.length,
+      updated: changed.length,
+      deactivated,
+      notified,
+      runId: run.id,
+    };
   } catch (err) {
     await prisma.pollRun.update({
       where: { id: run.id },
@@ -90,10 +171,12 @@ export async function runPoll(): Promise<PollResult> {
   }
 }
 
-async function notifyWatches(newListings: Listing[]): Promise<number> {
+async function notifyWatches(market: Market, newListings: Listing[]): Promise<number> {
   if (!newListings.length) return 0;
+  // Bevakningar följer sin egen förmedling, oavsett vilken kö användaren står i
+  // just nu: man kan stå i flera köer.
   const watches = await prisma.watch.findMany({
-    where: { enabled: true },
+    where: { enabled: true, market },
     include: { user: { include: { pushSubscriptions: true } } },
   });
 

@@ -2,14 +2,18 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpDown, RotateCcw, X } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { SearchParams } from "@/lib/filters";
-import { DEFAULT_SORTS, SORT_OPTIONS, isDefaultSorts, withSorts, type Sort } from "@/lib/sort";
+import { DEFAULT_SORTS, isDefaultSorts, sortOptionsFor, withSorts, type Sort } from "@/lib/sort";
+import type { Market } from "@/lib/markets";
 
 /**
  * Sorteringsrad med flera nivåer. Klick på inaktivt piller lägger till det som
  * nästa nivå, klick på aktivt piller vänder riktningen, × tar bort nivån.
  */
-export async function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }) {
+export async function SortBar({ sorts, sp, market }: { sorts: Sort[]; sp: SearchParams; market: Market }) {
   const t = await getTranslations("sort");
+  // Bara sorteringar förmedlingen har underlag för: Syd och Uppsala saknar t.ex.
+  // både våningsplan och kötidsstatistik.
+  const options = sortOptionsFor(market);
   const explicit = isDefaultSorts(sorts) ? [] : sorts;
   const display = explicit.length ? explicit : DEFAULT_SORTS;
   const multi = display.length > 1;
@@ -20,7 +24,7 @@ export async function SortBar({ sorts, sp }: { sorts: Sort[]; sp: SearchParams }
         <span className="mr-1 inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
           <ArrowUpDown className="size-3.5" /> {t("label")}
         </span>
-        {SORT_OPTIONS.map((o) => {
+        {options.map((o) => {
           const idx = display.findIndex((s) => s.key === o.key);
           const active = idx >= 0;
           const current = active ? display[idx] : null;

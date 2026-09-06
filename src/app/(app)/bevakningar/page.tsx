@@ -10,6 +10,7 @@ import { WatchCard } from "@/components/watch-card";
 import { ProGate } from "@/components/pro-gate";
 import { describePlan, planState } from "@/lib/plan";
 import { formatDate } from "@/lib/format";
+import { marketOf } from "@/lib/markets";
 import type { Locale } from "@/i18n/config";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,7 +28,7 @@ export default async function WatchesPage() {
     prisma.watch.findMany({ where: { userId: session.user.id }, orderBy: { createdAt: "asc" } }),
   ]);
   const info = describePlan(planState(user), (k, v) => tPro(k, v), (d) => formatDate(d, locale));
-  const hits = await Promise.all(watches.map((w) => prisma.listing.count({ where: filtersToWhere(watchToFilters(w)) })));
+  const hits = await Promise.all(watches.map((w) => prisma.listing.count({ where: filtersToWhere(watchToFilters(w), marketOf(w.market)) })));
 
   return (
     <div className="space-y-6">

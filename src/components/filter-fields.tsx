@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AreaMap, Filters } from "@/lib/filters";
 import type { AreaCounts } from "@/lib/areas";
+import { marketInfo, type Market } from "@/lib/markets";
 
 /**
  * Gemensamma filterfält för lägenhetslistan och bevakningsformuläret.
@@ -14,14 +15,18 @@ export function FilterFields({
   initial,
   compact,
   counts,
+  market,
 }: {
   areas: AreaMap;
   initial: Partial<Filters>;
   compact?: boolean;
   /** Antal annonser per område med övriga filter applicerade. Utan counts visas inga siffror. */
   counts?: AreaCounts;
+  /** Förmedlingen filtren gäller; alla har inte samma uppgifter om annonserna. */
+  market: Market;
 }) {
   const t = useTranslations("filters");
+  const info = marketInfo(market);
   const [kommuner, setKommuner] = useState<string[]>(initial.kommuner ?? []);
   const [stadsdelar, setStadsdelar] = useState<string[]>(initial.stadsdelar ?? []);
 
@@ -98,7 +103,7 @@ export function FilterFields({
         <Range label={t("rooms")} name="Rum" min={initial.minRum} max={initial.maxRum} step="0.5" />
         <Range label={t("areaM2")} name="Yta" min={initial.minYta} max={initial.maxYta} />
         <Range label={t("rentPerMonth")} name="Hyra" min={initial.minHyra} max={initial.maxHyra} step="100" />
-        <Range label={t("floor")} name="Vaning" min={initial.minVaning} max={initial.maxVaning} />
+        {info.hasFloor && <Range label={t("floor")} name="Vaning" min={initial.minVaning} max={initial.maxVaning} />}
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
@@ -107,15 +112,18 @@ export function FilterFields({
         <Check name="nyproduktion" label={t("newBuildOnly")} checked={initial.nyproduktion} />
       </div>
 
-      <details className="rounded-xl border border-line bg-canvas p-3">
-        <summary className="cursor-pointer text-sm font-medium text-muted">{t("specialQueues")}</summary>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <Check name="inkluderaUngdom" label={t("includeYouth")} checked={initial.inkluderaUngdom} />
-          <Check name="inkluderaStudent" label={t("includeStudent")} checked={initial.inkluderaStudent} />
-          <Check name="inkluderaSenior" label={t("includeSenior")} checked={initial.inkluderaSenior} />
-          <Check name="inkluderaKorttid" label={t("includeShortTerm")} checked={initial.inkluderaKorttid} />
-        </div>
-      </details>
+      {/* Boplats Väst märker inte ut specialköer i annonserna, så där finns inget att välja bort. */}
+      {info.hasSpecialQueues && (
+        <details className="rounded-xl border border-line bg-canvas p-3">
+          <summary className="cursor-pointer text-sm font-medium text-muted">{t("specialQueues")}</summary>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <Check name="inkluderaUngdom" label={t("includeYouth")} checked={initial.inkluderaUngdom} />
+            <Check name="inkluderaStudent" label={t("includeStudent")} checked={initial.inkluderaStudent} />
+            <Check name="inkluderaSenior" label={t("includeSenior")} checked={initial.inkluderaSenior} />
+            <Check name="inkluderaKorttid" label={t("includeShortTerm")} checked={initial.inkluderaKorttid} />
+          </div>
+        </details>
+      )}
     </div>
   );
 }

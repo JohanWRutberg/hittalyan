@@ -167,20 +167,36 @@ function markerElement(g: Group, index: number) {
   return el;
 }
 
+/** Kartans synliga utsnitt, i grader. */
+export interface MapBounds {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}
+
 export function ListingsMap({
   points,
   market,
   userYears = null,
   sticky = false,
+  onBoundsChange,
 }: {
   points: MapPoint[];
   /** Förmedlingen som visas; dess stad är kartans utgångsläge */
   market: Market;
   userYears?: number | null;
   sticky?: boolean;
+  /** Anropas när kartan flyttats eller zoomats, så listan kan följa utsnittet. */
+  onBoundsChange?: (bounds: MapBounds) => void;
 }) {
   const { lat, lng } = marketInfo(market).center;
   const center: [number, number] = [lng, lat];
+  // Via ref, så att kartan inte byggs om när föräldern får en ny callback.
+  const onBoundsRef = useRef(onBoundsChange);
+  useEffect(() => {
+    onBoundsRef.current = onBoundsChange;
+  }, [onBoundsChange]);
   const t = useTranslations("listings.map");
   const tChance = useTranslations("chance");
   const tListing = useTranslations("listings");
@@ -230,6 +246,13 @@ export function ListingsMap({
         m.addControl(new maplibregl.FullscreenControl(), "top-right");
         m.on("load", () => {
           if (!cancelled) setReady(true);
+        });
+        // Rapportera utsnittet när kartan stannat. `moveend` täcker både panorering,
+        // zoom och den inledande inramningen av annonserna.
+        m.on("moveend", () => {
+          if (cancelled) return;
+          const b = m.getBounds();
+          onBoundsRef.current?.({ west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() });
         });
         m.on("error", (e) => {
           if (!m.loaded()) {

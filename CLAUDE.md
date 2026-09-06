@@ -233,6 +233,27 @@ Korten använder medvetet vanliga `<img>` med `loading="lazy"`, **inte** `next/i
 Vercels Hobby-plan har en månadskvot för bildoptimeringar som ~1 400 annonser med flera
 bilder var skulle äta upp i onödan, och bilderna är redan färdigskalade hos källan.
 
+## Listan och kartan
+
+I **inloggat läge** hämtas hela träfflistan i en enda fråga och skickas till webbläsaren,
+som sköter både filtrering efter kartans utsnitt och sidbläddring (`listings-browser.tsx`).
+Hela Stockholm är ~33 kB brotli, mindre än ett enda annonsfoto, så det är billigare att
+skicka allt än att fråga servern varje gång kartan flyttas.
+
+- **Att panorera kartan, byta sida eller ändra antal per sida kostar noll anrop.**
+  Gör det inte till serveranrop igen: en enda panorering hade då blivit en full sidladdning.
+- Det tog samtidigt bort tre frågor per sidvisning (antal, antal nya, och en separat
+  hämtning för kartan) – de räknas nu fram ur listan som redan är hämtad.
+- Sorteringen ligger kvar på servern. Listan kommer sorterad, och både filtrering och
+  paginering i webbläsaren bevarar ordningen.
+- Annonser utan koordinater filtreras aldrig bort av kartutsnittet; de ska inte försvinna
+  för att förmedlingen saknar position.
+- Antal per sida (10/25/50/75/100) är en ren webbläsarinställning i localStorage,
+  se `page-size.ts`.
+
+**Utloggat läge har kvar serverpaginering** och sitt eget tak, eftersom det ändå saknar
+filter och sortering.
+
 ## Favoriter
 
 Pro-användare kan spara annonser (`Favorite`). De nås under fliken Favoriter på

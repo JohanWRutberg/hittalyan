@@ -188,6 +188,21 @@
       "popupChanceTitle": "Liknande lägenheter: {q1}–{q3} års kötid",
       "etAl": "m.fl.",
       "popupAverageTitle": "Liknande bostäder i området har krävt {years} kötid i snitt."
+    },
+    "viewport": {
+      "showing": "Visar {count} av {total} i kartans utsnitt.",
+      "showingAll": "Visar alla {total} annonser, oavsett kartans utsnitt.",
+      "showAll": "Visa alla",
+      "followMap": "Följ kartan",
+      "empty": "Inga annonser i den här delen av kartan. Zooma ut eller flytta kartan."
+    },
+    "perPage": {
+      "label": "Per sida"
+    },
+    "pagination": {
+      "label": "Sidbläddring",
+      "previous": "Föregående sida",
+      "next": "Nästa sida"
     }
   },
   "filters": {

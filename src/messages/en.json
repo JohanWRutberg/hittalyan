@@ -188,6 +188,21 @@
       "popupChanceTitle": "Similar apartments: {q1}–{q3} years in the queue",
       "etAl": "et al.",
       "popupAverageTitle": "Similar homes in this area required {years} in the queue on average."
+    },
+    "viewport": {
+      "showing": "Showing {count} of {total} within the map view.",
+      "showingAll": "Showing all {total} listings, regardless of the map view.",
+      "showAll": "Show all",
+      "followMap": "Follow the map",
+      "empty": "No listings in this part of the map. Zoom out or move the map."
+    },
+    "perPage": {
+      "label": "Per page"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous page",
+      "next": "Next page"
     }
   },
   "filters": {

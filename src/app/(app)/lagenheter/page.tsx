@@ -18,6 +18,7 @@ import { watchToFilters } from "@/lib/watch-filters";
 import { FilterPanel } from "@/components/filter-panel";
 import { ListingCard } from "@/components/listing-card";
 import { ListingsMap, type MapPoint } from "@/components/listings-map";
+import { ListingsBrowser } from "@/components/listings-browser";
 import { SortBar } from "@/components/sort-bar";
 import { PushGuide } from "@/components/push-guide";
 import { parseSorts, sortsToOrderBy } from "@/lib/sort";
@@ -27,6 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("listings") };
 }
 
+/** Sidbläddring sker i webbläsaren; det här är bara ett tak på hur mycket vi skickar dit. */
+const MAX_LISTINGS = 2000;
+
+/** Utloggade bläddrar fortfarande på servern. */
 const PAGE_SIZE = 60;
 
 export default async function ListingsPage({ searchParams }: PageProps<"/lagenheter">) {
@@ -49,42 +54,30 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
     }
   }
   const info = marketInfo(market);
-  const page = Math.max(1, Number(sp.sida ?? 1) || 1);
   const where = filtersToWhere(filters, market);
   const sorts = parseSorts(sp, market);
   // Antal per område: samma filter som listan, men utan valda kommuner/stadsdelar
   const areaWhere = filtersToWhere({ ...filters, kommuner: [], stadsdelar: [] }, market);
 
-  const [areas, total, listings, newLast24h, lastRun, queueDate, mapRows, areaCounts, me] = await Promise.all([
+  // Hela träfflistan hämtas i **en** fråga och skickas till webbläsaren, som sköter
+  // filtrering efter kartans utsnitt och "visa fler". Det tog bort tre frågor per
+  // sidvisning (antal, antal nya och en separat hämtning för kartan), och gör att
+  // panorering av kartan inte kostar ett enda anrop.
+  const [areas, listings, lastRun, queueDate, areaCounts, me] = await Promise.all([
     getAreaMap(market),
-    prisma.listing.count({ where }),
-    prisma.listing.findMany({
-      where,
-      orderBy: sortsToOrderBy(sorts, market),
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-    }),
-    // Samma filter som listan, så "nya" alltid är en delmängd av totalen
-    prisma.listing.count({ where: { AND: [where, { firstSeenAt: { gte: dayAgo() } }] } }),
+    prisma.listing.findMany({ where, orderBy: sortsToOrderBy(sorts, market), take: MAX_LISTINGS }),
     prisma.pollRun.findFirst({ where: { ok: true, market }, orderBy: { startedAt: "desc" } }),
     getQueueDate(session.user.id, market),
-    prisma.listing.findMany({
-      where: { ...where, lat: { not: null }, lng: { not: null } },
-      orderBy: [{ firstSeenAt: "desc" }, { id: "desc" }],
-      take: 1500,
-      select: {
-        id: true, lat: true, lng: true, gatuadress: true, stadsdel: true, kommun: true,
-        antalRum: true, yta: true, hyra: true, vaning: true, url: true, nyproduktion: true, firstSeenAt: true,
-        kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
-      },
-    }),
     getAreaCounts(areaWhere),
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
   ]);
+  const total = listings.length;
+  const cutoff = dayAgo();
+  const newLast24h = listings.filter((l) => l.firstSeenAt >= cutoff).length;
 
-  // Favoriter är en Pro-funktion. Hela användarens lista hämtas, inte bara
-  // sidans 60 kort: kartan visar upp till 1 500 annonser och de ska också få
-  // hjärta. En användares favoriter är en liten mängd.
+  // Favoriter är en Pro-funktion. Hela användarens lista hämtas: kartan visar
+  // fler annonser än korten, och alla ska kunna få hjärta. En användares
+  // favoriter är en liten mängd.
   const canFavorite = hasPro(me);
   const favoriteIds = canFavorite
     ? new Set(
@@ -94,30 +87,8 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
       )
     : new Set<string>();
 
-  const cutoff = dayAgo();
-  const mapPoints: MapPoint[] = mapRows.map((r) => ({
-    id: r.id,
-    lat: r.lat!,
-    lng: r.lng!,
-    gatuadress: r.gatuadress,
-    stadsdel: r.stadsdel,
-    kommun: r.kommun,
-    antalRum: r.antalRum,
-    yta: r.yta,
-    hyra: r.hyra,
-    vaning: r.vaning,
-    url: r.url,
-    nyproduktion: r.nyproduktion,
-    kotidQ1: r.kotidQ1,
-    kotidQ3: r.kotidQ3,
-    kotidSnitt: r.kotidSnitt,
-    sokande: r.sokande,
-    isNew: r.firstSeenAt >= cutoff,
-    favorited: favoriteIds.has(r.id),
-  }));
 
   const activeCount = countActiveFilters(filters);
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const qt = queueDate ? queueTime(queueDate) : null;
   const userYears = queueDate ? queueYears(queueDate) : null;
 
@@ -161,42 +132,15 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} market={market} />
 
       <HoveredListingProvider initialFavorites={[...favoriteIds]}>
-        <div className="space-y-6">
-          <ListingsMap points={mapPoints} market={market} userYears={userYears} sticky />
-
-          <SortBar sorts={sorts} sp={sp} market={market} />
-
-          {listings.length === 0 ? (
-            <div className="card p-12 text-center text-muted">{t("empty")}</div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {listings.map((l, i) => (
-                <ListingCard
-                  key={l.id}
-                  listing={l}
-                  index={i}
-                  userYears={userYears}
-                  canFavorite={canFavorite}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <ListingsBrowser
+          listings={listings}
+          market={market}
+          userYears={userYears}
+          canFavorite={canFavorite}
+          sortBar={<SortBar sorts={sorts} sp={sp} market={market} />}
+        />
       </HoveredListingProvider>
 
-      {pages > 1 && (
-        <nav className="flex items-center justify-center gap-2 text-sm">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
-            const q = new URLSearchParams(Object.entries(sp).flatMap(([k, v]) => (v == null ? [] : Array.isArray(v) ? v.map((x) => [k, x]) : [[k, v]])) as [string, string][]);
-            q.set("sida", String(p));
-            return (
-              <Link key={p} href={`/lagenheter?${q}`} className={p === page ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}>
-                {p}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
     </div>
   );
 }

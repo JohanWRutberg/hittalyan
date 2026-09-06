@@ -287,6 +287,13 @@ dag ändras över tid), avaktiverar borttagna och notifierar matchande bevakning
 Frågorna är batchade eftersom serverless-funktioner har kort tidsgräns. En hel körning
 tar ungefär 20–25 sekunder.
 
+- **Cron-jobbet anropar en förmedling i taget** (`?market=<kod>`), så att var och en får
+  hela funktionens 60 sekunder för sig. När alla fyra trängdes i samma anrop slog
+  bildhämtningen i taket och Vercel svarade 504.
+- **`DEFAULT_RUN_MS` gäller hela körningen**, inte bara extraanropen. Listhämtningar och
+  databasskrivningar räknas in – de är långsammare i produktion än lokalt, och det var
+  precis det som missades första gången. Hinner inte en förmedling med hoppas den över
+  och tas nästa körning (`skipped` i svaret).
 - **Adminsidan har `maxDuration = 60`.** Knappen "kör hämtning" är en server action mot
   den sidans route, och en hel körning tar 20–25 sekunder – mer än Vercels standardgräns.
 - **Tidsbudgeten för extraanrop delas.** `EXTRA_FETCH_BUDGET_MS` i `poll.ts` ligger med

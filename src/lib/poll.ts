@@ -8,11 +8,18 @@ import { SOURCES } from "@/lib/sources";
 import type { KnownListing } from "@/lib/sources";
 
 /**
- * Hela pollningens budget för extraanrop (bildhämtning, objektsidor). Ligger med
- * marginal under `maxDuration` i /api/cron/poll, som är 60 sekunder, så att det
- * finns tid över för själva listhämtningarna och databasskrivningarna.
+ * Hur länge en körning får hålla på totalt. Ligger med marginal under
+ * `maxDuration` (60 s) i /api/cron/poll och på adminsidan.
+ *
+ * Gränsen gäller **hela** körningen, inte bara extraanropen. Tidigare mättes bara
+ * bildhämtningen, medan listhämtningar och databasskrivningar låg utanför – och
+ * eftersom de är långsammare i produktion än lokalt slog körningen i taket och
+ * Vercel svarade 504.
  */
-const EXTRA_FETCH_BUDGET_MS = 35_000;
+const DEFAULT_RUN_MS = 40_000;
+
+/** Tid som hålls undan för databasskrivningarna efter att hämtningen är klar. */
+const WRITE_RESERVE_MS = 10_000;
 
 export interface MarketPollResult {
   market: Market;
@@ -22,6 +29,13 @@ export interface MarketPollResult {
   deactivated: number;
   notified: number;
   runId: string;
+}
+
+export interface PollOptions {
+  /** Kör bara den här förmedlingen. Utan den körs alla i tur och ordning. */
+  market?: Market;
+  /** Absolut tidsgräns (epoch-ms) för hela körningen. */
+  deadline?: number;
 }
 
 export interface PollResult {
@@ -34,27 +48,40 @@ export interface PollResult {
   markets: MarketPollResult[];
   /** Förmedlingar som inte gick att hämta, med felmeddelande */
   failed: { market: Market; error: string }[];
+  /** Förmedlingar som hoppades över för att tiden tog slut; de tas nästa körning. */
+  skipped: Market[];
 }
 
 /**
- * Kör en hämtning för varje förmedling. Körningarna är oberoende: går Boplats Väst
- * ned ska Stockholm ändå uppdateras. Fel samlas i `failed` och kastas bara om
- * ingen enda förmedling gick att hämta.
+ * Kör en hämtning för en eller alla förmedlingar. Körningarna är oberoende: går
+ * Boplats Väst ned ska Stockholm ändå uppdateras. Fel samlas i `failed` och kastas
+ * bara om ingen enda förmedling gick att hämta.
+ *
+ * Cron-jobbet anropar en förmedling i taget, så att var och en får hela
+ * funktionens tidsgräns för sig. `runPoll()` utan `market` kör alla i tur och
+ * ordning och hoppar över dem som inte hinns med – de tas nästa körning.
  */
-export async function runPoll(): Promise<PollResult> {
+export async function runPoll(options: PollOptions = {}): Promise<PollResult> {
+  const todo = options.market ? [options.market] : MARKETS;
+  const runEnd = options.deadline ?? Date.now() + DEFAULT_RUN_MS;
   const markets: MarketPollResult[] = [];
   const failed: { market: Market; error: string }[] = [];
+  const skipped: Market[] = [];
 
-  // Budgeten delas bara mellan de förmedlingar som behöver extraanrop, och delas
-  // om efter varje: blir en klar snabbt får nästa mer tid, och en långsam källa
-  // kan aldrig svälta dem som kommer efter.
-  const budgetEnd = Date.now() + EXTRA_FETCH_BUDGET_MS;
-  let budgetUsersLeft = MARKETS.filter((m) => SOURCES[m].usesFetchBudget).length;
+  // Tiden delas bara mellan de förmedlingar som behöver extraanrop, och delas om
+  // efter varje: blir en klar snabbt får nästa mer tid, och en långsam källa kan
+  // aldrig svälta dem som kommer efter.
+  let budgetUsersLeft = todo.filter((m) => SOURCES[m].usesFetchBudget).length;
 
-  for (const market of MARKETS) {
+  for (const market of todo) {
+    if (Date.now() >= runEnd) {
+      skipped.push(market);
+      continue;
+    }
     let deadline = Date.now();
     if (SOURCES[market].usesFetchBudget) {
-      deadline = Date.now() + Math.max(0, budgetEnd - Date.now()) / budgetUsersLeft;
+      const left = Math.max(0, runEnd - Date.now() - WRITE_RESERVE_MS);
+      deadline = Date.now() + left / budgetUsersLeft;
       budgetUsersLeft -= 1;
     }
     try {
@@ -65,8 +92,8 @@ export async function runPoll(): Promise<PollResult> {
     }
   }
 
-  if (!markets.length) {
-    throw new Error(failed.map((f) => `${marketInfo(f.market).name}: ${f.error}`).join(" · ") || "Ingen förmedling kunde hämtas");
+  if (!markets.length && failed.length) {
+    throw new Error(failed.map((f) => `${marketInfo(f.market).name}: ${f.error}`).join(" · "));
   }
 
   const sum = (pick: (m: MarketPollResult) => number) => markets.reduce((a, m) => a + pick(m), 0);
@@ -76,9 +103,10 @@ export async function runPoll(): Promise<PollResult> {
     updated: sum((m) => m.updated),
     deactivated: sum((m) => m.deactivated),
     notified: sum((m) => m.notified),
-    runId: markets[markets.length - 1].runId,
+    runId: markets[markets.length - 1]?.runId ?? "",
     markets,
     failed,
+    skipped,
   };
 }
 
@@ -86,7 +114,7 @@ export async function runPoll(): Promise<PollResult> {
  * Hämtar en förmedlings annonser, sparar nya, uppdaterar ändrade, avaktiverar
  * borttagna och notifierar bevakningar som matchar de nya annonserna.
  */
-export async function runMarketPoll(market: Market, deadline = Date.now() + EXTRA_FETCH_BUDGET_MS): Promise<MarketPollResult> {
+export async function runMarketPoll(market: Market, deadline = Date.now() + DEFAULT_RUN_MS - WRITE_RESERVE_MS): Promise<MarketPollResult> {
   const run = await prisma.pollRun.create({ data: { market } });
   try {
     const existing = await prisma.listing.findMany({

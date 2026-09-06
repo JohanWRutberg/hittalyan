@@ -15,6 +15,19 @@ jobs:
     steps:
       - name: Trigger poll
         run: |
-          curl --fail --silent --show-error --max-time 120 --location \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.APP_URL }}/api/cron/poll"
+          # En förmedling per anrop: då får var och en hela funktionens tidsgräns
+          # för sig, och en långsam källa kan inte tvinga fram en 504 för de andra.
+          # Alla fyra försöks även om någon misslyckas.
+          fail=0
+          for market in stockholm vast syd uppsala; do
+            echo "--- $market"
+            if curl --fail --silent --show-error --max-time 120 --location \
+                 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+                 "${{ secrets.APP_URL }}/api/cron/poll?market=$market"; then
+              echo
+            else
+              echo "::warning::pollningen misslyckades för $market"
+              fail=1
+            fi
+          done
+          exit $fail

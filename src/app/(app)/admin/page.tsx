@@ -10,6 +10,14 @@ import { describePlan, planState } from "@/lib/plan";
 import type { Locale } from "@/i18n/config";
 import { MARKETS, marketInfo, marketOf } from "@/lib/markets";
 
+/**
+ * Knappen "kör hämtning" anropar runPoll() som en server action, alltså mot den
+ * här sidans route. En hel körning tar 20–25 sekunder sedan bildhämtningen kom
+ * till, vilket är mer än Vercels standardgräns – därför samma 60 sekunder som
+ * cron-endpointen.
+ */
+export const maxDuration = 60;
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("meta.pages");
   return { title: t("admin") };

@@ -266,6 +266,8 @@ dag ändras över tid), avaktiverar borttagna och notifierar matchande bevakning
 Frågorna är batchade eftersom serverless-funktioner har kort tidsgräns. En hel körning
 tar ungefär 20–25 sekunder.
 
+- **Adminsidan har `maxDuration = 60`.** Knappen "kör hämtning" är en server action mot
+  den sidans route, och en hel körning tar 20–25 sekunder – mer än Vercels standardgräns.
 - **Tidsbudgeten för extraanrop delas.** `EXTRA_FETCH_BUDGET_MS` i `poll.ts` ligger med
   marginal under `maxDuration` (60 s) i cron-endpointen, och delas bara mellan de källor
   som satt `usesFetchBudget` (Stockholm och Väst). En källa kan aldrig svälta dem som

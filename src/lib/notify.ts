@@ -144,6 +144,70 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
   return anyOk;
 }
 
+// ---------- Kontaktformulär ----------
+
+/** Adress som kontaktformuläret går till. */
+export const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? "hittalyanse@gmail.com";
+
+/**
+ * Meddelande från kontaktformuläret. Avsändaren måste vara en verifierad
+ * avsändaradress hos Resend, så användarens adress läggs som `replyTo`:
+ * då går det att svara direkt i mailklienten.
+ */
+export async function sendContactEmail(opts: {
+  name: string;
+  email: string;
+  subjectLabel: string;
+  message: string;
+  market: string;
+  plan: string;
+}): Promise<boolean> {
+  const subject = `[Hitta Lyan] ${opts.subjectLabel} – ${opts.name}`;
+  const rows: [string, string][] = [
+    ["Namn", opts.name],
+    ["E-post", opts.email],
+    ["Ämne", opts.subjectLabel],
+    ["Kö", opts.market],
+    ["Plan", opts.plan],
+  ];
+  const html = `<!doctype html>
+<html lang="sv"><body style="margin:0;background:#f4f8fa;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(15,23,42,.08)">
+      <h1 style="margin:0 0 16px;font-size:19px">${escapeHtml(opts.subjectLabel)}</h1>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        ${rows
+          .map(
+            ([k, v]) =>
+              `<tr><td style="padding:4px 12px 4px 0;color:#64748b;white-space:nowrap">${escapeHtml(k)}</td><td style="padding:4px 0">${escapeHtml(v)}</td></tr>`,
+          )
+          .join("")}
+      </table>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e6eef2;white-space:pre-wrap;font-size:15px;line-height:1.5">${escapeHtml(opts.message)}</div>
+    </div>
+  </div>
+</body></html>`;
+
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.log(`[mail:dev] Kontakt till ${CONTACT_EMAIL} — ${subject}\n${opts.message}`);
+    return true; // lokalt utan nyckel räknas det som skickat, annars går formuläret aldrig att prova
+  }
+  const resend = new Resend(key);
+  const { error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>",
+    to: CONTACT_EMAIL,
+    replyTo: opts.email,
+    subject,
+    html,
+  });
+  if (error) {
+    console.error("[mail] kontaktfel:", error);
+    return false;
+  }
+  return true;
+}
+
 // ---------- Engångskoder (glömt lösenord, byte av e-post) ----------
 
 export type OtpType = "sign-in" | "email-verification" | "forget-password" | "change-email";

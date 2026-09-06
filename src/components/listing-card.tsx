@@ -7,6 +7,8 @@ import { useMediaQuery } from "@/lib/use-media-query";
 import type { Listing } from "@/generated/prisma/client";
 import { formatDate, formatNumber, formatVaning, formatYta, isRecent } from "@/lib/format";
 import { ChanceMeter } from "@/components/chance-meter";
+import { ListingImages } from "@/components/listing-images";
+import { FavoriteButton } from "@/components/favorite-button";
 import { useHoveredListing } from "@/components/hovered-listing";
 import type { Locale } from "@/i18n/config";
 import { marketInfo, marketOf } from "@/lib/markets";
@@ -22,11 +24,14 @@ export function ListingCard({
   index = 0,
   userYears = null,
   showChance = true,
+  favorited,
 }: {
   listing: ListingLike;
   index?: number;
   userYears?: number | null;
   showChance?: boolean;
+  /** Undefined när favoriter inte är tillgängliga (utloggad eller utan Pro) */
+  favorited?: boolean;
 }) {
   const t = useTranslations("listings");
   const tc = useTranslations("common");
@@ -53,17 +58,32 @@ export function ListingCard({
     l.hiss && { key: "hiss", cls: "" },
   ].filter(Boolean) as { key: string; cls: string }[];
 
+  const images = l.images ?? [];
+
   return (
-    <motion.a
-      href={l.url}
-      target="_blank"
-      rel="noreferrer"
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index, 12) * 0.03, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -2 }}
+      // Hovern ligger på hela kortet, inte bara länken, så att bildspelet också
+      // markerar huset på kartan.
       onMouseEnter={noHover ? undefined : () => setHovered(l.id)}
       onMouseLeave={noHover ? undefined : () => setHovered(null)}
+      className={`card group relative flex flex-col overflow-hidden transition hover:shadow-lift ${armed ? "ring-2 ring-blue-500/60" : ""}`}
+    >
+      {/* Bildspel och hjärta ligger utanför länken: en knapp får inte ligga i en <a>. */}
+      <ListingImages images={images} alt={`${l.gatuadress}, ${l.stadsdel}`} />
+      {favorited !== undefined && (
+        <div className="absolute right-3 top-3 z-10">
+          <FavoriteButton listingId={l.id} initial={favorited} />
+        </div>
+      )}
+
+    <a
+      href={l.url}
+      target="_blank"
+      rel="noreferrer"
       onFocus={noHover ? undefined : () => setHovered(l.id)}
       onBlur={noHover ? undefined : () => setHovered(null)}
       onClick={(e) => {
@@ -79,7 +99,7 @@ export function ListingCard({
         setArmedId(null);
       }}
       aria-describedby={armed ? `tap-${l.id}` : undefined}
-      className={`card group flex flex-col gap-3 p-5 transition hover:shadow-lift ${armed ? "ring-2 ring-blue-500/60" : ""}`}
+      className="flex flex-1 flex-col gap-3 p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -146,7 +166,8 @@ export function ListingCard({
           </span>
         </div>
       </div>
-    </motion.a>
+    </a>
+    </motion.div>
   );
 }
 

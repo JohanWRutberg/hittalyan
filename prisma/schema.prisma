@@ -44,6 +44,7 @@ model User {
   accounts          Account[]
   queues            UserQueue[]
   watches           Watch[]
+  favorites         Favorite[]
   pushSubscriptions PushSubscription[]
   notifications     Notification[]
 
@@ -154,6 +155,12 @@ model Listing {
   kotidSnitt    Float?
   /// Antal sökande just nu (Boplats Väst, Boplats Syd, Uppsala)
   sokande       Int?
+  /// Bild-URL:er hos förmedlingen, i visningsordning. Första är omslagsbilden.
+  /// Vi lagrar adresser, inte bilder: de ligger kvar hos källan.
+  images        String[] @default([])
+  /// När vi senast försökte hämta bilder. Skiljer "har inga bilder" från "inte
+  /// försökt än", så att annonser utan bilder inte hämtas om i all evighet.
+  imagesCheckedAt DateTime?
 
   firstSeenAt   DateTime  @default(now())
   lastSeenAt    DateTime  @default(now())
@@ -163,6 +170,7 @@ model Listing {
   active        Boolean   @default(true)
 
   notifications Notification[]
+  favorites     Favorite[]
 
   @@unique([market, externalId])
   @@index([market, kommun, stadsdel])
@@ -210,6 +218,20 @@ model Watch {
 
   @@index([userId])
   @@index([market])
+}
+
+/// En annons en Pro-användare sparat. Ligger kvar tills användaren tar bort den
+/// eller annonsen städas bort ur databasen.
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId, createdAt])
 }
 
 model PushSubscription {

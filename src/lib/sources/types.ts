@@ -40,6 +40,12 @@ export interface SourceListing {
   kotidSnitt: number | null;
   /** Antal sökande just nu */
   sokande: number | null;
+  /**
+   * Bild-URL:er hos förmedlingen, i visningsordning.
+   * `undefined` betyder "inte hämtat den här körningen" och lämnar det som redan
+   * finns sparat i fred; en tom lista betyder "hämtat, men annonsen saknar bilder".
+   */
+  images?: string[];
 }
 
 export interface SourceResult {
@@ -57,16 +63,32 @@ export interface KnownListing {
   refreshedAt: Date;
   /** Redan hämtad kötidsstatistik, som ändras för långsamt för att hämtas om */
   kotidSnitt: number | null;
+  /** Har vi redan bilder? Källor som behöver ett extra anrop hämtar bara dem som saknar. */
+  hasImages: boolean;
+  /**
+   * När vi senast försökte hämta bilder, eller null om vi aldrig gjort det.
+   * Skiljer "annonsen har inga bilder" från "inte försökt än", så att bildlösa
+   * annonser inte hämtas om varje körning.
+   */
+  imagesCheckedAt: Date | null;
 }
 
 export interface Source {
   market: Market;
   /**
-   * Hämtar aktuella annonser. `known` är annonser vi redan har. Källor som
-   * behöver ett extra anrop per annons använder den för att bara hämta nya och
-   * ett fåtal äldre per körning.
+   * Behöver källan extraanrop per annons (och därmed en del av tidsbudgeten)?
+   * Källor som får allt i ett svar sätter inte den här och lämnar budgeten
+   * till dem som faktiskt behöver den.
    */
-  fetchListings(known: ReadonlyMap<string, KnownListing>): Promise<SourceResult>;
+  usesFetchBudget?: boolean;
+  /**
+   * Hämtar aktuella annonser. `known` är annonser vi redan har; källor som
+   * behöver ett extra anrop per annons använder den för att bara hämta det som
+   * saknas. `deadline` (epoch-ms) är hur länge källan får hålla på med sådana
+   * extraanrop innan resten ska lämnas till nästa körning – hela pollningen
+   * delar på Vercels tidsgräns.
+   */
+  fetchListings(known: ReadonlyMap<string, KnownListing>, deadline: number): Promise<SourceResult>;
 }
 
 export const USER_AGENT =

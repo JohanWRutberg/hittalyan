@@ -12,7 +12,10 @@
       "admin": "Admin",
       "pro": "Pro",
       "login": "Log in",
-      "register": "Create account"
+      "register": "Create account",
+      "contact": "Contact",
+      "about": "About us",
+      "disclaimer": "Disclaimer"
     }
   },
   "common": {
@@ -32,7 +35,8 @@
     "viewListings": "View apartments",
     "language": "Language",
     "swedish": "Svenska",
-    "english": "English"
+    "english": "English",
+    "send": "Send"
   },
   "nav": {
     "listings": "Apartments",
@@ -66,7 +70,6 @@
         "text": "See how many years and days you have been in your housing queue, always up to date."
       }
     },
-    "footer": "Hitta Lyan is an independent service and is not affiliated with Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB or Uppsala bostadsförmedling.",
     "cities": {
       "title": "Four queues, one service",
       "lead": "Choose the housing agency you are queuing with, and that is what you see. Switch whenever you like."
@@ -156,7 +159,10 @@
       "similarRequired": " · similar ones required {q1}–{q3} years in the queue",
       "tapAgain": "Tap again to open the listing",
       "applicants": "{count} applicants so far",
-      "applicantsShort": "Applicants"
+      "applicantsShort": "Applicants",
+      "prevImage": "Previous image",
+      "nextImage": "Next image",
+      "noImage": "This listing has no photo"
     },
     "tags": {
       "nyproduktion": "New build",
@@ -671,5 +677,131 @@
     "accountTitle": "Your housing queue",
     "accountLead": "You see listings from one agency at a time. Switch whenever you like.",
     "accountNote": "Your queue time is saved per queue, so it is still there if you switch back. Watches you have already created keep notifying you about their own queue, whichever one you are in now."
+  },
+  "favorites": {
+    "title": "Favourites",
+    "lead": "Listings you have saved. They stay here until you remove them or the listing disappears.",
+    "add": "Save as favourite",
+    "remove": "Remove from favourites",
+    "gateWhat": "save favourites",
+    "expiredNotice": "Dimmed listings are no longer available at the agency.",
+    "empty": {
+      "title": "No favourites yet",
+      "lead": "Tap the heart on a listing to save it here.",
+      "cta": "Browse apartments"
+    }
+  },
+  "contact": {
+    "title": "Contact us",
+    "lead": "Write to us and we will reply to the address on your account.",
+    "name": "Name",
+    "email": "Email address",
+    "fromAccount": "Your name and address come from your account. You can change them under Account.",
+    "subject": "What is it about?",
+    "subjectPlaceholder": "Choose a topic",
+    "subjects": {
+      "konto": "Question about my account",
+      "pro": "Pro and payment",
+      "bugg": "Something is not working",
+      "annons": "Error in a listing",
+      "forslag": "Suggestion for improvement",
+      "ovrigt": "Something else"
+    },
+    "message": "Message",
+    "messagePlaceholder": "Please be as specific as you can. If something is not working, it helps to know which page and which device you were using.",
+    "sending": "Sending …",
+    "sent": {
+      "title": "Thanks, your message is on its way",
+      "lead": "We will reply to {email} as soon as we can."
+    },
+    "errors": {
+      "subject": "Please choose what your message is about.",
+      "tooShort": "Please write a little more so we understand what it is about.",
+      "tooLong": "The message can be at most {max} characters.",
+      "send": "The message could not be sent right now. Please try again shortly."
+    }
+  },
+  "footer": {
+    "tagline": "Tracks new rental apartments at four housing agencies and gets in touch the moment something matches.",
+    "service": "Service",
+    "contact": "Contact us",
+    "about": "About",
+    "aboutUs": "About us",
+    "disclaimer": "Disclaimer",
+    "cookieSettings": "Cookie settings",
+    "sources": "Data comes from {list}.",
+    "independent": "An independent service, not affiliated with the housing agencies."
+  },
+  "cookies": {
+    "title": "May we measure how the site is used?",
+    "lead": "We already use necessary cookies for signing in, language and your chosen queue. On top of those we would like to use Google Analytics to see what works and what does not. You can say no without losing any functionality.",
+    "readMore": "Read more",
+    "accept": "Yes, that's fine",
+    "deny": "No thanks"
+  },
+  "about": {
+    "title": "About Hitta Lyan",
+    "lead": "A tracking service for people in a Swedish housing queue.",
+    "sections": {
+      "what": {
+        "title": "What the service does",
+        "body": "Hitta Lyan keeps an eye on new rental apartments at Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd and Uppsala bostadsförmedling. You save a filter for what you are looking for, and get an email and a notification the moment a listing matches. You choose which queue you belong to and see one at a time."
+      },
+      "why": {
+        "title": "Why it exists",
+        "body": "The agencies' own sites are built for you to search yourself, whenever you happen to think of it. Attractive apartments are often listed for only a few days, and it is easy to miss one simply because you looked on the wrong day. The idea behind Hitta Lyan is simple: you should not have to keep checking manually."
+      },
+      "how": {
+        "title": "How it works",
+        "body": "Every thirty minutes we fetch the current listings from the agencies, compare them against your watches and get in touch when something new matches. We also show an estimate of your odds, based on the agencies' own statistics on how much queue time similar homes have required."
+      },
+      "independent": {
+        "title": "Independent of the agencies",
+        "body": "Hitta Lyan is not run by, and has no connection to, any of the housing agencies. We do not let any homes and we do not accept applications. All applications are made at the agency, using your ordinary account there."
+      },
+      "money": {
+        "title": "How the service is funded",
+        "body": "Browsing listings, filtering and using the map is free. Watches with email and push, and the ability to save favourites, are part of Pro, which is a paid subscription. We do not sell your data to anyone."
+      }
+    }
+  },
+  "disclaimer": {
+    "title": "Disclaimer",
+    "lead": "In short: what you can and cannot expect from this service.",
+    "updated": "If you have questions about any of this, you are welcome to contact us.",
+    "sections": {
+      "source": {
+        "title": "The data comes from others",
+        "body": "All listings and their details are fetched from the housing agencies' own websites. We do not create any content ourselves and cannot change what a listing says. What the agency shows always takes precedence over what is shown here."
+      },
+      "accuracy": {
+        "title": "We cannot guarantee accuracy",
+        "body": "We fetch fresh data every thirty minutes, but a listing may have changed, been removed or been given new terms since then. Details can also be misread when we parse them. Always check with the agency before making a decision."
+      },
+      "noAffiliation": {
+        "title": "No affiliation with the agencies",
+        "body": "Hitta Lyan is an independent service with no connection to Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB or Uppsala bostadsförmedling. Their names are used only to describe where the data comes from."
+      },
+      "noApplication": {
+        "title": "We do not let any homes",
+        "body": "You cannot apply for an apartment through Hitta Lyan. You apply at the agency using your account there, and it is their queue rules and terms that decide who gets the home."
+      },
+      "chance": {
+        "title": "The odds meter is an estimate",
+        "body": "The assessment is based on the agencies' own statistics on previously let homes, and on the queue date you entered yourself. It says something about how your queue time compares to others, but it is not a prediction. The underlying data also differs between cities: Stockholm reports quartiles, Boplats Väst an area average, and Boplats Syd and Uppsala no queue-time statistics at all."
+      },
+      "queueTime": {
+        "title": "You enter your queue time yourself",
+        "body": "None of the agencies offer a login that would let us fetch your queue time automatically. The date you enter under Account is used only to work out your queue time and show your odds. If the date is wrong, so is the assessment."
+      },
+      "availability": {
+        "title": "The service may be unavailable",
+        "body": "We cannot promise that the service always works or that every notification arrives. The agencies' websites can change or go down, and data may then be missing or out of date. Do not rely on us alone if a particular home matters to you."
+      },
+      "liability": {
+        "title": "Liability",
+        "body": "The service is provided as is. We are not liable for homes you missed, for decisions you made based on information here, or for damage arising from the service being unavailable or showing something incorrect."
+      }
+    }
   }
 }

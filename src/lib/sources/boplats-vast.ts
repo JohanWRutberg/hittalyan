@@ -5,7 +5,7 @@
  * sista ansökningsdag finns bara på objektsidan, och kötidsstatistiken hämtas
  * från en egen endpoint per annons.
  *
- * Nya annonser går alltid först och får hela sin tidsbudget (`FRESH_TIME_BUDGET_MS`):
+ * Nya annonser går alltid först och får hela tidsbudgeten pollningen ger källan:
  * användarna ska se en ny annons så fort som möjligt, inte vänta flera pollningar på
  * att en fast per-körning-gräns ska hinna beta av en ovanligt stor klump. Ett fast
  * antal per körning gav precis det problemet vid en kall start: med tidigare
@@ -27,13 +27,8 @@ const BASE = marketInfo("vast").siteUrl;
 const LIST_URL = `${BASE}/sok?types=1hand`;
 const objectUrl = (id: string) => `${BASE}/objekt/1hand/${id}`;
 const statsUrl = (id: string) => `${BASE}/area_statistics/1hand/${id}`;
+const photosUrl = (id: string) => `${BASE}/objekt/1hand/${id}/photos`;
 
-/**
- * Så länge får nya annonser hämtas innan resten får vänta till nästa körning.
- * Uppmätt svarstid mot boplats.se är ~0.2–0.3 s per anrop; med marginal för
- * långsammare nätverk från Vercel räcker det här till några hundra annonser.
- */
-const FRESH_TIME_BUDGET_MS = 40_000;
 /** Tak på hur många kända annonser som fräschas upp, om tid blir över. */
 const REFRESH_CEILING = 40;
 /** Samtidiga hämtningar mot boplats.se. */
@@ -162,7 +157,29 @@ export function parseObjectPage(id: string, html: string, now = new Date()): Sou
     kotidQ3: null,
     kotidSnitt: null,
     sokande: toNumber(first(html, /data-show-id="queue-list">\s*([\d\s]+)\s*sökande/)),
+    // Omslagsbilden; kompletteras med resten i fetchOne.
+    images: (() => {
+      const cover = first(html, /<div class="mainphoto">[\s\S]*?<img src="([^"]+)"/);
+      return cover ? [cover] : [];
+    })(),
   };
+}
+
+/**
+ * Objektsidan visar bara omslagsbilden; resten ligger på en egen /photos-sida
+ * (~14 kB). Den hämtas därför bara när annonsen ändå hämtas i sin helhet.
+ * Planskissen och hyresvärdens logotyp ligger under andra sökvägar och
+ * plockas inte med.
+ */
+async function fetchPhotos(id: string, coverFromObjectPage: string | null): Promise<string[]> {
+  try {
+    const html = await getText(photosUrl(id));
+    const urls = [...new Set(html.match(/https:\/\/boplats\.se\/bilder\/1hand\/[A-Za-z0-9]+\/max\/\d+\/\d+/g) ?? [])];
+    if (urls.length) return urls;
+  } catch {
+    // Bilder är en bonus; annonsen är användbar utan dem.
+  }
+  return coverFromObjectPage ? [coverFromObjectPage] : [];
 }
 
 interface AreaStatistics {
@@ -208,6 +225,7 @@ async function fetchOne(id: string, cachedQueueYears: number | null): Promise<So
     const listing = parseObjectPage(id, await getText(objectUrl(id)));
     if (!listing) return null;
     listing.kotidSnitt = cachedQueueYears ?? (await fetchAverageQueueYears(id));
+    listing.images = await fetchPhotos(id, listing.images?.[0] ?? null);
     return listing;
   } catch (err) {
     console.error(`[poll:vast] kunde inte hämta ${id}:`, (err as Error).message);
@@ -217,7 +235,8 @@ async function fetchOne(id: string, cachedQueueYears: number | null): Promise<So
 
 export const boplatsVastSource: Source = {
   market: "vast",
-  async fetchListings(known): Promise<SourceResult> {
+  usesFetchBudget: true,
+  async fetchListings(known, deadline): Promise<SourceResult> {
     const ids = parseListIds(await getText(LIST_URL));
     if (!ids.length) throw new Error("Oväntat svar från Boplats Väst (inga annonser)");
     const activeIds = ids.map((id) => listingId("vast", id));
@@ -230,7 +249,6 @@ export const boplatsVastSource: Source = {
       .sort((a, b) => seen(a)!.refreshedAt.getTime() - seen(b)!.refreshedAt.getTime())
       .slice(0, REFRESH_CEILING);
 
-    const deadline = Date.now() + FRESH_TIME_BUDGET_MS;
     // Nya annonser går först och får hela budgeten. Uppfräschning av kända
     // annonser sker bara med tiden som blir över.
     const listings = [

@@ -18,6 +18,8 @@ const QUERY = `query getRentalObjectsAvailable {
     rentalObjects {
       rentalObjectId
       street
+      imageCdn
+      images { imageId sortingOrder }
       rooms
       area
       rent
@@ -64,6 +66,8 @@ interface RawObject {
   balcony: boolean | null;
   elevator: boolean | null;
   region: { regionId: number | null } | null;
+  imageCdn: string | null;
+  images: { imageId: number | null; sortingOrder: number | null }[] | null;
   boendeTyp: Named[] | null;
   bostadsTyp: Named[] | null;
   kontraktsTyp: Named[] | null;
@@ -76,6 +80,22 @@ const has = (list: Named[] | null | undefined, ...needles: string[]) => {
   const n = names(list);
   return needles.some((needle) => n.includes(needle.toLowerCase()));
 };
+
+/**
+ * Bilderna ligger på plattformens CDN. `?width=` är den enda storleksparameter
+ * den lyssnar på. Korten är som bredast ~400 px, och 480 räcker även på skärmar
+ * med hög upplösning: originalet är ~265 kB, 480 ger ~83 kB och 640 ~132 kB.
+ */
+const IMAGE_WIDTH = 480;
+
+function imageUrls(raw: RawObject): string[] {
+  const cdn = raw.imageCdn?.replace(/\/+$/, "");
+  if (!cdn || !raw.images?.length) return [];
+  return [...raw.images]
+    .sort((a, b) => (a.sortingOrder ?? 0) - (b.sortingOrder ?? 0))
+    .filter((i) => i.imageId != null)
+    .map((i) => `${cdn}/mypages/image/${i.imageId}?width=${IMAGE_WIDTH}`);
+}
 
 function normalize(market: Market, raw: RawObject): SourceListing {
   const info = marketInfo(market);
@@ -119,6 +139,7 @@ function normalize(market: Market, raw: RawObject): SourceListing {
     kotidQ3: null,
     kotidSnitt: null,
     sokande: raw.applicationCount ?? null,
+    images: imageUrls(raw),
   };
 }
 

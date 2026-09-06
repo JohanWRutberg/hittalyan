@@ -4,7 +4,7 @@
  */
 
 import { listingId } from "@/lib/markets";
-import type { Source, SourceListing, SourceResult } from "@/lib/sources/types";
+import type { KnownListing, Source, SourceListing, SourceResult } from "@/lib/sources/types";
 import { USER_AGENT } from "@/lib/sources/types";
 
 export const BOSTAD_BASE_URL = "https://bostad.stockholm.se";
@@ -108,11 +108,70 @@ export async function fetchAllListings(): Promise<SourceListing[]> {
   return (data as RawAnnons[]).filter((a) => typeof a?.AnnonsId === "number").map(normalize);
 }
 
-/** Ett anrop ger allt, så varje körning hämtar om alla annonser. */
+/**
+ * Bilderna är det enda som inte finns i JSON-flödet. De ligger i ett
+ * `<div class="image-slider">` på annonsens egen sida, som därför hämtas en gång
+ * per annons. Tidsbudgeten (satt av pollningen) gör att en kall start (~700
+ * annonser) sprids över några körningar i stället för att spränga Vercels
+ * tidsgräns; i normal drift handlar det om ett par annonser per körning.
+ */
+const IMAGE_CONCURRENCY = 4;
+
+export function parseImages(html: string): string[] {
+  // Innehållet är bara <picture>-element, inga nästlade <div>, så första
+  // avslutande taggen är rätt gräns.
+  const slider = /<div class="image-slider[^"]*">([\s\S]*?)<\/div>/.exec(html);
+  if (!slider) return [];
+  const urls = [...slider[1].matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]);
+  return [...new Set(urls)]
+    .filter((u) => u.startsWith("/uploads/"))
+    .map((u) => `${BOSTAD_BASE_URL}${u}`);
+}
+
+async function fetchImages(listing: SourceListing): Promise<void> {
+  try {
+    const res = await fetch(listing.url, {
+      headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": USER_AGENT },
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return;
+    listing.images = parseImages(await res.text());
+  } catch {
+    // Bilder är en bonus; annonsen är fullt användbar utan dem och försöket
+    // görs om nästa körning.
+  }
+}
+
+/**
+ * Alla annonser har inte bilder – en del publiceras helt utan. De får inte
+ * hämtas om varje körning, men en förmedling kan lägga till bilder i efterhand,
+ * så bildlösa annonser prövas igen en gång per dygn.
+ */
+const RECHECK_AFTER_MS = 24 * 60 * 60 * 1000;
+
+function needsImageFetch(known: KnownListing | undefined): boolean {
+  if (!known) return true; // ny annons
+  if (known.hasImages) return false;
+  if (!known.imagesCheckedAt) return true; // aldrig försökt
+  return Date.now() - known.imagesCheckedAt.getTime() > RECHECK_AFTER_MS;
+}
+
 export const stockholmSource: Source = {
   market: "stockholm",
-  async fetchListings(): Promise<SourceResult> {
+  usesFetchBudget: true,
+  async fetchListings(known, deadline): Promise<SourceResult> {
+    // Ett anrop ger alla annonsers uppgifter, så de hämtas om varje körning.
     const listings = await fetchAllListings();
+
+    // Nyast först: de syns överst i listan och är de användarna faktiskt tittar på.
+    const needImages = listings
+      .filter((l) => needsImageFetch(known.get(l.id)))
+      .sort((a, b) => (b.annonseradFran?.getTime() ?? 0) - (a.annonseradFran?.getTime() ?? 0));
+    for (let i = 0; i < needImages.length && Date.now() < deadline; i += IMAGE_CONCURRENCY) {
+      await Promise.all(needImages.slice(i, i + IMAGE_CONCURRENCY).map(fetchImages));
+    }
+
     return { activeIds: listings.map((l) => l.id), listings };
   },
 };

@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
 import { FadeIn } from "@/components/motion";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { SiteFooter } from "@/components/site-footer";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatNumber } from "@/lib/format";
@@ -114,7 +115,7 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-line py-6 text-center text-xs text-muted">{t("footer")}</footer>
+      <SiteFooter />
     </div>
   );
 }

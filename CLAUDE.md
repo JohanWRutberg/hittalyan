@@ -110,6 +110,8 @@ src/app/
     lagenheter/         Listan (öppen även utloggad, se nedan)
     bevakningar/        Sparade filter, kräver Pro
     konto/ pro/ admin/
+    kontakt/            Kontaktformulär, kräver inloggning
+    om-oss/ ansvarsfriskrivning/
   (auth)/               login, register, glomt-losenord
   api/                  auth, cron/poll, push, stripe
 src/lib/                Affärslogik, se nedan
@@ -117,6 +119,7 @@ src/i18n/ src/messages/ Språkstöd
 ```
 
 `src/lib` i korthet: `markets.ts` beskriver förmedlingarna, `sources/` hämtar från dem,
+`consent.ts` håller cookie-samtycket,
 `poll.ts` sparar och notifierar, `market-context.ts` avgör vilken kö som visas,
 `matching.ts` avgör om en annons matchar en bevakning, `filters.ts` översätter
 sökparametrar till Prisma-frågor, `chance.ts` bedömer chansen, `plan.ts` avgör Pro,
@@ -132,7 +135,7 @@ behåll dem: hemskärmsinstallationer och bokmärken pekar dit.
 | --- | --- |
 | Utloggad | `/lagenheter` med karta och sidbläddring, men **24 h fördröjning** (`PUBLIC_DELAY_HOURS`) och en låst teaser som räknar de dolda. Inget filter, ingen sortering, ingen chansmätare. Parametrar i adressen ignoreras på servern. Förmedling går att byta, valet ligger i en cookie. |
 | Inloggad (gratis) | Allt ovan utan fördröjning, plus filter, sortering, områdesantal och chansmätare. |
-| Pro | Bevakningar med mail och push. En bevakning hör till den kö den skapades i och **fortsätter notifiera även efter ett kösbyte**, eftersom man kan stå i flera köer. Nya konton får `TRIAL_DAYS` (14) dagar Pro. |
+| Pro | Bevakningar med mail och push, och favoritmarkering av annonser. En bevakning hör till den kö den skapades i och **fortsätter notifiera även efter ett kösbyte**, eftersom man kan stå i flera köer. Nya konton får `TRIAL_DAYS` (14) dagar Pro. |
 | Admin | Adminportal: användare, planer, avstängning, körningslogg. |
 
 Att strypa det utloggade läget är ett medvetet val. Lätta inte på det utan att fråga.
@@ -206,13 +209,62 @@ alla kostat tid:
   `(hover: none)` ignoreras hover-händelserna helt. Vilket kort som är "laddat" ligger i
   delad kontext (`hovered-listing.tsx`), annars räknas ett tryck på ett annat kort fel.
 
+## Bilder
+
+Annonsernas bilder **länkas** från förmedlingarna, vi lagrar bara adresserna i
+`Listing.images`. Ingen av dem blockerar hotlinking (kontrollerat med `Referer` från
+vår domän).
+
+- Momentum (Syd, Uppsala) ger dem gratis i GraphQL-svaret. `?width=480` är den enda
+  storleksparameter CDN:et lyssnar på och tar bilden från ~265 kB till ~83 kB.
+- Boplats Väst har omslagsbilden på objektsidan och resten på `/objekt/1hand/<id>/photos`.
+- **Stockholm har inga bilder i JSON-flödet.** De ligger i `<div class="image-slider">`
+  på annonsens egen sida, som därför hämtas en gång per annons. Det är enda anledningen
+  till att Stockholm behöver extraanrop alls. Ungefär **hälften av Stockholms annonser
+  publiceras helt utan bilder**; övriga tre förmedlingar har bild på i princip allt.
+- `Listing.imagesCheckedAt` skiljer "annonsen har inga bilder" från "vi har inte försökt
+  än". Utan den hämtades de bildlösa om vid varje körning i all evighet, och blockerade
+  uppbyggnaden av resten. Bildlösa prövas igen en gång per dygn, ifall förmedlingen
+  lägger till bilder i efterhand.
+- Annonser utan bilder får en platshållare (`ImagePlaceholder`), så att korten blir lika
+  höga och rutnätet inte hackar.
+
+Korten använder medvetet vanliga `<img>` med `loading="lazy"`, **inte** `next/image`:
+Vercels Hobby-plan har en månadskvot för bildoptimeringar som ~1 400 annonser med flera
+bilder var skulle äta upp i onödan, och bilderna är redan färdigskalade hos källan.
+
+## Favoriter
+
+Pro-användare kan spara annonser (`Favorite`). De nås under fliken Favoriter på
+`/bevakningar` och ligger kvar tills användaren tar bort dem eller annonsen städas bort.
+Favoriter kan spänna över flera köer, så chansen räknas mot kötiden i den kö annonsen
+faktiskt tillhör.
+
+## Cookies och statistik
+
+Tre cookies sätts utan att fråga, för att tjänsten ska fungera: sessionscookien,
+språkvalet och vald förmedling. De kräver inget samtycke.
+
+Google Analytics gör det. Den laddas därför **inte alls** förrän användaren aktivt sagt
+ja, och samtyckesbannern visas bara när `NEXT_PUBLIC_GA_ID` är satt – finns ingen mätning
+finns inget att samtycka till, och då ska ingen banner störa. Valet ligger i
+`localStorage` (inte en cookie: det behövs bara i webbläsaren) och läses med
+`useSyncExternalStore`, vilket också ger synk mellan flikar. Sidvisningar skickas manuellt
+eftersom App Router byter sida utan omladdning.
+
 ## Pollning
 
 `runPoll()` kör `runMarketPoll()` för varje förmedling i tur och ordning: hämtar,
 lägger till nya annonser, uppdaterar ändrade (kötidsstatistik, antal sökande och sista
 dag ändras över tid), avaktiverar borttagna och notifierar matchande bevakningar.
 Frågorna är batchade eftersom serverless-funktioner har kort tidsgräns. En hel körning
-tar ungefär tio sekunder.
+tar ungefär 20–25 sekunder.
+
+- **Tidsbudgeten för extraanrop delas.** `EXTRA_FETCH_BUDGET_MS` i `poll.ts` ligger med
+  marginal under `maxDuration` (60 s) i cron-endpointen, och delas bara mellan de källor
+  som satt `usesFetchBudget` (Stockholm och Väst). En källa kan aldrig svälta dem som
+  kommer efter. Använd **inte** fasta tak per körning för hur många nya annonser som får
+  hämtas: det gjorde att hela utbudet inte syntes förrän efter flera pollningar.
 
 - **Körningarna är oberoende.** Går Boplats Väst ned ska Stockholm ändå uppdateras. Fel
   samlas i `failed` och kastas bara om ingen enda förmedling gick att hämta.
@@ -236,7 +288,9 @@ Se `.env.example` för hela listan. Värda att känna till:
 `ADMIN_EMAILS` (blir admin vid registrering) · `TRIAL_DAYS` (0 stänger av provperiod) ·
 `PUBLIC_DELAY_HOURS` (fördröjning för utloggade) · `CRON_SECRET` (måste matcha GitHub-
 secreten `CRON_SECRET`, och `APP_URL` där ska vara `https://www.hittalyan.se`) ·
-`RESEND_API_KEY` (utan den loggas mailen bara i konsolen, vilket är praktiskt lokalt).
+`RESEND_API_KEY` (utan den loggas mailen bara i konsolen, vilket är praktiskt lokalt) ·
+`NEXT_PUBLIC_GA_ID` (tom = ingen mätning och ingen cookiebanner) ·
+`CONTACT_EMAIL` (dit kontaktformuläret går, standard hittalyanse@gmail.com).
 
 Prismas migreringar går via `DATABASE_URL_UNPOOLED` när den finns (Neons direktanslutning),
 runtime använder `DATABASE_URL` (poolad).

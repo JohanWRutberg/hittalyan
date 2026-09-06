@@ -12,7 +12,10 @@
       "admin": "Admin",
       "pro": "Pro",
       "login": "Logga in",
-      "register": "Skapa konto"
+      "register": "Skapa konto",
+      "contact": "Kontakt",
+      "about": "Om oss",
+      "disclaimer": "Ansvarsfriskrivning"
     }
   },
   "common": {
@@ -32,7 +35,8 @@
     "viewListings": "Visa lägenheter",
     "language": "Språk",
     "swedish": "Svenska",
-    "english": "English"
+    "english": "English",
+    "send": "Skicka"
   },
   "nav": {
     "listings": "Lägenheter",
@@ -66,7 +70,6 @@
         "text": "Se hur många år och dagar du stått i din bostadskö, alltid uppdaterat."
       }
     },
-    "footer": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB eller Uppsala bostadsförmedling.",
     "cities": {
       "title": "Fyra köer, en tjänst",
       "lead": "Du väljer vilken bostadsförmedling du står i kö hos, och ser den. Byt när du vill."
@@ -156,7 +159,10 @@
       "similarRequired": " · liknande har krävt {q1}–{q3} års kötid",
       "tapAgain": "Tryck igen för att öppna annonsen",
       "applicants": "{count} sökande just nu",
-      "applicantsShort": "Sökande"
+      "applicantsShort": "Sökande",
+      "prevImage": "Föregående bild",
+      "nextImage": "Nästa bild",
+      "noImage": "Annonsen saknar bild"
     },
     "tags": {
       "nyproduktion": "Nyproduktion",
@@ -671,5 +677,131 @@
     "accountTitle": "Din bostadskö",
     "accountLead": "Du ser annonser från en förmedling i taget. Byt när du vill.",
     "accountNote": "Kötiden sparas för varje kö, så den finns kvar om du byter tillbaka. Bevakningar du redan skapat fortsätter skicka notiser för sin egen kö, oavsett vilken du står i nu."
+  },
+  "favorites": {
+    "title": "Favoriter",
+    "lead": "Annonser du sparat. De ligger kvar tills du tar bort dem eller annonsen försvinner.",
+    "add": "Spara som favorit",
+    "remove": "Ta bort från favoriter",
+    "gateWhat": "spara favoriter",
+    "expiredNotice": "Nedtonade annonser är inte längre aktuella hos förmedlingen.",
+    "empty": {
+      "title": "Inga favoriter än",
+      "lead": "Tryck på hjärtat på en annons för att spara den här.",
+      "cta": "Till lägenheterna"
+    }
+  },
+  "contact": {
+    "title": "Kontakta oss",
+    "lead": "Skriv till oss så svarar vi till adressen på ditt konto.",
+    "name": "Namn",
+    "email": "E-postadress",
+    "fromAccount": "Namn och adress hämtas från ditt konto. Vill du ändra dem gör du det under Konto.",
+    "subject": "Vad gäller det?",
+    "subjectPlaceholder": "Välj ett ämne",
+    "subjects": {
+      "konto": "Fråga om kontot",
+      "pro": "Pro och betalning",
+      "bugg": "Något fungerar inte",
+      "annons": "Fel i en annons",
+      "forslag": "Förslag på förbättring",
+      "ovrigt": "Övrigt"
+    },
+    "message": "Meddelande",
+    "messagePlaceholder": "Beskriv gärna så utförligt du kan. Gäller det något som inte fungerar hjälper det att veta vilken sida och vilken enhet du använde.",
+    "sending": "Skickar …",
+    "sent": {
+      "title": "Tack, meddelandet är skickat",
+      "lead": "Vi svarar till {email} så snart vi kan."
+    },
+    "errors": {
+      "subject": "Välj vad ärendet gäller.",
+      "tooShort": "Skriv några rader till, så att vi förstår vad det gäller.",
+      "tooLong": "Meddelandet får vara högst {max} tecken.",
+      "send": "Meddelandet kunde inte skickas just nu. Försök igen om en stund."
+    }
+  },
+  "footer": {
+    "tagline": "Bevakar nya hyresrätter hos fyra bostadsförmedlingar och hör av sig så fort något matchar.",
+    "service": "Tjänsten",
+    "contact": "Kontakta oss",
+    "about": "Om",
+    "aboutUs": "Om oss",
+    "disclaimer": "Ansvarsfriskrivning",
+    "cookieSettings": "Cookieinställningar",
+    "sources": "Uppgifterna kommer från {list}.",
+    "independent": "En fristående tjänst utan koppling till bostadsförmedlingarna."
+  },
+  "cookies": {
+    "title": "Får vi mäta hur sajten används?",
+    "lead": "Vi använder redan nödvändiga cookies för inloggning, språk och vald kö. Utöver dem vill vi gärna använda Google Analytics för att se vad som fungerar och vad som inte gör det. Du kan säga nej utan att något slutar fungera.",
+    "readMore": "Läs mer",
+    "accept": "Ja, det går bra",
+    "deny": "Nej tack"
+  },
+  "about": {
+    "title": "Om Hitta Lyan",
+    "lead": "En bevakningstjänst för dig som står i bostadskö.",
+    "sections": {
+      "what": {
+        "title": "Vad tjänsten gör",
+        "body": "Hitta Lyan håller koll på nya hyresrätter hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd och Uppsala bostadsförmedling. Du sparar ett filter för det du letar efter, och får mail och notis så fort en annons matchar. Du väljer själv vilken kö du tillhör och ser en i taget."
+      },
+      "why": {
+        "title": "Varför den finns",
+        "body": "Bostadsförmedlingarnas egna sajter är byggda för att man ska söka själv, när man kommer på det. Attraktiva lägenheter ligger ofta ute bara några dagar, och det är lätt att missa en annons för att man råkade titta på fel dag. Tanken med Hitta Lyan är enkel: du ska slippa hålla koll manuellt."
+      },
+      "how": {
+        "title": "Så fungerar det",
+        "body": "Var trettionde minut hämtar vi de aktuella annonserna från förmedlingarna, jämför dem med dina bevakningar och hör av oss när något nytt matchar. Vi visar också en uppskattning av dina chanser, baserad på förmedlingarnas egen statistik över hur lång kötid liknande bostäder har krävt."
+      },
+      "independent": {
+        "title": "Fristående från förmedlingarna",
+        "body": "Hitta Lyan drivs inte av och har ingen koppling till någon av bostadsförmedlingarna. Vi förmedlar inga bostäder och tar inte emot några ansökningar. All ansökan sker hos förmedlingen, med ditt vanliga konto där."
+      },
+      "money": {
+        "title": "Hur tjänsten finansieras",
+        "body": "Att se annonserna, filtrera och använda kartan är gratis. Bevakningar med mail och push, och möjligheten att spara favoriter, ingår i Pro som är ett betalt abonnemang. Vi säljer inga uppgifter om dig vidare."
+      }
+    }
+  },
+  "disclaimer": {
+    "title": "Ansvarsfriskrivning",
+    "lead": "Kort om vad du kan och inte kan förvänta dig av tjänsten.",
+    "updated": "Har du frågor om något här är du välkommen att kontakta oss.",
+    "sections": {
+      "source": {
+        "title": "Uppgifterna kommer från andra",
+        "body": "Alla annonser och uppgifter om dem hämtas från bostadsförmedlingarnas egna webbplatser. Vi skapar inget innehåll själva och kan inte ändra det som står i en annons. Det som visas hos förmedlingen gäller alltid före det som visas här."
+      },
+      "accuracy": {
+        "title": "Vi kan inte garantera att allt stämmer",
+        "body": "Vi hämtar nya uppgifter var trettionde minut, men en annons kan ha ändrats, tagits bort eller fått nya villkor sedan dess. Uppgifter kan också tolkas fel när vi läser dem. Kontrollera alltid hos förmedlingen innan du fattar ett beslut."
+      },
+      "noAffiliation": {
+        "title": "Ingen koppling till förmedlingarna",
+        "body": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB eller Uppsala bostadsförmedling. Deras namn används enbart för att beskriva varifrån uppgifterna kommer."
+      },
+      "noApplication": {
+        "title": "Vi förmedlar inga bostäder",
+        "body": "Du kan inte söka en lägenhet genom Hitta Lyan. Ansökan gör du hos förmedlingen med ditt konto där, och det är deras köregler och villkor som avgör vem som får bostaden."
+      },
+      "chance": {
+        "title": "Chansmätaren är en uppskattning",
+        "body": "Bedömningen bygger på förmedlingarnas egen statistik över tidigare förmedlade bostäder, och på det ködatum du själv angett. Den säger något om hur din kötid förhåller sig till andras, men är ingen förutsägelse. Underlaget skiljer sig dessutom mellan städerna: Stockholm redovisar kvartiler, Boplats Väst ett områdessnitt, och Boplats Syd och Uppsala ingen kötidsstatistik alls."
+      },
+      "queueTime": {
+        "title": "Kötiden anger du själv",
+        "body": "Ingen av förmedlingarna erbjuder inloggning som låter oss hämta din kötid automatiskt. Datumet du fyller i under Konto används bara för att räkna ut din kötid och visa din chans. Anger du fel datum blir bedömningen fel."
+      },
+      "availability": {
+        "title": "Tjänsten kan vara nere",
+        "body": "Vi kan inte lova att tjänsten alltid fungerar eller att varje notis kommer fram. Förmedlingarnas webbplatser kan ändras eller ligga nere, och då kan uppgifter saknas eller bli inaktuella. Förlita dig inte enbart på oss om en viss bostad är viktig för dig."
+      },
+      "liability": {
+        "title": "Ansvar",
+        "body": "Tjänsten tillhandahålls i befintligt skick. Vi ansvarar inte för bostäder du missat, för beslut du fattat utifrån uppgifter här, eller för skada som uppstått av att tjänsten varit otillgänglig eller visat något felaktigt."
+      }
+    }
   }
 }

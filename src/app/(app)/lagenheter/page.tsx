@@ -10,6 +10,7 @@ import { queueYears } from "@/lib/chance";
 import { HoveredListingProvider } from "@/components/hovered-listing";
 import type { Locale } from "@/i18n/config";
 import { getSession } from "@/lib/session";
+import { hasPro } from "@/lib/plan";
 import { getCurrentMarket, getQueueDate } from "@/lib/market-context";
 import { marketInfo, type Market } from "@/lib/markets";
 import { MarketSwitcher } from "@/components/market-switcher";
@@ -54,7 +55,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
   // Antal per område: samma filter som listan, men utan valda kommuner/stadsdelar
   const areaWhere = filtersToWhere({ ...filters, kommuner: [], stadsdelar: [] }, market);
 
-  const [areas, total, listings, newLast24h, lastRun, queueDate, mapRows, areaCounts] = await Promise.all([
+  const [areas, total, listings, newLast24h, lastRun, queueDate, mapRows, areaCounts, me] = await Promise.all([
     getAreaMap(market),
     prisma.listing.count({ where }),
     prisma.listing.findMany({
@@ -78,7 +79,22 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
       },
     }),
     getAreaCounts(areaWhere),
+    prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
   ]);
+
+  // Favoriter är en Pro-funktion. Vi hämtar bara markeringar för annonserna på
+  // sidan, inte hela användarens lista.
+  const canFavorite = hasPro(me);
+  const favoriteIds = canFavorite
+    ? new Set(
+        (
+          await prisma.favorite.findMany({
+            where: { userId: session.user.id, listingId: { in: listings.map((l) => l.id) } },
+            select: { listingId: true },
+          })
+        ).map((f) => f.listingId),
+      )
+    : new Set<string>();
 
   const cutoff = dayAgo();
   const mapPoints: MapPoint[] = mapRows.map((r) => ({
@@ -156,7 +172,13 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {listings.map((l, i) => (
-                <ListingCard key={l.id} listing={l} index={i} userYears={userYears} />
+                <ListingCard
+                  key={l.id}
+                  listing={l}
+                  index={i}
+                  userYears={userYears}
+                  favorited={canFavorite ? favoriteIds.has(l.id) : undefined}
+                />
               ))}
             </div>
           )}

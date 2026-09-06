@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
 /** Sidor som kräver inloggning. /lagenheter är öppen i begränsat läge. */
-const PROTECTED = ["/bevakningar", "/konto", "/pro", "/admin"];
+const PROTECTED = ["/bevakningar", "/konto", "/pro", "/admin", "/kontakt"];
 
 // Optimistisk kontroll: saknas sessionscookie skickas man till /login.
 // Riktig verifiering sker i server components via requireSession().
@@ -20,5 +20,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/bevakningar/:path*", "/konto/:path*", "/pro/:path*", "/admin/:path*", "/login", "/register", "/glomt-losenord"],
+  matcher: ["/bevakningar/:path*", "/konto/:path*", "/pro/:path*", "/admin/:path*", "/kontakt/:path*", "/login", "/register", "/glomt-losenord"],
 };

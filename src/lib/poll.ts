@@ -7,6 +7,13 @@ import { MARKETS, marketInfo, type Market } from "@/lib/markets";
 import { SOURCES } from "@/lib/sources";
 import type { KnownListing } from "@/lib/sources";
 
+/**
+ * Hela pollningens budget för extraanrop (bildhämtning, objektsidor). Ligger med
+ * marginal under `maxDuration` i /api/cron/poll, som är 60 sekunder, så att det
+ * finns tid över för själva listhämtningarna och databasskrivningarna.
+ */
+const EXTRA_FETCH_BUDGET_MS = 35_000;
+
 export interface MarketPollResult {
   market: Market;
   total: number;
@@ -38,9 +45,20 @@ export async function runPoll(): Promise<PollResult> {
   const markets: MarketPollResult[] = [];
   const failed: { market: Market; error: string }[] = [];
 
+  // Budgeten delas bara mellan de förmedlingar som behöver extraanrop, och delas
+  // om efter varje: blir en klar snabbt får nästa mer tid, och en långsam källa
+  // kan aldrig svälta dem som kommer efter.
+  const budgetEnd = Date.now() + EXTRA_FETCH_BUDGET_MS;
+  let budgetUsersLeft = MARKETS.filter((m) => SOURCES[m].usesFetchBudget).length;
+
   for (const market of MARKETS) {
+    let deadline = Date.now();
+    if (SOURCES[market].usesFetchBudget) {
+      deadline = Date.now() + Math.max(0, budgetEnd - Date.now()) / budgetUsersLeft;
+      budgetUsersLeft -= 1;
+    }
     try {
-      markets.push(await runMarketPoll(market));
+      markets.push(await runMarketPoll(market, deadline));
     } catch (err) {
       failed.push({ market, error: (err as Error).message });
       console.error(`[poll:${market}]`, (err as Error).message);
@@ -68,7 +86,7 @@ export async function runPoll(): Promise<PollResult> {
  * Hämtar en förmedlings annonser, sparar nya, uppdaterar ändrade, avaktiverar
  * borttagna och notifierar bevakningar som matchar de nya annonserna.
  */
-export async function runMarketPoll(market: Market): Promise<MarketPollResult> {
+export async function runMarketPoll(market: Market, deadline = Date.now() + EXTRA_FETCH_BUDGET_MS): Promise<MarketPollResult> {
   const run = await prisma.pollRun.create({ data: { market } });
   try {
     const existing = await prisma.listing.findMany({
@@ -76,15 +94,19 @@ export async function runMarketPoll(market: Market): Promise<MarketPollResult> {
       select: {
         id: true, refreshedAt: true, kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
         hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true, active: true,
+        images: true, imagesCheckedAt: true,
       },
     });
     const existingById = new Map(existing.map((e) => [e.id, e]));
     const isFirstRun = existing.length === 0;
 
     const known: Map<string, KnownListing> = new Map(
-      existing.map((e) => [e.id, { refreshedAt: e.refreshedAt, kotidSnitt: e.kotidSnitt }]),
+      existing.map((e) => [
+        e.id,
+        { refreshedAt: e.refreshedAt, kotidSnitt: e.kotidSnitt, hasImages: e.images.length > 0, imagesCheckedAt: e.imagesCheckedAt },
+      ]),
     );
-    const { activeIds, listings } = await SOURCES[market].fetchListings(known);
+    const { activeIds, listings } = await SOURCES[market].fetchListings(known, deadline);
     // Ett tomt svar är nästan alltid ett fel hos källan, inte en tom bostadskö.
     // Utan den här spärren hade en sådan körning avaktiverat allt vi har.
     if (!activeIds.length) throw new Error(`${marketInfo(market).name} gav inga annonser`);
@@ -115,6 +137,9 @@ export async function runMarketPoll(market: Market): Promise<MarketPollResult> {
         e.kotidQ3 !== l.kotidQ3 ||
         e.kotidSnitt !== l.kotidSnitt ||
         e.sokande !== l.sokande ||
+        // `images: undefined` betyder att källan inte hämtade bilder den här
+        // körningen, och ska inte räknas som en ändring.
+        (l.images !== undefined && !sameImages(e.images, l.images)) ||
         e.hyra !== l.hyra ||
         e.vaning !== l.vaning ||
         e.yta !== l.yta ||
@@ -134,6 +159,13 @@ export async function runMarketPoll(market: Market): Promise<MarketPollResult> {
     const unchangedIds = listings.filter((l) => existingById.has(l.id) && !changedIds.has(l.id)).map((l) => l.id);
     if (unchangedIds.length) {
       await prisma.listing.updateMany({ where: { id: { in: unchangedIds } }, data: { refreshedAt: now } });
+    }
+
+    // Annonser vi faktiskt försökt hämta bilder för, oavsett om det gav något.
+    // Utan den här stämpeln skulle bildlösa annonser hämtas om i all evighet.
+    const checkedIds = listings.filter((l) => l.images !== undefined).map((l) => l.id);
+    if (checkedIds.length) {
+      await prisma.listing.updateMany({ where: { id: { in: checkedIds } }, data: { imagesCheckedAt: now } });
     }
 
     const { count: deactivated } = await prisma.listing.updateMany({
@@ -170,6 +202,8 @@ export async function runMarketPoll(market: Market): Promise<MarketPollResult> {
     throw err;
   }
 }
+
+const sameImages = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 async function notifyWatches(market: Market, newListings: Listing[]): Promise<number> {
   if (!newListings.length) return 0;

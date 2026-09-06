@@ -5,9 +5,18 @@
  * sista ansökningsdag finns bara på objektsidan, och kötidsstatistiken hämtas
  * från en egen endpoint per annons.
  *
- * Därför hämtas objektsidan bara för **nya** annonser, plus ett fåtal äldre per
- * körning så att antalet sökande inte blir inaktuellt. Taket finns för att var
- * sparsam med en server som inte är byggd för att vara ett öppet API.
+ * Nya annonser går alltid först och får hela sin tidsbudget (`FRESH_TIME_BUDGET_MS`):
+ * användarna ska se en ny annons så fort som möjligt, inte vänta flera pollningar på
+ * att en fast per-körning-gräns ska hinna beta av en ovanligt stor klump. Ett fast
+ * antal per körning gav precis det problemet vid en kall start: med tidigare
+ * MAX_NEW_PER_RUN=30 mot ~111 annonser tog det fyra körningar (två timmar) innan
+ * hela utbudet syntes, trots att inget var fel – annonserna fanns bara inte hämtade
+ * än. En tidsbudget anpassar sig i stället efter hur många som faktiskt är nya, och
+ * hur snabbt boplats.se svarar just nu, utan att riskera Vercels 60-sekundersgräns
+ * för hela pollningen (som delas med de tre andra förmedlingarna).
+ *
+ * Redan kända annonser fräschas upp (antal sökande m.m.) bara med den tid som blir
+ * över, och högst ett bundet antal – det är en bonus, inte något användarna väntar på.
  */
 
 import { listingId, marketInfo } from "@/lib/markets";
@@ -19,10 +28,14 @@ const LIST_URL = `${BASE}/sok?types=1hand`;
 const objectUrl = (id: string) => `${BASE}/objekt/1hand/${id}`;
 const statsUrl = (id: string) => `${BASE}/area_statistics/1hand/${id}`;
 
-/** Högst så här många nya annonser hämtas i sin helhet per körning. Resten tas nästa gång. */
-const MAX_NEW_PER_RUN = 30;
-/** Så här många redan kända annonser fräschas upp per körning (antal sökande ändras). */
-const REFRESH_PER_RUN = 12;
+/**
+ * Så länge får nya annonser hämtas innan resten får vänta till nästa körning.
+ * Uppmätt svarstid mot boplats.se är ~0.2–0.3 s per anrop; med marginal för
+ * långsammare nätverk från Vercel räcker det här till några hundra annonser.
+ */
+const FRESH_TIME_BUDGET_MS = 40_000;
+/** Tak på hur många kända annonser som fräschas upp, om tid blir över. */
+const REFRESH_CEILING = 40;
 /** Samtidiga hämtningar mot boplats.se. */
 const CONCURRENCY = 4;
 
@@ -174,10 +187,13 @@ async function fetchAverageQueueYears(id: string): Promise<number | null> {
   }
 }
 
-/** Kör uppgifter några i taget i stället för alla på en gång. */
-async function inBatches<T, R>(items: T[], size: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+/**
+ * Kör uppgifter några i taget i stället för alla på en gång, och slutar starta
+ * nya omgångar när tidsbudgeten är slut. Resten hämtas nästa körning i stället.
+ */
+async function inBatchesUntil<T, R>(items: T[], size: number, deadline: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = [];
-  for (let i = 0; i < items.length; i += size) {
+  for (let i = 0; i < items.length && Date.now() < deadline; i += size) {
     out.push(...(await Promise.all(items.slice(i, i + size).map(fn))));
   }
   return out;
@@ -207,16 +223,20 @@ export const boplatsVastSource: Source = {
     const activeIds = ids.map((id) => listingId("vast", id));
 
     const seen = (id: string): KnownListing | undefined => known.get(listingId("vast", id));
-    const fresh = ids.filter((id) => !seen(id)).slice(0, MAX_NEW_PER_RUN);
+    const fresh = ids.filter((id) => !seen(id));
     // Äldst uppdaterade först, så alla annonser turas om att bli uppfräschade.
     const stale = ids
       .filter((id) => seen(id))
       .sort((a, b) => seen(a)!.refreshedAt.getTime() - seen(b)!.refreshedAt.getTime())
-      .slice(0, REFRESH_PER_RUN);
+      .slice(0, REFRESH_CEILING);
 
-    const listings = await inBatches([...fresh, ...stale], CONCURRENCY, (id) =>
-      fetchOne(id, seen(id)?.kotidSnitt ?? null),
-    );
+    const deadline = Date.now() + FRESH_TIME_BUDGET_MS;
+    // Nya annonser går först och får hela budgeten. Uppfräschning av kända
+    // annonser sker bara med tiden som blir över.
+    const listings = [
+      ...(await inBatchesUntil(fresh, CONCURRENCY, deadline, (id) => fetchOne(id, null))),
+      ...(await inBatchesUntil(stale, CONCURRENCY, deadline, (id) => fetchOne(id, seen(id)?.kotidSnitt ?? null))),
+    ];
 
     return { activeIds, listings: listings.filter((l): l is SourceListing => l != null) };
   },

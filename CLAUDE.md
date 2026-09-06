@@ -99,7 +99,12 @@ onödan. Den är **inte** säkerheten. Riktig kontroll sker i server components 
   och poängen är att bevisa att den nya adressen ägs.
 - `BETTER_AUTH_URL` måste vara exakt den adress webbläsaren faktiskt står på, alltså
   `https://www.hittalyan.se` med www. Apex omdirigerar (308) till www, och en avvikelse
-  gör att Better Auths ursprungskontroll avvisar inloggningar.
+  gör att Better Auths ursprungskontroll avvisar inloggningar med `INVALID_ORIGIN`.
+- `trustedOrigins` i `auth.ts` godkänner **utöver** baseURL: `hittalyan.vercel.app`,
+  `VERCEL_URL` (preview-deployer) och allt i `TRUSTED_ORIGINS`. Vercel-adressen finns med
+  för att sajten ska gå att använda när domänen blockeras av företagsfilter, vilket
+  Defender for Endpoint gör med nyregistrerade domäner. Ta inte bort den utan att veta
+  att domänen är fri.
 
 ## Språk
 

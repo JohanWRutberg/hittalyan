@@ -16,8 +16,25 @@ export function adminEmails(): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Adresser som får logga in, utöver BETTER_AUTH_URL (som Better Auth alltid litar på).
+ * Vercels egen adress finns med eftersom hittalyan.se kan vara blockerad av
+ * företagsfilter, och sajten då fortfarande ska gå att använda. VERCEL_URL täcker
+ * dessutom preview-deployer, som annars får en ny adress vid varje bygge.
+ * Fler kan läggas till via TRUSTED_ORIGINS (kommaseparerat), utan kodändring.
+ */
+function trustedOrigins(): string[] {
+  const extra = (process.env.TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const vercel = process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [];
+  return ["https://hittalyan.vercel.app", ...vercel, ...extra];
+}
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: trustedOrigins(),
   secret: process.env.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: {

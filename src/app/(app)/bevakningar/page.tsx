@@ -125,7 +125,7 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
       ) : (
         <>
           {favorites.some((f) => !f.listing.active) && <p className="text-sm text-muted">{tf("expiredNotice")}</p>}
-          <HoveredListingProvider>
+          <HoveredListingProvider initialFavorites={favorites.map((f) => f.listingId)}>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {favorites.map((f, i) => (
                 <div key={f.id} className={f.listing.active ? "" : "opacity-60"}>
@@ -133,7 +133,7 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
                     listing={f.listing}
                     index={i}
                     userYears={yearsByMarket.get(f.listing.market) ?? null}
-                    favorited={info.active ? true : undefined}
+                    canFavorite={info.active}
                   />
                 </div>
               ))}

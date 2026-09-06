@@ -82,17 +82,15 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
   ]);
 
-  // Favoriter är en Pro-funktion. Vi hämtar bara markeringar för annonserna på
-  // sidan, inte hela användarens lista.
+  // Favoriter är en Pro-funktion. Hela användarens lista hämtas, inte bara
+  // sidans 60 kort: kartan visar upp till 1 500 annonser och de ska också få
+  // hjärta. En användares favoriter är en liten mängd.
   const canFavorite = hasPro(me);
   const favoriteIds = canFavorite
     ? new Set(
-        (
-          await prisma.favorite.findMany({
-            where: { userId: session.user.id, listingId: { in: listings.map((l) => l.id) } },
-            select: { listingId: true },
-          })
-        ).map((f) => f.listingId),
+        (await prisma.favorite.findMany({ where: { userId: session.user.id }, select: { listingId: true } })).map(
+          (f) => f.listingId,
+        ),
       )
     : new Set<string>();
 
@@ -115,6 +113,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
     kotidSnitt: r.kotidSnitt,
     sokande: r.sokande,
     isNew: r.firstSeenAt >= cutoff,
+    favorited: favoriteIds.has(r.id),
   }));
 
   const activeCount = countActiveFilters(filters);
@@ -161,7 +160,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
 
       <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} market={market} />
 
-      <HoveredListingProvider>
+      <HoveredListingProvider initialFavorites={[...favoriteIds]}>
         <div className="space-y-6">
           <ListingsMap points={mapPoints} market={market} userYears={userYears} sticky />
 
@@ -177,7 +176,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
                   listing={l}
                   index={i}
                   userYears={userYears}
-                  favorited={canFavorite ? favoriteIds.has(l.id) : undefined}
+                  canFavorite={canFavorite}
                 />
               ))}
             </div>
@@ -244,7 +243,7 @@ async function PublicListings({ sp, market }: { sp: SearchParams; market: Market
     id: r.id, lat: r.lat!, lng: r.lng!, gatuadress: r.gatuadress, stadsdel: r.stadsdel, kommun: r.kommun,
     antalRum: r.antalRum, yta: r.yta, hyra: r.hyra, vaning: r.vaning, url: r.url, nyproduktion: r.nyproduktion,
     kotidQ1: r.kotidQ1, kotidQ3: r.kotidQ3, kotidSnitt: r.kotidSnitt, sokande: r.sokande,
-    isNew: r.firstSeenAt >= cutoff,
+    isNew: r.firstSeenAt >= cutoff, favorited: false,
   }));
 
   return (

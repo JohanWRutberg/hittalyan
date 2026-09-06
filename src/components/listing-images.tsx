@@ -67,17 +67,18 @@ export function ListingImages({ images, alt }: { images: string[]; alt: string }
   );
 }
 
-/** Lugn platshållare för annonser som förmedlingen publicerat utan bilder. */
+/**
+ * Lugn platshållare för annonser som förmedlingen publicerat utan bilder.
+ * Texten är synlig, så ikonen döljs för skärmläsare i stället för att sidan
+ * ska säga samma sak två gånger.
+ */
 function ImagePlaceholder() {
   const t = useTranslations("listings.card");
   return (
-    <div
-      className="relative aspect-4/3 w-full overflow-hidden bg-linear-to-br from-brand-50 via-canvas to-slate-100"
-      role="img"
-      aria-label={t("noImage")}
-    >
-      <div className="absolute inset-0 grid place-items-center">
-        <Building2 className="size-10 text-brand-200" strokeWidth={1.5} />
+    <div className="relative aspect-4/3 w-full overflow-hidden bg-linear-to-br from-brand-50 via-canvas to-slate-100">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+        <Building2 className="size-9 text-brand-200" strokeWidth={1.5} aria-hidden />
+        <span className="text-xs font-medium uppercase tracking-wider text-slate-400">{t("noImage")}</span>
       </div>
     </div>
   );

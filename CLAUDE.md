@@ -226,8 +226,8 @@ vår domän).
   än". Utan den hämtades de bildlösa om vid varje körning i all evighet, och blockerade
   uppbyggnaden av resten. Bildlösa prövas igen en gång per dygn, ifall förmedlingen
   lägger till bilder i efterhand.
-- Annonser utan bilder får en platshållare (`ImagePlaceholder`), så att korten blir lika
-  höga och rutnätet inte hackar.
+- Annonser utan bilder får en platshållare (`ImagePlaceholder`) med texten "Bilder
+  saknas", så att korten blir lika höga och rutnätet inte hackar.
 
 Korten använder medvetet vanliga `<img>` med `loading="lazy"`, **inte** `next/image`:
 Vercels Hobby-plan har en månadskvot för bildoptimeringar som ~1 400 annonser med flera
@@ -239,6 +239,12 @@ Pro-användare kan spara annonser (`Favorite`). De nås under fliken Favoriter p
 `/bevakningar` och ligger kvar tills användaren tar bort dem eller annonsen städas bort.
 Favoriter kan spänna över flera köer, så chansen räknas mot kötiden i den kö annonsen
 faktiskt tillhör.
+
+Favoritläget ligger i `hovered-listing.tsx`, alltså samma delade kontext som hovern.
+Det är därför hjärtat på kortet och hjärtat på kartans markör ändras i samma ögonblick.
+Kartan bygger **inte** om sina markörer när en favorit ändras – de kan vara 1 500 – utan
+lägger till eller tar bort hjärtat på just de markörer det gäller, precis som
+hover-markeringen fungerar.
 
 ## Cookies och statistik
 

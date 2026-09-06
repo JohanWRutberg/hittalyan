@@ -32,6 +32,8 @@ export interface MapPoint {
   kotidSnitt: number | null;
   sokande: number | null;
   isNew: boolean;
+  /** Sparad som favorit av den inloggade användaren */
+  favorited: boolean;
 }
 
 interface Group {
@@ -40,6 +42,7 @@ interface Group {
   lng: number;
   items: MapPoint[];
   hasNew: boolean;
+  hasFavorite: boolean;
 }
 
 // OpenFreeMap: fria vektorkartor utan API-nyckel. Positron är den ljusa, rena stilen.
@@ -78,8 +81,9 @@ function groupPoints(points: MapPoint[]): Group[] {
     if (g) {
       g.items.push(p);
       g.hasNew ||= p.isNew;
+      g.hasFavorite ||= p.favorited;
     } else {
-      map.set(key, { key, lat: p.lat, lng: p.lng, items: [p], hasNew: p.isNew });
+      map.set(key, { key, lat: p.lat, lng: p.lng, items: [p], hasNew: p.isNew, hasFavorite: p.favorited });
     }
   }
   return [...map.values()];
@@ -93,6 +97,7 @@ interface PopupText {
   chanceTitle: (q1: number, q3: number) => string;
   averageTitle: (years: string) => string;
   applicants: (count: number) => string;
+  favorite: string;
   etAl: string;
   locale: Locale;
 }
@@ -122,6 +127,7 @@ function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
         <span class="lm-popup__main">${escapeHtml(formatRum(p.antalRum, tx.locale))} · ${escapeHtml(formatYta(p.yta))} · ${escapeHtml(formatVaning(p.vaning, tx.locale))}</span>
         <span class="lm-popup__rent">${escapeHtml(formatKr(p.hyra, tx.locale))}</span>
         ${chance}
+        ${p.favorited ? `<span class="lm-popup__fav" title="${escapeHtml(tx.favorite)}">${HEART_SVG}</span>` : ""}
         ${p.isNew ? `<span class="lm-popup__new">${escapeHtml(tx.isNew)}</span>` : ""}
       </a>`;
     })
@@ -138,6 +144,10 @@ function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
     </div>`;
 }
 
+/** Litet fyllt hjärta, används på markören och i popupen. */
+const HEART_SVG =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.8 6.9 13.8C3 10.3 .5 8 .5 5.2.5 2.9 2.3 1.1 4.6 1.1c1.3 0 2.5.6 3.4 1.6.9-1 2.1-1.6 3.4-1.6 2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6L8 14.8z"/></svg>';
+
 function markerElement(g: Group, index: number) {
   // Yttre element positioneras av MapLibre (via transform) och får därför inte animeras.
   // All animation sker på det inre elementet.
@@ -151,6 +161,7 @@ function markerElement(g: Group, index: number) {
   inner.innerHTML = `
     <span class="lm-marker__halo"></span>
     <span class="lm-marker__pin">${g.items.length > 1 ? `<span class="lm-marker__count">${g.items.length}</span>` : ""}</span>
+    ${g.hasFavorite ? `<span class="lm-marker__fav">${HEART_SVG}</span>` : ""}
   `;
   el.appendChild(inner);
   return el;
@@ -173,8 +184,9 @@ export function ListingsMap({
   const t = useTranslations("listings.map");
   const tChance = useTranslations("chance");
   const tListing = useTranslations("listings");
+  const tFav = useTranslations("favorites");
   const locale = useLocale() as Locale;
-  const { hovered } = useHoveredListing();
+  const { hovered, favorites } = useHoveredListing();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -265,6 +277,7 @@ export function ListingsMap({
             chanceTitle: (q1, q3) => t("popupChanceTitle", { q1, q3 }),
             averageTitle: (years) => t("popupAverageTitle", { years }),
             applicants: (count) => tListing("card.applicants", { count }),
+            favorite: tFav("title"),
             etAl: t("etAl"),
             locale,
           }),
@@ -295,6 +308,30 @@ export function ListingsMap({
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- översättarna är stabila per språk, locale räcker som beroende
   }, [points, ready, userYears, locale, market]);
+
+  /**
+   * Håll favorithjärtat i synk när man klickar i hjärtat på ett kort. Markörerna
+   * byggs inte om – de kan vara upp till 1 500 – utan hjärtat läggs till eller tas
+   * bort på just de markörer det gäller.
+   */
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.querySelectorAll<HTMLElement>(".lm-marker").forEach((m) => {
+      const ids = (m.dataset.ids ?? "").split(",");
+      const on = ids.some((id) => favorites.has(id));
+      const existing = m.querySelector(".lm-marker__fav");
+      if (on === !!existing) return;
+      if (on) {
+        const badge = document.createElement("span");
+        badge.className = "lm-marker__fav";
+        badge.innerHTML = HEART_SVG;
+        m.querySelector(".lm-marker__inner")?.appendChild(badge);
+      } else {
+        existing!.remove();
+      }
+    });
+  }, [favorites, points, ready]);
 
   // Markera markören för det kort som hovras i listan
   useEffect(() => {

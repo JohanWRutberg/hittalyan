@@ -24,14 +24,14 @@ export function ListingCard({
   index = 0,
   userYears = null,
   showChance = true,
-  favorited,
+  canFavorite = false,
 }: {
   listing: ListingLike;
   index?: number;
   userYears?: number | null;
   showChance?: boolean;
-  /** Undefined när favoriter inte är tillgängliga (utloggad eller utan Pro) */
-  favorited?: boolean;
+  /** Får användaren favoritmarkera? Falskt för utloggade och konton utan Pro. */
+  canFavorite?: boolean;
 }) {
   const t = useTranslations("listings");
   const tc = useTranslations("common");
@@ -74,9 +74,9 @@ export function ListingCard({
     >
       {/* Bildspel och hjärta ligger utanför länken: en knapp får inte ligga i en <a>. */}
       <ListingImages images={images} alt={`${l.gatuadress}, ${l.stadsdel}`} />
-      {favorited !== undefined && (
+      {canFavorite && (
         <div className="absolute right-3 top-3 z-10">
-          <FavoriteButton listingId={l.id} initial={favorited} />
+          <FavoriteButton listingId={l.id} />
         </div>
       )}
 

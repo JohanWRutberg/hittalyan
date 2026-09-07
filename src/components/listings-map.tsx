@@ -275,6 +275,10 @@ export function ListingsMap({
   const compactHeader = stuckNow && !isDesktop;
   /** Panelen ligger uppe i toppen: raka hörn där delarna möts, kompaktare höjd. */
   const pinned = stuck && stuckNow;
+  const toggleCollapsed = () => {
+    setCollapsed((v) => !v);
+    if (!collapsed) setExpanded(false);
+  };
 
   // Initiera kartan en gång
   useEffect(() => {
@@ -474,9 +478,12 @@ export function ListingsMap({
         className="card overflow-hidden transition-[border-radius] duration-200 ease-out motion-reduce:transition-none"
         style={pinned ? { borderRadius: 0 } : undefined}
       >
-      {/* Tre spalter, så pilen hamnar mitt i fältet oavsett hur breda sidorna är. */}
+      {/* Tre spalter, så pilen hamnar mitt i fältet oavsett hur breda sidorna är.
+          Hela raden fäller in och ut – en generös tryckyta på mobil. Pilen inuti är
+          den tangentbordsnåbara kontrollen; raden är en ren pekargenväg. */}
       <div
-        className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 overflow-hidden transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+        onClick={toggleCollapsed}
+        className={`grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 overflow-hidden transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
           compactHeader ? "px-3 py-1" : "px-5 py-3"
         }`}
       >
@@ -484,25 +491,32 @@ export function ListingsMap({
           <MapPin className="size-4 shrink-0 text-accent" />
           {t("title")}
           <span className="truncate font-normal text-muted">
-            · {t("summary", { listings: points.length, buildings })}
-            {points.length > MAX_MARKERS && t("showing", { max: MAX_MARKERS })}
+            {/* Mobilen har inte plats för hela sammanfattningen utan att texten
+                lägger sig över pilen i mitten. */}
+            <span className="sm:hidden">· {t("summaryShort", { listings: points.length })}</span>
+            <span className="hidden sm:inline">
+              · {t("summary", { listings: points.length, buildings })}
+              {points.length > MAX_MARKERS && t("showing", { max: MAX_MARKERS })}
+            </span>
           </span>
         </div>
         <CollapseToggle
           expanded={!collapsed}
-          onToggle={() => {
-            setCollapsed(!collapsed);
-            if (!collapsed) setExpanded(false);
-          }}
+          onToggle={toggleCollapsed}
           label={collapsed ? t("unfold") : t("fold")}
           compact={compactHeader}
         />
         <div className="flex shrink-0 items-center gap-1 justify-self-end">
+          {/* Dold på mobil: där räcker MapLibres egen fullskärmsknapp i kartan,
+              och raden blir trång med tre kontroller. */}
           {!collapsed && (
             <button
               type="button"
-              onClick={() => setExpanded(!expanded)}
-              className={`btn-ghost text-xs ${compactHeader ? "px-2 py-0.5" : "px-2.5 py-1.5"}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(!expanded);
+              }}
+              className={`btn-ghost hidden text-xs sm:inline-flex ${compactHeader ? "px-2 py-0.5" : "px-2.5 py-1.5"}`}
               title={expanded ? t("smaller") : t("larger")}
             >
               {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}

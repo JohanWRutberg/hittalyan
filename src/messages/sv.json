@@ -189,7 +189,8 @@
       "etAl": "m.fl.",
       "popupAverageTitle": "Liknande bostäder i området har krävt {years} kötid i snitt.",
       "fold": "Fäll in",
-      "unfold": "Visa karta"
+      "unfold": "Visa karta",
+      "summaryShort": "{listings} lgh"
     },
     "viewport": {
       "showing": "Visar {count} av {total} i kartans utsnitt.",

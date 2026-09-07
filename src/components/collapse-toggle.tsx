@@ -25,7 +25,11 @@ export function CollapseToggle({
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onClick={(e) => {
+        // Hela rubrikraden är klickbar; annars skulle klicket räknas två gånger.
+        e.stopPropagation();
+        onToggle();
+      }}
       aria-expanded={expanded}
       aria-label={label}
       title={label}

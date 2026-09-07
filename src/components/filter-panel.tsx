@@ -56,25 +56,28 @@ export function FilterPanel({
       className="card overflow-hidden transition-[border-radius] duration-200 ease-out motion-reduce:transition-none"
       style={pinned ? { borderRadius: 0 } : undefined}
     >
-      {/* Tre spalter, så pilen hamnar mitt i fältet oavsett hur breda sidorna är. */}
+      {/* Tre spalter, så pilen hamnar mitt i fältet oavsett hur breda sidorna är.
+          Hela raden fäller in och ut – en generös tryckyta på mobil. Pilen inuti är
+          den tangentbordsnåbara kontrollen; raden är en ren pekargenväg. */}
       <div
-        className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+        onClick={() => setOpen(!open)}
+        className={`grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
           pinned ? "px-3 py-1.5" : "px-5 py-3"
         }`}
       >
-        <button type="button" onClick={() => setOpen(!open)} className="flex min-w-0 items-center gap-2 justify-self-start text-sm font-semibold" aria-expanded={open}>
+        <div className="flex min-w-0 items-center gap-2 justify-self-start text-sm font-semibold">
           <SlidersHorizontal className="size-4 shrink-0 text-accent" />
           <span className="truncate">{t("title")}</span>
           {activeCount > 0 && <span className="shrink-0 rounded-full bg-brand-600 px-2 py-0.5 text-xs text-white">{activeCount}</span>}
-        </button>
+        </div>
         <CollapseToggle expanded={open} onToggle={() => setOpen(!open)} label={open ? t("hide") : t("show")} compact={pinned} />
         <div className="flex items-center gap-2 justify-self-end">
           {activeCount > 0 && (
-            <Link href="/lagenheter" className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
+            <Link href="/lagenheter" onClick={(e) => e.stopPropagation()} className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
               <X className="size-3.5" /> <span className="hidden sm:inline">{t("clear")}</span>
             </Link>
           )}
-          <Link href={`/bevakningar/ny?${query}`} className="btn-secondary px-3 py-1.5 text-xs">
+          <Link href={`/bevakningar/ny?${query}`} onClick={(e) => e.stopPropagation()} className="btn-secondary px-3 py-1.5 text-xs">
             <BellPlus className="size-3.5" /> <span className="sm:hidden">{t("watchThisShort")}</span><span className="hidden sm:inline">{t("watchThis")}</span>
           </Link>
         </div>

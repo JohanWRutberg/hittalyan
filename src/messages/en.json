@@ -189,7 +189,8 @@
       "etAl": "et al.",
       "popupAverageTitle": "Similar homes in this area required {years} in the queue on average.",
       "fold": "Collapse",
-      "unfold": "Show map"
+      "unfold": "Show map",
+      "summaryShort": "{listings} homes"
     },
     "viewport": {
       "showing": "Showing {count} of {total} within the map view.",

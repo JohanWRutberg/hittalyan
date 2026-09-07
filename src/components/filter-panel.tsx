@@ -13,6 +13,7 @@ import { FilterFields, Check } from "@/components/filter-fields";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { Market } from "@/lib/markets";
 import { useStickyPanel } from "@/components/sticky-panel";
+import { CollapseToggle } from "@/components/collapse-toggle";
 
 export function FilterPanel({
   areas,
@@ -51,19 +52,23 @@ export function FilterPanel({
   }
 
   return (
-    <div className="card overflow-hidden" style={pinned ? { borderRadius: 0 } : undefined}>
+    <div
+      className="card overflow-hidden transition-[border-radius] duration-200 ease-out motion-reduce:transition-none"
+      style={pinned ? { borderRadius: 0 } : undefined}
+    >
+      {/* Tre spalter, så pilen hamnar mitt i fältet oavsett hur breda sidorna är. */}
       <div
-        className={`flex items-center justify-between gap-3 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+        className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
           pinned ? "px-3 py-1.5" : "px-5 py-3"
         }`}
       >
-        <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold" aria-expanded={open}>
-          <SlidersHorizontal className="size-4 text-accent" />
-          {t("title")}
-          {activeCount > 0 && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs text-white">{activeCount}</span>}
-          <span className="text-xs font-normal text-muted">{open ? t("hide") : t("show")}</span>
+        <button type="button" onClick={() => setOpen(!open)} className="flex min-w-0 items-center gap-2 justify-self-start text-sm font-semibold" aria-expanded={open}>
+          <SlidersHorizontal className="size-4 shrink-0 text-accent" />
+          <span className="truncate">{t("title")}</span>
+          {activeCount > 0 && <span className="shrink-0 rounded-full bg-brand-600 px-2 py-0.5 text-xs text-white">{activeCount}</span>}
         </button>
-        <div className="flex items-center gap-2">
+        <CollapseToggle expanded={open} onToggle={() => setOpen(!open)} label={open ? t("hide") : t("show")} compact={pinned} />
+        <div className="flex items-center gap-2 justify-self-end">
           {activeCount > 0 && (
             <Link href="/lagenheter" className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
               <X className="size-3.5" /> <span className="hidden sm:inline">{t("clear")}</span>

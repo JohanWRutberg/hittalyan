@@ -113,6 +113,22 @@
   --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 16px 40px -16px rgb(15 23 42 / 0.2);
 }
 
+/*
+ * Scroll-anchoring av: den fastnaglade panelen (filter + karta + sortering) ändrar
+ * höjd när den fäster. Webbläsaren kompenserar då scrollpositionen för att hålla
+ * ett element nedanför stilla – vilket flyttar sentinelen, släpper fastnaglingen,
+ * växer panelen igen, och så vidare. Det är den återkopplingen som fick fälten att
+ * skaka kraftigt vid vissa scrollägen.
+ *
+ * Måste sitta på scroll-behållaren, inte på panelen: ankaret väljs bland
+ * scroll-behållarens ättlingar, och det var ett kort *under* panelen som valdes.
+ * Ofarligt här, eftersom annonsbilderna ligger i fasta 16:10-rutor och alltså inte
+ * ändrar layout när de laddas.
+ */
+html {
+  overflow-anchor: none;
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
@@ -138,6 +154,40 @@ body {
   .chip {
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
+  }
+}
+
+/* ---------- Fäll in/ut-pilen (filter och karta) ---------- */
+
+/*
+ * Hovern ligger här och inte som `hover:`-klass: Tailwinds hover-variant packas
+ * inte in i `@media (hover: hover)`, och på iOS blir tillståndet då kvar efter
+ * ett tryck. `:active` ger återkoppling på pekskärm i stället.
+ */
+@media (hover: hover) {
+  .collapse-toggle:hover {
+    background-color: var(--subtle);
+    color: var(--ink);
+  }
+}
+.collapse-toggle:active {
+  background-color: var(--subtle);
+  color: var(--ink);
+}
+
+@media (pointer: coarse) {
+  /* Minst 44px tryckyta, utan att knappen växer visuellt. */
+  .collapse-toggle {
+    position: relative;
+  }
+  .collapse-toggle::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 56px;
+    height: 44px;
+    transform: translate(-50%, -50%);
   }
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type * as MapLibre from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { ChevronDown, ChevronUp, Maximize2, Minimize2, MapPin } from "lucide-react";
+import { Maximize2, Minimize2, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
 import { chanceFor, chanceRange } from "@/lib/chance";
@@ -13,6 +13,7 @@ import { useHoveredListing } from "@/components/hovered-listing";
 import { marketInfo, type Market } from "@/lib/markets";
 import { useResolvedTheme } from "@/lib/use-theme";
 import { StickyPanelProvider } from "@/components/sticky-panel";
+import { CollapseToggle } from "@/components/collapse-toggle";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { Locale } from "@/i18n/config";
 
@@ -255,7 +256,16 @@ export function ListingsMap({
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !stuck) return;
-    const io = new IntersectionObserver(([e]) => setStuckNow(!e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 });
+    // Hysteres: fäst först när hela sentinelen passerat toppen, släpp först när
+    // den är helt tillbaka i bild. Bandet däremellan gör att små scrollryck inte
+    // kan flippa läget fram och tillbaka.
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting && e.boundingClientRect.top < 0) setStuckNow(true);
+        else if (e.intersectionRatio >= 0.99) setStuckNow(false);
+      },
+      { threshold: [0, 1] },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, [stuck]);
@@ -438,29 +448,39 @@ export function ListingsMap({
 
   return (
     <>
-      {/* Sentinel: när den scrollat ovanför skärmen är kartan fastnaglad. Ingen höjd, ingen marginal. */}
-      {stuck && <div ref={sentinelRef} aria-hidden className="h-0 !m-0" />}
+      {/* Sentinel: när den scrollat ovanför skärmen är panelen fastnaglad. Höjden
+          ger hysteres (se observern ovan) och den negativa marginalen gör den
+          layoutneutral. */}
+      {stuck && <div ref={sentinelRef} aria-hidden className="h-10 -mb-10" />}
     <div
-      className={stuck ? "sticky top-0 z-20 will-change-transform transition-transform duration-300 ease-out motion-reduce:transition-none" : ""}
+      className={`${stuck ? "sticky top-0 z-20 will-change-transform transition-transform duration-300 ease-out motion-reduce:transition-none" : ""}`}
       // Fastnaglad karta ligger på top 0 och skjuts ned med en transform (GPU, inget
       // layoutarbete) så mycket som menyn är hög, i stället för att animera top.
       style={stuck && stuckNow ? { transform: "translateY(var(--nav-h, 0px))" } : undefined}
     >
-      {/* Raka hörn när kartan ligger i topp: annars syns listan som scrollar
-          bakom genom rundningarna. Inline-stil, eftersom den måste vinna över
-          `rounded-2xl` i .card oavsett hur Tailwind sorterar klasserna. */}
       <StickyPanelProvider value={pinned}>
       {header && (
         // Eget avstånd i normalläge; fastnaglat ska filtret och kartan sitta ihop.
-        <div className={pinned ? "" : "mb-6"}>{header}</div>
+        // Marginalen tonas med samma längd som paddingarna, annars snäpper glappet
+        // igen direkt medan resten fortfarande glider.
+        <div className={`transition-[margin] duration-200 ease-out motion-reduce:transition-none ${pinned ? "mb-0" : "mb-6"}`}>
+          {header}
+        </div>
       )}
-      <div className="card overflow-hidden" style={pinned ? { borderRadius: 0 } : undefined}>
+      {/* Raka hörn i topp: annars syns listan som scrollar bakom genom rundningarna.
+          Inline-stil, eftersom den måste vinna över `rounded-2xl` i .card oavsett
+          hur Tailwind sorterar klasserna. */}
       <div
-        className={`flex items-center justify-between gap-3 overflow-hidden transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+        className="card overflow-hidden transition-[border-radius] duration-200 ease-out motion-reduce:transition-none"
+        style={pinned ? { borderRadius: 0 } : undefined}
+      >
+      {/* Tre spalter, så pilen hamnar mitt i fältet oavsett hur breda sidorna är. */}
+      <div
+        className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 overflow-hidden transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
           compactHeader ? "px-3 py-1" : "px-5 py-3"
         }`}
       >
-        <div className={`flex min-w-0 items-center gap-2 font-semibold ${compactHeader ? "text-xs" : "text-sm"}`}>
+        <div className={`flex min-w-0 items-center gap-2 justify-self-start font-semibold ${compactHeader ? "text-xs" : "text-sm"}`}>
           <MapPin className="size-4 shrink-0 text-accent" />
           {t("title")}
           <span className="truncate font-normal text-muted">
@@ -468,7 +488,16 @@ export function ListingsMap({
             {points.length > MAX_MARKERS && t("showing", { max: MAX_MARKERS })}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <CollapseToggle
+          expanded={!collapsed}
+          onToggle={() => {
+            setCollapsed(!collapsed);
+            if (!collapsed) setExpanded(false);
+          }}
+          label={collapsed ? t("unfold") : t("fold")}
+          compact={compactHeader}
+        />
+        <div className="flex shrink-0 items-center gap-1 justify-self-end">
           {!collapsed && (
             <button
               type="button"
@@ -480,19 +509,6 @@ export function ListingsMap({
               <span className="hidden sm:inline">{expanded ? t("smaller") : t("larger")}</span>
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              setCollapsed(!collapsed);
-              if (!collapsed) setExpanded(false);
-            }}
-            aria-expanded={!collapsed}
-            className={`btn-ghost text-xs ${compactHeader ? "px-2 py-0.5" : "px-2.5 py-1.5"}`}
-            title={collapsed ? t("unfold") : t("fold")}
-          >
-            {collapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
-            <span className="hidden sm:inline">{collapsed ? t("unfold") : t("fold")}</span>
-          </button>
         </div>
       </div>
       <div
@@ -515,10 +531,10 @@ export function ListingsMap({
         <div
           // Fastnaglat blir kartan och sorteringen en panel: rak överkant mot
           // skärmkanten, mjuk underkant där listan scrollar förbi under.
-          className={`bg-canvas transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+          className={`border border-t-0 bg-canvas transition-[padding,border-radius,border-color] duration-200 ease-out motion-reduce:transition-none ${
             pinned
-              ? "rounded-b-2xl border border-t-0 border-line px-3 py-1.5 [&_.chip]:py-0.5 [&_.chip]:text-[11px]"
-              : "pt-4"
+              ? "rounded-b-2xl border-line px-3 py-1.5 [&_.chip]:py-0.5 [&_.chip]:text-[11px]"
+              : "border-transparent pt-4"
           }`}
         >
           {footer}

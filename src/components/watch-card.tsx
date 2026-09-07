@@ -46,17 +46,17 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
           </div>
           <p className="mt-0.5 text-sm text-muted">{parts.length ? parts.join(" · ") : t("all")}</p>
         </div>
-        <span className={`chip shrink-0 ${w.enabled ? "border-brand-200 bg-brand-50 text-brand-700" : ""}`}>
+        <span className={`chip shrink-0 ${w.enabled ? "border-accent-line bg-accent-soft text-accent" : ""}`}>
           {w.enabled ? t("active") : t("paused")}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-        <span className="inline-flex items-center gap-1"><Mail className={`size-3.5 ${w.notifyEmail ? "text-brand-600" : "text-slate-300"}`} /> {t("mail", { state: w.notifyEmail ? t("on") : t("off") })}</span>
-        <span className="inline-flex items-center gap-1"><Bell className={`size-3.5 ${w.notifyPush ? "text-brand-600" : "text-slate-300"}`} /> {t("push", { state: w.notifyPush ? t("on") : t("off") })}</span>
+        <span className="inline-flex items-center gap-1"><Mail className={`size-3.5 ${w.notifyEmail ? "text-accent" : "text-faint"}`} /> {t("mail", { state: w.notifyEmail ? t("on") : t("off") })}</span>
+        <span className="inline-flex items-center gap-1"><Bell className={`size-3.5 ${w.notifyPush ? "text-accent" : "text-faint"}`} /> {t("push", { state: w.notifyPush ? t("on") : t("off") })}</span>
         <span>{t("hits", { count: hits })}</span>
       </div>
       <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
-        <Link href={`/lagenheter?${w.id ? `bevakning=${w.id}` : ""}`} className="text-sm font-medium text-brand-700 hover:underline">
+        <Link href={`/lagenheter?${w.id ? `bevakning=${w.id}` : ""}`} className="text-sm font-medium text-accent hover:underline">
           {t("showHits")}
         </Link>
         <div className="flex items-center gap-1">
@@ -68,7 +68,7 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
           </Link>
           <button
             type="button"
-            className="btn-ghost px-2.5 py-1.5 hover:text-red-600"
+            className="btn-ghost px-2.5 py-1.5 hover:text-danger"
             title={tc("delete")}
             onClick={() => {
               if (confirm(t("confirmDelete", { name: w.name }))) start(() => deleteWatch(w.id));

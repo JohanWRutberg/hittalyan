@@ -48,12 +48,12 @@ export function ListingCard({
   const armed = armedId === l.id;
   const isNew = isRecent(l.firstSeenAt);
   const tagKeys = [
-    l.nyproduktion && { key: "nyproduktion", cls: "border-amber-200 bg-amber-50 text-amber-700" },
+    l.nyproduktion && { key: "nyproduktion", cls: "border-warn-line bg-warn-soft text-warn" },
     l.ungdom && { key: "ungdom", cls: "" },
     l.student && { key: "student", cls: "" },
     l.senior && { key: "senior", cls: "" },
     l.korttid && { key: "korttid", cls: "" },
-    l.bostadssnabben && info.quickLetTagKey && { key: info.quickLetTagKey, cls: "border-sky-200 bg-sky-50 text-sky-700" },
+    l.bostadssnabben && info.quickLetTagKey && { key: info.quickLetTagKey, cls: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300" },
     l.balkong && { key: "balkong", cls: "" },
     l.hiss && { key: "hiss", cls: "" },
   ].filter(Boolean) as { key: string; cls: string }[];
@@ -105,7 +105,7 @@ export function ListingCard({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {isNew && (
-              <span className="chip border-brand-200 bg-brand-50 text-brand-700">
+              <span className="chip border-accent-line bg-accent-soft text-accent">
                 <Sparkles className="size-3" /> {t("card.new")}
               </span>
             )}
@@ -113,9 +113,9 @@ export function ListingCard({
               {l.stadsdel} · {l.kommun}
             </span>
           </div>
-          <h3 className="mt-1 truncate text-lg font-semibold tracking-tight text-ink group-hover:text-brand-700">{l.gatuadress}</h3>
+          <h3 className="mt-1 truncate text-lg font-semibold tracking-tight text-ink group-hover:text-accent">{l.gatuadress}</h3>
         </div>
-        <ArrowUpRight className="size-5 shrink-0 text-slate-300 transition group-hover:text-brand-600" />
+        <ArrowUpRight className="size-5 shrink-0 text-faint transition group-hover:text-accent" />
       </div>
 
       <dl className="grid grid-cols-4 gap-2 text-sm">
@@ -148,12 +148,12 @@ export function ListingCard({
             </div>
           ) : (
             <p className="text-xs text-muted">
-              <span className="font-medium text-brand-700">{tc("login")}</span> {t("card.loginForChance")}
+              <span className="font-medium text-accent">{tc("login")}</span> {t("card.loginForChance")}
               {l.kotidQ1 != null && l.kotidQ3 != null && t("card.similarRequired", { q1: l.kotidQ1, q3: l.kotidQ3 })}
             </p>
           ))}
         {armed && (
-          <p id={`tap-${l.id}`} className="rounded-lg bg-blue-50 px-2 py-1 text-center text-[11px] font-medium text-blue-700 sm:hidden">
+          <p id={`tap-${l.id}`} className="rounded-lg bg-blue-50 dark:bg-blue-950 px-2 py-1 text-center text-[11px] font-medium text-blue-700 dark:text-blue-300 sm:hidden">
             {t("card.tapAgain")}
           </p>
         )}

@@ -32,15 +32,15 @@ export function CookieConsent({ enabled }: { enabled: boolean }) {
           aria-label={t("title")}
           className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4"
         >
-          <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-line bg-white p-5 shadow-lift sm:flex-row sm:items-center">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+          <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-line bg-surface p-5 shadow-lift sm:flex-row sm:items-center">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
               <Cookie className="size-5" />
             </span>
             <div className="flex-1 text-sm">
               <p className="font-semibold">{t("title")}</p>
               <p className="mt-0.5 text-muted">
                 {t("lead")}{" "}
-                <Link href="/ansvarsfriskrivning" className="font-medium text-brand-700 hover:underline">
+                <Link href="/ansvarsfriskrivning" className="font-medium text-accent hover:underline">
                   {t("readMore")}
                 </Link>
               </p>
@@ -67,7 +67,7 @@ export function CookieSettingsButton({ label }: { label: string }) {
   if (consent == null) return null;
 
   return (
-    <button type="button" onClick={clearConsent} className="hover:text-brand-700">
+    <button type="button" onClick={clearConsent} className="hover:text-accent">
       {label}
     </button>
   );

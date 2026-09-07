@@ -77,8 +77,8 @@ export function PushGuide({ variant }: { variant: "banner" | "full" }) {
     const text =
       state.platform === "ios-safari" ? t("ios") : state.platform === "ios-installed" ? t("iosInstalled") : t("android");
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">
-        <Bell className="mt-0.5 size-4 shrink-0 text-brand-700" />
+      <div className="flex items-start gap-3 rounded-2xl border border-accent-line bg-accent-soft px-4 py-3 text-sm text-accent-strong">
+        <Bell className="mt-0.5 size-4 shrink-0 text-accent" />
         <p className="flex-1">
           {text}{" "}
           <Link href="/konto" className="font-semibold underline">
@@ -88,7 +88,7 @@ export function PushGuide({ variant }: { variant: "banner" | "full" }) {
         <button
           type="button"
           aria-label={t("dismiss")}
-          className="-mr-1 -mt-1 rounded-lg p-1 text-brand-700/70 hover:bg-brand-100 hover:text-brand-900"
+          className="-mr-1 -mt-1 rounded-lg p-1 text-accent/70 hover:bg-accent-soft hover:text-accent-strong"
           onClick={() => {
             setDismissed(true);
             try {
@@ -120,16 +120,16 @@ function FullGuide({ state }: { state: GuideState }) {
   return (
     <div className="space-y-3">
       {state.platform === "ios-installed" && (
-        <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900">{t("installed")}</p>
+        <p className="rounded-xl bg-accent-soft px-3 py-2 text-sm text-accent-strong">{t("installed")}</p>
       )}
       {sections.map((s) => {
         const mine = s.id === current;
         return (
-          <details key={s.id} open={mine} className={`rounded-xl border p-3 ${mine ? "border-brand-200 bg-brand-50/40" : "border-line bg-white"}`}>
+          <details key={s.id} open={mine} className={`rounded-xl border p-3 ${mine ? "border-accent-line bg-accent-soft/40" : "border-line bg-surface"}`}>
             <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
-              <s.icon className="size-4 text-brand-700" />
+              <s.icon className="size-4 text-accent" />
               {t(`${s.key}.title`)}
-              {mine && <span className="chip ml-auto border-brand-200 bg-brand-50 text-brand-700">{t("yourDevice")}</span>}
+              {mine && <span className="chip ml-auto border-accent-line bg-accent-soft text-accent">{t("yourDevice")}</span>}
             </summary>
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-ink">
               {Array.from({ length: s.steps }, (_, i) => (

@@ -46,7 +46,7 @@ export function LocaleSwitcher({ compact }: { compact?: boolean }) {
   const [pending, start] = useTransition();
 
   return (
-    <div className={`flex items-center gap-0.5 rounded-xl border border-line bg-white p-0.5 ${pending ? "opacity-60" : ""}`} role="group" aria-label={t("language")}>
+    <div className={`flex items-center gap-0.5 rounded-xl border border-line bg-surface p-0.5 ${pending ? "opacity-60" : ""}`} role="group" aria-label={t("language")}>
       {LOCALES.map((l) => {
         const { Flag, labelKey } = FLAGS[l];
         const active = l === locale;
@@ -64,7 +64,7 @@ export function LocaleSwitcher({ compact }: { compact?: boolean }) {
               })
             }
             className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-xs font-semibold transition ${
-              active ? "bg-brand-50 text-brand-800 shadow-soft" : "text-muted hover:bg-slate-100 hover:text-ink"
+              active ? "bg-accent-soft text-accent-strong shadow-soft" : "text-muted hover:bg-subtle hover:text-ink"
             }`}
           >
             <Flag className="h-3.5 w-[21px] rounded-[2px] shadow-[0_0_0_1px_rgb(15_23_42_/_0.08)]" />

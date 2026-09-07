@@ -21,7 +21,7 @@ export default async function ContactPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-start gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
           <Mail className="size-5" />
         </span>
         <div>

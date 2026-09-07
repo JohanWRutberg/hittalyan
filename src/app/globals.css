@@ -1,6 +1,75 @@
 @import "tailwindcss";
 
-@theme {
+/*
+ * Färgerna finns i två lager: en uppsättning råa toner per läge (:root och
+ * [data-theme="dark"]), och semantiska namn som Tailwind gör verktygsklasser av.
+ * Komponenter använder de semantiska (bg-surface, text-accent), aldrig de råa –
+ * då byter hela gränssnittet läge genom att variablerna skrivs om.
+ *
+ * `@theme inline` är nyckeln: utan `inline` fryser Tailwind värdet vid bygget och
+ * omskrivningen i körning får ingen effekt.
+ */
+
+:root {
+  color-scheme: light;
+
+  --canvas: #f5f9fb;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2eaf0;
+  /* Svag bakgrund för hover och platshållare */
+  --subtle: #f1f5f9;
+  /* Text som ska tona bort helt, t.ex. placeholder */
+  --faint: #94a3b8;
+
+  /* Varumärkets teal i sina roller. I mörkt läge vänds ljusheten:
+     accenten blir ljus mot mörk bakgrund, tonplattan blir mörk. */
+  --accent: #136558;
+  --accent-strong: #11433c;
+  --accent-soft: #effaf7;
+  --accent-line: #b0e6d6;
+  --accent-line-strong: #7cd3bd;
+
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --danger-line: #fecaca;
+
+  --warn: #92400e;
+  --warn-soft: #fffbeb;
+  --warn-line: #fde68a;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0f1720;
+  --surface: #18222e;
+  --ink: #e6edf3;
+  --muted: #94a3b8;
+  --line: #2a3543;
+  --subtle: #212c3a;
+  --faint: #64748b;
+
+  --accent: #5fd0b6;
+  --accent-strong: #8fe3d0;
+  --accent-soft: #12352d;
+  --accent-line: #1d5548;
+  --accent-line-strong: #27705d;
+
+  --danger: #fca5a5;
+  --danger-soft: #2a1416;
+  --danger-line: #4a1f22;
+
+  --warn: #fcd34d;
+  --warn-soft: #2a1f0d;
+  --warn-line: #4a3714;
+}
+
+/* Låter `dark:`-varianten fungera mot vårt data-attribut. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
@@ -15,18 +84,30 @@
   --color-brand-800: #125147;
   --color-brand-900: #11433c;
 
-  --color-ink: #0f172a;
-  --color-muted: #64748b;
-  --color-line: #e2eaf0;
-  --color-surface: #ffffff;
-  --color-canvas: #f5f9fb;
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-canvas: var(--canvas);
+  --color-subtle: var(--subtle);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-accent-line-strong: var(--accent-line-strong);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-line: var(--warn-line);
 
   --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
   --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 16px 40px -16px rgb(15 23 42 / 0.2);
-}
-
-html {
-  color-scheme: light;
 }
 
 body {
@@ -58,7 +139,7 @@ body {
 }
 
 @utility input {
-  @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink shadow-none outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:opacity-60;
+  @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink shadow-none outline-none transition placeholder:text-faint focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:opacity-60;
 }
 @utility label {
   @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted;
@@ -70,19 +151,19 @@ body {
   @apply btn bg-brand-600 text-white shadow-soft hover:bg-brand-700 active:scale-[0.98];
 }
 @utility btn-secondary {
-  @apply btn border border-line bg-white text-ink hover:border-brand-300 hover:bg-brand-50;
+  @apply btn border border-line bg-surface text-ink hover:border-accent-line-strong hover:bg-accent-soft;
 }
 @utility btn-ghost {
-  @apply btn text-muted hover:bg-slate-100 hover:text-ink;
+  @apply btn text-muted hover:bg-subtle hover:text-ink;
 }
 @utility btn-danger {
-  @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50;
+  @apply btn border border-danger-line bg-surface text-danger hover:bg-danger-soft;
 }
 @utility card {
   @apply rounded-2xl border border-line bg-surface shadow-soft;
 }
 @utility chip {
-  @apply inline-flex items-center gap-1 rounded-full border border-line bg-white px-2.5 py-1 text-xs font-medium text-muted;
+  @apply inline-flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-1 text-xs font-medium text-muted;
 }
 
 /* ---------- Karta (MapLibre + egna markörer) ---------- */
@@ -93,7 +174,7 @@ body {
 .maplibregl-ctrl-group {
   border-radius: 12px !important;
   box-shadow: var(--shadow-soft) !important;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--line);
 }
 .maplibregl-ctrl-group button {
   width: 34px !important;
@@ -243,11 +324,12 @@ body {
   padding: 0 !important;
   border-radius: 14px !important;
   box-shadow: var(--shadow-lift) !important;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--line);
+  background: var(--surface) !important;
   overflow: hidden;
 }
 .maplibregl-popup-tip {
-  border-top-color: #fff !important;
+  border-top-color: var(--surface) !important;
 }
 .lm-popup {
   padding: 12px 14px;
@@ -282,14 +364,14 @@ body {
   transition: background 0.15s;
 }
 .lm-popup__row:hover {
-  background: var(--color-brand-50);
+  background: var(--accent-soft);
 }
 .lm-popup__main {
   flex: 1;
 }
 .lm-popup__rent {
   font-weight: 600;
-  color: var(--color-brand-700);
+  color: var(--accent);
   white-space: nowrap;
 }
 .lm-popup__new {
@@ -312,7 +394,7 @@ body {
 }
 .lm-popup__chance--excellent { color: #065f46; background: #d1fae5; border-color: #6ee7b7; }
 .lm-popup__chance--great { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
-.lm-popup__chance--good { color: var(--color-brand-700); background: var(--color-brand-50); border-color: var(--color-brand-200); }
+.lm-popup__chance--good { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
 .lm-popup__chance--some { color: #4d7c0f; background: #f7fee7; border-color: #d9f99d; }
 .lm-popup__chance--slim { color: #b45309; background: #fffbeb; border-color: #fde68a; }
 .lm-popup__chance--low { color: #64748b; background: #f8fafc; border-color: #e2e8f0; }
@@ -336,7 +418,7 @@ body {
   outline: none;
 }
 .lm-popup__row:focus-visible {
-  outline: 2px solid var(--color-brand-400);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
@@ -393,4 +475,20 @@ body {
     width: 30px !important;
     height: 30px !important;
   }
+}
+
+
+/* ---------- Kartan i mörkt läge ----------
+ * Markörnålarna behåller sina färger: de ska sticka ut mot kartan, inte smälta in.
+ * Popupens pillerfärger är däremot ljusa pastelltoner som skriker mot en mörk
+ * yta, så de får dämpade motsvarigheter med samma innebörd.
+ */
+[data-theme="dark"] {
+  .lm-popup__new { color: #fcd34d; background: #3a2a0a; }
+  .lm-popup__chance--excellent { color: #6ee7b7; background: #0c2f22; border-color: #17513c; }
+  .lm-popup__chance--great { color: #5ed6a8; background: #0d2a20; border-color: #164634; }
+  .lm-popup__chance--some { color: #bef264; background: #26300f; border-color: #3f4d18; }
+  .lm-popup__chance--slim { color: #fcd34d; background: #332504; border-color: #4d3a0c; }
+  .lm-popup__chance--low { color: #94a3b8; background: #1c2634; border-color: #2a3543; }
+  .lm-popup__applicants { color: #94a3b8; background: #1c2634; border-color: #2a3543; }
 }

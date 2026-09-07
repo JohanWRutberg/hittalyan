@@ -39,8 +39,8 @@ export function FavoriteButton({ listingId }: { listingId: string }) {
           setFavorite(listingId, res.favorited);
         });
       }}
-      className={`grid size-9 place-items-center rounded-full bg-white/90 shadow-soft transition hover:bg-white disabled:opacity-60 ${
-        on ? "text-red-500" : "text-slate-400 hover:text-red-500"
+      className={`grid size-9 place-items-center rounded-full bg-surface/90 shadow-soft transition hover:bg-surface disabled:opacity-60 ${
+        on ? "text-danger" : "text-faint hover:text-danger"
       }`}
     >
       <Heart className={`size-4.5 ${on ? "fill-current" : ""}`} />

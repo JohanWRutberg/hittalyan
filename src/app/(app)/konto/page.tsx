@@ -44,7 +44,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {sp.ny && (
-        <FadeIn className="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-brand-900">
+        <FadeIn className="rounded-2xl border border-accent-line bg-accent-soft p-5 text-accent-strong">
           <p className="font-semibold">{t("welcome.title")}</p>
           <p className="mt-1 text-sm">
             {t.rich("welcome.lead", {
@@ -65,12 +65,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
 
       <FadeIn className="card p-6">
         <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><CalendarClock className="size-5" /></span>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"><CalendarClock className="size-5" /></span>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{t("queue.title")}</h2>
             <p className="text-sm text-muted">{info.name}</p>
             {qt ? (
-              <p className="mt-1 text-3xl font-bold tracking-tight text-brand-700">
+              <p className="mt-1 text-3xl font-bold tracking-tight text-accent">
                 {t("queue.value", { years: qt.years, days: qt.days })}
                 <span className="mt-0.5 block text-sm font-medium text-muted sm:ml-2 sm:inline sm:text-base">
                   {t("queue.since", { total: formatNumber(qt.totalDays, locale), date: formatDate(queueDate, locale) })}
@@ -89,7 +89,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
 
       <FadeIn delay={0.03} className="card p-6">
         <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><Building2 className="size-5" /></span>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"><Building2 className="size-5" /></span>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{tm("accountTitle")}</h2>
             <p className="mt-1 text-sm text-muted">{tm("accountLead")}</p>
@@ -101,7 +101,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
 
       <FadeIn delay={0.05} className="card p-6">
         <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><ShieldCheck className="size-5" /></span>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"><ShieldCheck className="size-5" /></span>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{t("notifications.title")}</h2>
             <p className="mt-1 text-sm text-muted">
@@ -109,7 +109,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
             </p>
             <div className="mt-4"><PushToggle /></div>
             <details className="mt-4 group">
-              <summary className="cursor-pointer text-sm font-medium text-brand-700 hover:underline">{t("notifications.guide")}</summary>
+              <summary className="cursor-pointer text-sm font-medium text-accent hover:underline">{t("notifications.guide")}</summary>
               <div className="mt-3"><PushGuide variant="full" /></div>
             </details>
           </div>
@@ -118,7 +118,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
 
       <FadeIn delay={0.1} className="card p-6">
         <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><Mail className="size-5" /></span>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"><Mail className="size-5" /></span>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{t("profile.title")}</h2>
             <div className="mt-4"><NameForm value={user.name} /></div>
@@ -142,7 +142,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
             {notifications.map((n) => (
               <li key={n.id} className="flex items-center justify-between gap-4 px-6 py-3 text-sm">
                 <div className="min-w-0">
-                  <a href={n.listing.url} target="_blank" rel="noreferrer" className="truncate font-medium text-brand-700 hover:underline">
+                  <a href={n.listing.url} target="_blank" rel="noreferrer" className="truncate font-medium text-accent hover:underline">
                     {n.listing.gatuadress}, {n.listing.stadsdel}
                   </a>
                   <p className="text-xs text-muted">{n.watch.name} · {marketInfo(marketOf(n.listing.market)).city} · {formatDateTime(n.createdAt, locale)}</p>

@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
 import { FadeIn } from "@/components/motion";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { SiteFooter } from "@/components/site-footer";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -35,6 +36,7 @@ export default async function LandingPage() {
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-6 py-5">
         <Logo />
         <nav className="flex items-center gap-2">
+          <ThemeSwitcher compact />
           <LocaleSwitcher compact />
           {session ? (
             <Link href="/lagenheter" className="btn-primary">
@@ -54,11 +56,11 @@ export default async function LandingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-24">
-        <section className="relative overflow-hidden rounded-3xl border border-line bg-white px-6 py-16 shadow-soft sm:px-12 sm:py-24">
-          <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-brand-100 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-full bg-sky-100 blur-3xl" />
+        <section className="relative overflow-hidden rounded-3xl border border-line bg-surface px-6 py-16 shadow-soft sm:px-12 sm:py-24">
+          <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-accent-soft blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-full bg-sky-100 blur-3xl dark:bg-sky-500/10" />
           <FadeIn className="relative max-w-2xl">
-            <span className="chip border-brand-200 bg-brand-50 text-brand-700">
+            <span className="chip border-accent-line bg-accent-soft text-accent">
               <span className="size-1.5 rounded-full bg-brand-500" /> {t("badge")}
             </span>
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-ink sm:text-6xl">{t("title")}</h1>
@@ -89,7 +91,7 @@ export default async function LandingPage() {
                   <div key={m} className="rounded-2xl border border-line bg-canvas px-4 py-3">
                     <p className="font-semibold">{info.city}</p>
                     <p className="truncate text-xs text-muted">{info.name}</p>
-                    <p className="mt-1 text-sm text-brand-700">
+                    <p className="mt-1 text-sm text-accent">
                       {t.rich("activeNow", {
                         count: formatNumber(activeByMarket.get(m) ?? 0, locale),
                         strong: (c) => <strong>{c}</strong>,
@@ -105,7 +107,7 @@ export default async function LandingPage() {
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f, i) => (
             <FadeIn key={f.key} delay={0.1 + i * 0.06} className="card p-6">
-              <span className="grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-700">
+              <span className="grid size-10 place-items-center rounded-xl bg-accent-soft text-accent">
                 <f.icon className="size-5" />
               </span>
               <h3 className="mt-4 font-semibold">{t(`features.${f.key}.title`)}</h3>

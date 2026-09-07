@@ -3,6 +3,7 @@ import { LogIn } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { NavLinks, SignOutButton } from "@/components/nav-client";
 import { AutoHideHeader } from "@/components/auto-hide-header";
 
@@ -14,6 +15,7 @@ export async function PublicNav() {
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
         <Logo href="/" />
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <ThemeSwitcher compact />
           <LocaleSwitcher compact />
           <Link href="/login" title={t("login")} aria-label={t("login")} className="btn-ghost px-2 sm:px-4">
             <LogIn className="size-4 sm:hidden" />
@@ -45,6 +47,7 @@ export async function AppNav({ user }: { user: { name: string; email: string; ro
           <NavLinks links={links} />
         </div>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <ThemeSwitcher compact />
           <LocaleSwitcher compact />
           <Link href="/konto" className="hidden text-sm text-muted sm:block">
             {user.name}

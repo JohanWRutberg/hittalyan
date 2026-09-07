@@ -150,16 +150,16 @@ function ChipPicker({
   const countOf = (name: string) => options.find((o) => o.name === name)?.count ?? 0;
 
   return (
-    <div className="rounded-xl border border-line bg-white p-2">
+    <div className="rounded-xl border border-line bg-surface p-2">
       <div className="flex flex-wrap items-center gap-1.5">
         {selected.map((s) => (
-          <button key={s} type="button" onClick={() => onToggle(s)} className="chip border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100">
+          <button key={s} type="button" onClick={() => onToggle(s)} className="chip border-accent-line bg-accent-soft text-accent hover:bg-accent-soft">
             {s}
             {showCounts && <CountBadge n={countOf(s)} active />}
             <span aria-hidden>×</span>
           </button>
         ))}
-        <button type="button" onClick={() => setOpen(!open)} className="chip hover:border-brand-300">
+        <button type="button" onClick={() => setOpen(!open)} className="chip hover:border-accent-line-strong">
           {selected.length ? (open ? t("closePicker") : t("change")) : placeholder}
         </button>
       </div>
@@ -179,7 +179,7 @@ function ChipPicker({
                   type="button"
                   onClick={() => onToggle(o.name)}
                   className={`chip transition ${
-                    on ? "border-brand-300 bg-brand-100 text-brand-800" : empty ? "text-slate-400 hover:border-slate-300" : "hover:border-brand-300 hover:text-ink"
+                    on ? "border-accent-line-strong bg-accent-soft text-accent-strong" : empty ? "text-faint hover:border-line" : "hover:border-accent-line-strong hover:text-ink"
                   }`}
                 >
                   {o.name}
@@ -198,7 +198,7 @@ function CountBadge({ n, active }: { n: number; active?: boolean }) {
   return (
     <span
       className={`ml-0.5 rounded-full px-1.5 text-[10px] font-semibold tabular-nums ${
-        active ? "bg-brand-600 text-white" : n > 0 ? "bg-slate-100 text-slate-600" : "bg-slate-50 text-slate-300"
+        active ? "bg-brand-600 text-white" : n > 0 ? "bg-subtle text-muted" : "bg-subtle text-faint"
       }`}
     >
       {n}
@@ -222,7 +222,7 @@ function Range({ label, name, min, max, step }: { label: string; name: string; m
 
 export function Check({ name, label, checked, description }: { name: string; label: string; checked?: boolean; description?: string }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-white px-3 py-2.5 text-sm transition has-checked:border-brand-300 has-checked:bg-brand-50">
+    <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-surface px-3 py-2.5 text-sm transition has-checked:border-accent-line-strong has-checked:bg-accent-soft">
       <input type="checkbox" name={name} defaultChecked={!!checked} className="mt-0.5 size-4 accent-brand-600" />
       <span>
         <span className="font-medium">{label}</span>

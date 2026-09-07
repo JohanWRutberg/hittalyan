@@ -15,8 +15,8 @@ export function QueueDateForm({ value }: { value: string }) {
         <input id="queueRegisteredAt" name="queueRegisteredAt" type="date" defaultValue={value} max={new Date().toISOString().slice(0, 10)} className="input" />
       </div>
       <button type="submit" disabled={pending} className="btn-primary">{pending ? tc("saving") : tc("save")}</button>
-      {state?.error && <span className="text-sm text-red-700">{state.error}</span>}
-      {state?.ok && <span className="text-sm text-brand-700">{tc("saved")}</span>}
+      {state?.error && <span className="text-sm text-danger">{state.error}</span>}
+      {state?.ok && <span className="text-sm text-accent">{tc("saved")}</span>}
     </form>
   );
 }
@@ -32,8 +32,8 @@ export function NameForm({ value }: { value: string }) {
         <input id="name" name="name" defaultValue={value} required className="input" />
       </div>
       <button type="submit" disabled={pending} className="btn-secondary">{pending ? tc("saving") : t("profile.update")}</button>
-      {state?.error && <span className="text-sm text-red-700">{state.error}</span>}
-      {state?.ok && <span className="text-sm text-brand-700">{tc("saved")}</span>}
+      {state?.error && <span className="text-sm text-danger">{state.error}</span>}
+      {state?.ok && <span className="text-sm text-accent">{tc("saved")}</span>}
     </form>
   );
 }

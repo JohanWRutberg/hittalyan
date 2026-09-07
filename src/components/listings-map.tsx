@@ -11,6 +11,7 @@ import { chanceFor, chanceRange } from "@/lib/chance";
 import { formatYearsShort } from "@/lib/format";
 import { useHoveredListing } from "@/components/hovered-listing";
 import { marketInfo, type Market } from "@/lib/markets";
+import { useResolvedTheme } from "@/lib/use-theme";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { Locale } from "@/i18n/config";
 
@@ -45,8 +46,13 @@ interface Group {
   hasFavorite: boolean;
 }
 
-// OpenFreeMap: fria vektorkartor utan API-nyckel. Positron är den ljusa, rena stilen.
-const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+// OpenFreeMap: fria vektorkartor utan API-nyckel. Positron är den ljusa, rena
+// stilen; dark är dess mörka motsvarighet. En vit karta mitt i ett mörkt
+// gränssnitt lyser som en ficklampa, så stilen följer temat.
+const STYLE_URLS = {
+  light: "https://tiles.openfreemap.org/styles/positron",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+} as const;
 
 const MAX_MARKERS = 1500;
 const MIN_FIT_ZOOM = 8.3;
@@ -190,6 +196,7 @@ export function ListingsMap({
   /** Anropas när kartan flyttats eller zoomats, så listan kan följa utsnittet. */
   onBoundsChange?: (bounds: MapBounds) => void;
 }) {
+  const theme = useResolvedTheme();
   const { lat, lng } = marketInfo(market).center;
   const center: [number, number] = [lng, lat];
   // Via ref, så att kartan inte byggs om när föräldern får en ny callback.
@@ -235,7 +242,9 @@ export function ListingsMap({
         if (cancelled || !containerRef.current) return;
         const m = new maplibregl.Map({
           container: containerRef.current,
-          style: STYLE_URL,
+          // Läses ur DOM här i stället för från propsen: kartan skapas en gång,
+          // och ett tema-beroende hade byggt om hela kartan vid varje byte.
+          style: STYLE_URLS[document.documentElement.dataset.theme === "dark" ? "dark" : "light"],
           center,
           zoom: 9,
           attributionControl: { compact: true },
@@ -356,6 +365,14 @@ export function ListingsMap({
     });
   }, [favorites, points, ready]);
 
+  // Byt kartstil när läget ändras. Markörerna är egna DOM-element och överlever
+  // setStyle, så de behöver inte byggas om.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    map.setStyle(STYLE_URLS[theme]);
+  }, [theme, ready]);
+
   // Markera markören för det kort som hovras i listan
   useEffect(() => {
     const container = containerRef.current;
@@ -392,7 +409,7 @@ export function ListingsMap({
         aria-hidden={hideHeader || undefined}
       >
         <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
-          <MapPin className="size-4 shrink-0 text-brand-600" />
+          <MapPin className="size-4 shrink-0 text-accent" />
           {t("title")}
           <span className="truncate font-normal text-muted">
             · {t("summary", { listings: points.length, buildings })}

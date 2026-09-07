@@ -24,13 +24,13 @@ export interface Chance {
 }
 
 const STYLES: Record<ChanceLevel, Omit<Chance, "level">> = {
-  excellent: { pill: "border-emerald-300 bg-emerald-100 text-emerald-800", dot: "bg-emerald-600", rank: 5 },
-  great: { pill: "border-emerald-200 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", rank: 4 },
-  good: { pill: "border-brand-200 bg-brand-50 text-brand-700", dot: "bg-brand-500", rank: 3 },
-  some: { pill: "border-lime-200 bg-lime-50 text-lime-700", dot: "bg-lime-500", rank: 2 },
-  slim: { pill: "border-amber-200 bg-amber-50 text-amber-700", dot: "bg-amber-500", rank: 1 },
-  low: { pill: "border-slate-200 bg-slate-50 text-slate-500", dot: "bg-slate-400", rank: 0 },
-  unknown: { pill: "border-line bg-white text-muted", dot: "bg-slate-300", rank: -1 },
+  excellent: { pill: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300", dot: "bg-emerald-600 dark:bg-emerald-400", rank: 5 },
+  great: { pill: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400", dot: "bg-emerald-500", rank: 4 },
+  good: { pill: "border-accent-line bg-accent-soft text-accent", dot: "bg-brand-500", rank: 3 },
+  some: { pill: "border-lime-200 bg-lime-50 text-lime-700 dark:border-lime-800 dark:bg-lime-950 dark:text-lime-300", dot: "bg-lime-500", rank: 2 },
+  slim: { pill: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300", dot: "bg-amber-500", rank: 1 },
+  low: { pill: "border-line bg-subtle text-muted", dot: "bg-faint", rank: 0 },
+  unknown: { pill: "border-line bg-surface text-muted", dot: "bg-faint", rank: -1 },
 };
 
 /** Fälten en annons bidrar med till bedömningen. */

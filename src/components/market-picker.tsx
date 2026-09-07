@@ -30,15 +30,15 @@ export function MarketPicker({
             onClick={() => onSelect?.(m)}
             className={`flex items-center justify-between gap-2 rounded-2xl border px-4 py-3 text-left transition disabled:opacity-60 ${
               active
-                ? "border-brand-300 bg-brand-50 shadow-soft"
-                : "border-line bg-white hover:border-brand-200 hover:bg-canvas"
+                ? "border-accent-line-strong bg-accent-soft shadow-soft"
+                : "border-line bg-surface hover:border-accent-line hover:bg-canvas"
             }`}
           >
             <span className="min-w-0">
-              <span className={`block font-semibold ${active ? "text-brand-800" : "text-ink"}`}>{info.city}</span>
+              <span className={`block font-semibold ${active ? "text-accent-strong" : "text-ink"}`}>{info.city}</span>
               <span className="block truncate text-xs text-muted">{info.name}</span>
             </span>
-            {active && <Check className="size-4 shrink-0 text-brand-700" />}
+            {active && <Check className="size-4 shrink-0 text-accent" />}
           </button>
         );
       })}

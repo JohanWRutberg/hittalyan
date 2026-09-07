@@ -56,7 +56,7 @@ export function ForgotPasswordForm() {
   if (step === "done") {
     return (
       <FadeIn className="text-center">
-        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent">
           <CheckCircle2 className="size-6" />
         </span>
         <h1 className="mt-4 text-2xl font-bold tracking-tight">{t("title")}</h1>
@@ -87,7 +87,7 @@ export function ForgotPasswordForm() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
           <button type="submit" disabled={busy} className="btn-primary w-full">
             {busy ? t("sending") : t("send")}
           </button>
@@ -102,7 +102,7 @@ export function ForgotPasswordForm() {
             <label className="label" htmlFor="password">{t("newPassword")}</label>
             <input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required className="input" />
           </div>
-          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
           <button type="submit" disabled={busy || otp.length < 6} className="btn-primary w-full">
             {busy ? t("submitting") : t("submit")}
           </button>
@@ -110,7 +110,7 @@ export function ForgotPasswordForm() {
             <button type="button" className="text-muted hover:text-ink hover:underline" onClick={() => setStep("email")}>
               {t("back")}
             </button>
-            <button type="button" disabled={busy} className="font-medium text-brand-700 hover:underline" onClick={() => sendCode()}>
+            <button type="button" disabled={busy} className="font-medium text-accent hover:underline" onClick={() => sendCode()}>
               {t("resend")}
             </button>
           </div>
@@ -118,7 +118,7 @@ export function ForgotPasswordForm() {
       )}
 
       <p className="mt-6 text-center text-sm text-muted">
-        <Link href="/login" className="font-semibold text-brand-700 hover:underline">
+        <Link href="/login" className="font-semibold text-accent hover:underline">
           {t("toLogin")}
         </Link>
       </p>

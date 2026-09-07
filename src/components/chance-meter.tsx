@@ -46,15 +46,15 @@ export function ChanceMeter({
         {t(`${c.level}.label`)}
       </span>
       {range && (
-        <div className="relative h-1.5 min-w-16 flex-1 rounded-full bg-slate-100">
-          <div className="absolute inset-y-0 rounded-full bg-slate-300/80" style={{ left: pct(range.q1), width: `calc(${pct(range.q3)} - ${pct(range.q1)})` }}>
+        <div className="relative h-1.5 min-w-16 flex-1 rounded-full bg-subtle">
+          <div className="absolute inset-y-0 rounded-full bg-faint/50" style={{ left: pct(range.q1), width: `calc(${pct(range.q3)} - ${pct(range.q1)})` }}>
             {/* Tredjedelsmarkeringar: början / mitten / slutet av spannet */}
-            <span className="absolute inset-y-0 left-1/3 w-px bg-white/90" />
-            <span className="absolute inset-y-0 left-2/3 w-px bg-white/90" />
+            <span className="absolute inset-y-0 left-1/3 w-px bg-surface/90" />
+            <span className="absolute inset-y-0 left-2/3 w-px bg-surface/90" />
           </div>
           {userYears != null && (
             <span
-              className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-sm ${c.dot}`}
+              className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface shadow-sm ${c.dot}`}
               style={{ left: pct(userYears) }}
             />
           )}

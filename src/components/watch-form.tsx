@@ -58,7 +58,7 @@ export function WatchForm({
           </div>
         </div>
 
-        {state?.error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {state?.error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{state.error}</p>}
 
         <div className="flex items-center justify-end gap-2">
           <Link href="/bevakningar" className="btn-ghost">

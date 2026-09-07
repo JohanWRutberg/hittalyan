@@ -820,5 +820,11 @@
         "body": "Tjänsten tillhandahålls i befintligt skick. Vi ansvarar inte för bostäder du missat, för beslut du fattat utifrån uppgifter här, eller för skada som uppstått av att tjänsten varit otillgänglig eller visat något felaktigt."
       }
     }
+  },
+  "theme": {
+    "label": "Utseende",
+    "system": "System",
+    "light": "Ljust",
+    "dark": "Mörkt"
   }
 }

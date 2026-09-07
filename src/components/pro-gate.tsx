@@ -8,7 +8,7 @@ export async function ProGate({ info, what }: { info: PlanInfo; what: string }) 
   const t = await getTranslations("pro.gate");
   return (
     <div className="card flex flex-col items-center gap-3 p-8 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+      <span className="grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent">
         <Lock className="size-5" />
       </span>
       <h2 className="text-lg font-semibold">{t("title", { what })}</h2>

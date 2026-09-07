@@ -16,12 +16,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const STATUS_CLS: Record<string, string> = {
-  success: "border-brand-200 bg-brand-50 text-brand-900",
-  cancel: "border-line bg-white text-muted",
-  error: "border-red-200 bg-red-50 text-red-800",
-  unconfigured: "border-amber-200 bg-amber-50 text-amber-900",
-  required: "border-amber-200 bg-amber-50 text-amber-900",
-  nocustomer: "border-line bg-white text-muted",
+  success: "border-accent-line bg-accent-soft text-accent-strong",
+  cancel: "border-line bg-surface text-muted",
+  error: "border-danger-line bg-danger-soft text-danger",
+  unconfigured: "border-warn-line bg-warn-soft text-warn",
+  required: "border-warn-line bg-warn-soft text-warn",
+  nocustomer: "border-line bg-surface text-muted",
 };
 
 export default async function ProPage({ searchParams }: PageProps<"/pro">) {
@@ -46,14 +46,14 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
 
       {statusKey && <FadeIn className={`rounded-2xl border px-4 py-3 text-sm ${STATUS_CLS[statusKey]}`}>{t(`status.${statusKey}`)}</FadeIn>}
 
-      <FadeIn className={`card flex flex-wrap items-center justify-between gap-4 p-5 ${info.active ? "border-brand-200" : ""}`}>
+      <FadeIn className={`card flex flex-wrap items-center justify-between gap-4 p-5 ${info.active ? "border-accent-line" : ""}`}>
         <div className="flex items-center gap-3">
-          <span className={`grid size-10 place-items-center rounded-xl ${info.active ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-500"}`}>
+          <span className={`grid size-10 place-items-center rounded-xl ${info.active ? "bg-accent-soft text-accent" : "bg-subtle text-muted"}`}>
             <Crown className="size-5" />
           </span>
           <div>
             <p className="font-semibold">
-              {t("yourPlan")} <span className={info.active ? "text-brand-700" : ""}>{info.label}</span>
+              {t("yourPlan")} <span className={info.active ? "text-accent" : ""}>{info.label}</span>
             </p>
             <p className="text-sm text-muted">{info.detail}</p>
           </div>
@@ -69,9 +69,9 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
         {prices.map((p, i) => {
           const highlight = p.key === "pass";
           return (
-            <FadeIn key={p.key} delay={0.05 * i} className={`card relative flex flex-col p-6 ${highlight ? "border-brand-300 ring-4 ring-brand-100" : ""}`}>
+            <FadeIn key={p.key} delay={0.05 * i} className={`card relative flex flex-col p-6 ${highlight ? "border-accent-line-strong ring-4 ring-brand-100" : ""}`}>
               {highlight && (
-                <span className="absolute -top-3 left-6 chip border-brand-300 bg-brand-600 text-white">
+                <span className="absolute -top-3 left-6 chip border-accent-line-strong bg-brand-600 text-white">
                   <Sparkles className="size-3" /> {t("popular")}
                 </span>
               )}
@@ -95,7 +95,7 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
           <h3 className="font-semibold">{t("included")}</h3>
           <ul className="mt-3 space-y-2 text-sm">
             {proFeatures.map((f) => (
-              <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-600" /> {f}</li>
+              <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-accent" /> {f}</li>
             ))}
           </ul>
         </FadeIn>
@@ -103,7 +103,7 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
           <h3 className="font-semibold">{t("alwaysFree")}</h3>
           <ul className="mt-3 space-y-2 text-sm">
             {freeFeatures.map((f) => (
-              <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-slate-400" /> {f}</li>
+              <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-faint" /> {f}</li>
             ))}
           </ul>
         </FadeIn>
@@ -111,7 +111,7 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
 
       <p className="text-xs text-muted">
         {t("footer")}{" "}
-        <Link href="/bevakningar" className="text-brand-700 hover:underline">{t("toWatches")}</Link>
+        <Link href="/bevakningar" className="text-accent hover:underline">{t("toWatches")}</Link>
       </p>
     </div>
   );

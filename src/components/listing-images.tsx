@@ -52,7 +52,7 @@ export function ListingImages({ images, alt }: { images: string[]; alt: string }
               <span
                 key={i}
                 className={`size-1.5 rounded-full transition ${
-                  i === index ? "bg-white" : "bg-white/50"
+                  i === index ? "bg-surface" : "bg-surface/50"
                 } shadow-[0_0_2px_rgb(15_23_42_/_0.6)]`}
               />
             ))}
@@ -75,10 +75,10 @@ export function ListingImages({ images, alt }: { images: string[]; alt: string }
 function ImagePlaceholder() {
   const t = useTranslations("listings.card");
   return (
-    <div className="relative aspect-4/3 w-full overflow-hidden bg-linear-to-br from-brand-50 via-canvas to-slate-100">
+    <div className="relative aspect-4/3 w-full overflow-hidden bg-linear-to-br from-accent-soft via-canvas to-subtle">
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <Building2 className="size-9 text-brand-200" strokeWidth={1.5} aria-hidden />
-        <span className="text-xs font-medium uppercase tracking-wider text-slate-400">{t("noImage")}</span>
+        <span className="text-xs font-medium uppercase tracking-wider text-faint">{t("noImage")}</span>
       </div>
     </div>
   );
@@ -105,7 +105,7 @@ function NavButton({
         e.stopPropagation();
         onClick();
       }}
-      className={`absolute top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink shadow-soft transition hover:bg-white focus-visible:opacity-100 sm:opacity-0 sm:group-hover/img:opacity-100 ${
+      className={`absolute top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full bg-surface/85 text-ink shadow-soft transition hover:bg-surface focus-visible:opacity-100 sm:opacity-0 sm:group-hover/img:opacity-100 ${
         side === "left" ? "left-2" : "right-2"
       }`}
     >

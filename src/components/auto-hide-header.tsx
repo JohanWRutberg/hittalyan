@@ -66,7 +66,7 @@ export function AutoHideHeader({ children }: { children: React.ReactNode }) {
     <header
       ref={ref}
       data-hidden={hidden || undefined}
-      className="sticky top-0 z-30 border-b border-line bg-white transition-transform duration-300 ease-out will-change-transform data-hidden:-translate-y-full motion-reduce:transition-none sm:bg-white/80 sm:backdrop-blur"
+      className="sticky top-0 z-30 border-b border-line bg-surface transition-transform duration-300 ease-out will-change-transform data-hidden:-translate-y-full motion-reduce:transition-none sm:bg-surface/80 sm:backdrop-blur"
     >
       {children}
     </header>

@@ -92,7 +92,7 @@ export function PushToggle() {
 
   if (state === "ios-install") {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-xl border border-warn-line bg-warn-soft p-4 text-sm text-warn">
         <p className="font-semibold">{t("iosInstall.title")}</p>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           {t.rich("iosInstall.steps.0", { b: (c) => <strong>{c}</strong> }) && null}
@@ -107,13 +107,13 @@ export function PushToggle() {
     return <p className="text-sm text-muted">{t("unsupported")}</p>;
   }
   if (state === "denied") {
-    return <p className="text-sm text-red-700">{t("denied")}</p>;
+    return <p className="text-sm text-danger">{t("denied")}</p>;
   }
   return (
     <div className="flex flex-wrap items-center gap-3">
       {state === "on" ? (
         <>
-          <span className="chip border-brand-200 bg-brand-50 text-brand-700"><BellRing className="size-3.5" /> {t("activeHere")}</span>
+          <span className="chip border-accent-line bg-accent-soft text-accent"><BellRing className="size-3.5" /> {t("activeHere")}</span>
           <button type="button" onClick={disable} className="btn-secondary py-1.5 text-xs"><BellOff className="size-3.5" /> {t("disable")}</button>
         </>
       ) : (
@@ -121,7 +121,7 @@ export function PushToggle() {
           <Bell className="size-4" /> {state === "loading" ? t("wait") : t("enable")}
         </button>
       )}
-      {error && <span className="text-sm text-red-700">{error}</span>}
+      {error && <span className="text-sm text-danger">{error}</span>}
     </div>
   );
 }

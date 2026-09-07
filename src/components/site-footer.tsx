@@ -12,7 +12,7 @@ export async function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-16 border-t border-line bg-white">
+    <footer className="mt-16 border-t border-line bg-surface">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-4">
         <div className="md:col-span-2">
           <p className="font-bold tracking-tight">Hitta Lyan</p>
@@ -23,14 +23,14 @@ export async function SiteFooter() {
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("service")}</h2>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <Link href="/lagenheter" className="hover:text-brand-700">{tn("listings")}</Link>
+              <Link href="/lagenheter" className="hover:text-accent">{tn("listings")}</Link>
             </li>
             <li>
-              <Link href="/pro" className="hover:text-brand-700">{tn("pro")}</Link>
+              <Link href="/pro" className="hover:text-accent">{tn("pro")}</Link>
             </li>
             {/* Kontaktformuläret kräver inloggning, så utloggade skickas till inloggningen. */}
             <li>
-              <Link href={session ? "/kontakt" : "/login"} className="hover:text-brand-700">{t("contact")}</Link>
+              <Link href={session ? "/kontakt" : "/login"} className="hover:text-accent">{t("contact")}</Link>
             </li>
           </ul>
         </nav>
@@ -39,10 +39,10 @@ export async function SiteFooter() {
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("about")}</h2>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <Link href="/om-oss" className="hover:text-brand-700">{t("aboutUs")}</Link>
+              <Link href="/om-oss" className="hover:text-accent">{t("aboutUs")}</Link>
             </li>
             <li>
-              <Link href="/ansvarsfriskrivning" className="hover:text-brand-700">{t("disclaimer")}</Link>
+              <Link href="/ansvarsfriskrivning" className="hover:text-accent">{t("disclaimer")}</Link>
             </li>
             <li>
               <CookieSettingsButton label={t("cookieSettings")} />

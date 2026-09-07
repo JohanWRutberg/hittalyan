@@ -53,7 +53,7 @@ export function EmailChangeForm({ current }: { current: string }) {
 
   if (step === "done") {
     return (
-      <p className="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-sm text-brand-900">
+      <p className="flex items-center gap-2 rounded-xl bg-accent-soft px-3 py-2.5 text-sm text-accent-strong">
         <CheckCircle2 className="size-4 shrink-0" /> {t("changed")}
       </p>
     );
@@ -101,7 +101,7 @@ export function EmailChangeForm({ current }: { current: string }) {
         </form>
       )}
 
-      {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
       <p className="text-xs text-muted">{t("note")}</p>
     </div>
   );

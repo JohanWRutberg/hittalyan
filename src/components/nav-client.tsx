@@ -18,13 +18,13 @@ export function NavLinks({ links, mobile }: { links: { href: string; label: stri
             key={l.href}
             href={l.href}
             className={`relative rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-              active ? "text-brand-700" : "text-muted hover:text-ink"
+              active ? "text-accent" : "text-muted hover:text-ink"
             }`}
           >
             {active && (
               <motion.span
                 layoutId={mobile ? "nav-active-mobile" : "nav-active"}
-                className="absolute inset-0 rounded-lg bg-brand-50"
+                className="absolute inset-0 rounded-lg bg-accent-soft"
                 transition={{ type: "spring", stiffness: 500, damping: 40 }}
               />
             )}

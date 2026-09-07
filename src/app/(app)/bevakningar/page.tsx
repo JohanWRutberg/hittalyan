@@ -81,7 +81,7 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
             key={x.key}
             href={x.key === "bevakningar" ? "/bevakningar" : "/bevakningar?flik=favoriter"}
             className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
-              tab === x.key ? "border-brand-600 text-brand-700" : "border-transparent text-muted hover:text-ink"
+              tab === x.key ? "border-brand-600 text-accent" : "border-transparent text-muted hover:text-ink"
             }`}
           >
             {x.label}
@@ -113,7 +113,7 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
         </>
       ) : favorites.length === 0 ? (
         <div className="card p-12 text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent">
             <Heart className="size-6" />
           </span>
           <p className="mt-4 text-lg font-semibold">{tf("empty.title")}</p>

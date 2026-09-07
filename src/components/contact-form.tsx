@@ -21,7 +21,7 @@ export function ContactForm({ name, email }: { name: string; email: string }) {
   if (state?.ok) {
     return (
       <FadeIn className="card flex flex-col items-center gap-3 p-10 text-center">
-        <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700">
+        <span className="grid size-12 place-items-center rounded-2xl bg-accent-soft text-accent">
           <CheckCircle2 className="size-6" />
         </span>
         <p className="text-lg font-semibold">{t("sent.title")}</p>
@@ -76,7 +76,7 @@ export function ContactForm({ name, email }: { name: string; email: string }) {
           </p>
         </div>
 
-        {state?.error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+        {state?.error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{state.error}</p>}
 
         <div className="flex justify-end">
           <button type="submit" disabled={pending} className="btn-primary">

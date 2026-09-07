@@ -50,7 +50,7 @@ export function FilterPanel({
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold" aria-expanded={open}>
-          <SlidersHorizontal className="size-4 text-brand-600" />
+          <SlidersHorizontal className="size-4 text-accent" />
           {t("title")}
           {activeCount > 0 && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-xs text-white">{activeCount}</span>}
           <span className="text-xs font-normal text-muted">{open ? t("hide") : t("show")}</span>

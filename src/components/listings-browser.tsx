@@ -105,8 +105,8 @@ export function ListingsBrowser({
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Visas bara när kartan faktiskt döljer något, så raden inte skräpar. */}
         {hiddenByMap || !followMap ? (
-          <span className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm text-brand-900">
-            <MapPin className="size-4 shrink-0 text-brand-700" />
+          <span className="inline-flex items-center gap-2 rounded-xl border border-accent-line bg-accent-soft px-3 py-1.5 text-sm text-accent-strong">
+            <MapPin className="size-4 shrink-0 text-accent" />
             {followMap
               ? t("viewport.showing", { count: visible.length, total: listings.length })
               : t("viewport.showingAll", { total: listings.length })}
@@ -116,7 +116,7 @@ export function ListingsBrowser({
                 setFollowMap((v) => !v);
                 setPage(1);
               }}
-              className="font-semibold text-brand-700 hover:underline"
+              className="font-semibold text-accent hover:underline"
             >
               {followMap ? t("viewport.showAll") : t("viewport.followMap")}
             </button>

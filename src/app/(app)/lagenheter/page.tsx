@@ -97,7 +97,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-sm font-medium text-brand-700">{info.name}</p>
+          <p className="text-sm font-medium text-accent">{info.name}</p>
           <p className="mt-1 text-sm text-muted">
             {t("count", { count: total })}
             {activeCount > 0 && t("matchFilter")} · {t("newLast24h", { count: newLast24h })}
@@ -107,10 +107,10 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
         <Link
           href="/konto"
           className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 shadow-soft transition hover:shadow-lift ${
-            qt ? "border-brand-200 bg-white" : "border-amber-200 bg-amber-50"
+            qt ? "border-accent-line bg-surface" : "border-warn-line bg-warn-soft"
           }`}
         >
-          <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${qt ? "bg-brand-50 text-brand-700" : "bg-amber-100 text-amber-700"}`}>
+          <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${qt ? "bg-accent-soft text-accent" : "bg-warn-soft text-warn"}`}>
             {qt ? <Clock3 className="size-4.5" /> : <HelpCircle className="size-4.5" />}
           </span>
           <span className="leading-tight">
@@ -121,7 +121,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
                 <span className="ml-1.5 text-xs font-medium text-muted">≈ {formatYearsShort(userYears!, locale)}</span>
               </span>
             ) : (
-              <span className="block text-sm font-semibold text-amber-800">{t("queueBadge.missing")}</span>
+              <span className="block text-sm font-semibold text-warn">{t("queueBadge.missing")}</span>
             )}
           </span>
         </Link>
@@ -194,7 +194,7 @@ async function PublicListings({ sp, market }: { sp: SearchParams; market: Market
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t("publicTitle")}</h1>
-        <p className="text-sm font-medium text-brand-700">{info.name}</p>
+        <p className="text-sm font-medium text-accent">{info.name}</p>
         <p className="mt-1 text-sm text-muted">
           {t("count", { count: total })}
           {hiddenCount > 0 && ` · ${t("public.hiddenCount", { count: hiddenCount, label: delayLabel })}`}
@@ -208,9 +208,9 @@ async function PublicListings({ sp, market }: { sp: SearchParams; market: Market
         <MarketSwitcher current={market} />
       </div>
 
-      <div className="card flex flex-col gap-4 border-brand-200 bg-gradient-to-br from-brand-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="card flex flex-col gap-4 border-accent-line bg-gradient-to-br from-accent-soft to-surface p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-brand-700 shadow-soft">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-accent shadow-soft">
             <Sparkles className="size-5" />
           </span>
           <div>
@@ -276,25 +276,25 @@ async function HiddenTeaser({ count, label }: { count: number; label: string }) 
         {widths.map(([a, b], i) => (
           <div key={i} className={`card select-none p-5 blur-[6px] ${i === 2 ? "hidden xl:block" : i === 1 ? "hidden sm:block" : ""}`}>
             <div className="flex items-center gap-2">
-              <span className="chip border-brand-200 bg-brand-50 text-brand-700">{t("card.new")}</span>
-              <span className={`h-3 rounded bg-slate-200 ${a}`} />
+              <span className="chip border-accent-line bg-accent-soft text-accent">{t("card.new")}</span>
+              <span className={`h-3 rounded bg-line ${a}`} />
             </div>
-            <div className={`mt-3 h-5 rounded bg-slate-300 ${b}`} />
+            <div className={`mt-3 h-5 rounded bg-faint/60 ${b}`} />
             <div className="mt-4 grid grid-cols-4 gap-2">
               {[0, 1, 2, 3].map((k) => (
                 <div key={k} className="h-12 rounded-xl bg-canvas" />
               ))}
             </div>
             <div className="mt-4 flex gap-2">
-              <span className="h-6 w-16 rounded-full bg-slate-100" />
-              <span className="h-6 w-12 rounded-full bg-slate-100" />
+              <span className="h-6 w-16 rounded-full bg-subtle" />
+              <span className="h-6 w-12 rounded-full bg-subtle" />
             </div>
-            <div className="mt-4 h-3 w-full rounded bg-slate-100" />
+            <div className="mt-4 h-3 w-full rounded bg-subtle" />
           </div>
         ))}
       </div>
       <div className="relative z-10 flex items-center justify-center p-2 [grid-area:1/1] sm:p-4">
-        <div className="card flex max-w-md flex-col items-center gap-3 border-brand-200 p-5 text-center shadow-lift sm:p-6">
+        <div className="card flex max-w-md flex-col items-center gap-3 border-accent-line p-5 text-center shadow-lift sm:p-6">
           <span className="grid size-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-soft">
             <Lock className="size-5" />
           </span>

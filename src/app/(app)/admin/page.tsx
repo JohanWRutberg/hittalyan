@@ -81,9 +81,9 @@ export default async function AdminPage() {
           [t("stats.sent"), sentNotifications, false],
           [t("stats.pending"), pendingNotifications, pendingNotifications > 0],
         ].map(([label, value, warn], i) => (
-          <FadeIn key={String(label)} delay={i * 0.04} className={`card p-5 ${warn ? "border-red-200 bg-red-50/50" : ""}`}>
+          <FadeIn key={String(label)} delay={i * 0.04} className={`card p-5 ${warn ? "border-danger-line bg-danger-soft/50" : ""}`}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-            <p className={`mt-1 text-3xl font-bold tracking-tight ${warn ? "text-red-700" : ""}`}>{String(value)}</p>
+            <p className={`mt-1 text-3xl font-bold tracking-tight ${warn ? "text-danger" : ""}`}>{String(value)}</p>
           </FadeIn>
         ))}
       </div>
@@ -122,22 +122,22 @@ export default async function AdminPage() {
             </thead>
             <tbody className="divide-y divide-line">
               {users.map((u) => (
-                <tr key={u.id} className={u.banned ? "bg-red-50/50" : ""}>
+                <tr key={u.id} className={u.banned ? "bg-danger-soft/50" : ""}>
                   <td className="px-6 py-3">
                     <div className="font-medium">{u.name}</div>
                     <div className="text-xs text-muted">{u.email}</div>
                   </td>
                   <td className="px-3 py-3">
-                    <span className={`chip ${u.role === "admin" ? "border-brand-200 bg-brand-50 text-brand-700" : ""}`}>{u.role ?? "user"}</span>
+                    <span className={`chip ${u.role === "admin" ? "border-accent-line bg-accent-soft text-accent" : ""}`}>{u.role ?? "user"}</span>
                   </td>
                   <td className="px-3 py-3">
-                    {u.banned ? <span className="chip border-red-200 bg-red-50 text-red-700" title={u.banReason ?? ""}>{t("users.banned")}</span> : <span className="chip">{t("users.active")}</span>}
+                    {u.banned ? <span className="chip border-danger-line bg-danger-soft text-danger" title={u.banReason ?? ""}>{t("users.banned")}</span> : <span className="chip">{t("users.active")}</span>}
                   </td>
                   <td className="px-3 py-3">
                     {(() => {
                       const pi = describePlan(planState(u), (k, v) => tPro(k, v), (d) => formatDate(d, locale));
                       return (
-                        <span className={`chip ${pi.active ? "border-amber-200 bg-amber-50 text-amber-800" : ""}`} title={pi.detail}>
+                        <span className={`chip ${pi.active ? "border-warn-line bg-warn-soft text-warn" : ""}`} title={pi.detail}>
                           {pi.label}
                           {pi.expiresAt && pi.active && <span className="font-normal text-muted">· {formatDate(pi.expiresAt, locale)}</span>}
                         </span>
@@ -190,15 +190,15 @@ export default async function AdminPage() {
                 <tr><td colSpan={8} className="px-6 py-6 text-center text-muted">{t("runs.none")}</td></tr>
               )}
               {runs.map((r) => (
-                <tr key={r.id} className={r.finishedAt && !r.ok ? "bg-red-50/50" : ""}>
+                <tr key={r.id} className={r.finishedAt && !r.ok ? "bg-danger-soft/50" : ""}>
                   <td className="px-6 py-3">{formatDateTime(r.startedAt, locale)}</td>
                   <td className="px-3 py-3">{marketInfo(marketOf(r.market)).city}</td>
                   <td className="px-3 py-3">{!r.finishedAt ? t("runs.running") : r.ok ? t("runs.ok") : t("runs.failed")}</td>
                   <td className="px-3 py-3 text-right">{r.total}</td>
                   <td className="px-3 py-3 text-right">{r.newCount}</td>
                   <td className="px-3 py-3 text-right">{r.notified}</td>
-                  <td className={`px-3 py-3 text-right ${r.notifyFailed ? "font-semibold text-red-700" : ""}`}>{r.notifyFailed}</td>
-                  <td className="px-6 py-3 text-xs text-red-700">{r.error ?? ""}</td>
+                  <td className={`px-3 py-3 text-right ${r.notifyFailed ? "font-semibold text-danger" : ""}`}>{r.notifyFailed}</td>
+                  <td className="px-6 py-3 text-xs text-danger">{r.error ?? ""}</td>
                 </tr>
               ))}
             </tbody>

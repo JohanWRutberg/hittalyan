@@ -14,8 +14,8 @@ export function RunPollButton() {
       <button type="submit" disabled={pending} className="btn-primary">
         <RefreshCw className={`size-4 ${pending ? "animate-spin" : ""}`} /> {pending ? t("running") : t("runPoll")}
       </button>
-      {state?.summary && <span className="text-sm text-brand-700">{state.summary}</span>}
-      {state?.error && <span className="text-sm text-red-700">{state.error}</span>}
+      {state?.summary && <span className="text-sm text-accent">{state.summary}</span>}
+      {state?.error && <span className="text-sm text-danger">{state.error}</span>}
     </form>
   );
 }
@@ -44,11 +44,11 @@ export function UserActions({ user, isSelf }: { user: { id: string; name: string
         <Crown className={`size-4 ${user.plan === "pro" ? "text-amber-500" : ""}`} />
       </button>
       <button type="button" className="btn-ghost px-2 py-1.5" title={admin ? t("makeUser") : t("makeAdmin")} onClick={() => start(() => adminSetRole(user.id, admin ? "user" : "admin"))}>
-        <UserCog className={`size-4 ${admin ? "text-brand-600" : ""}`} />
+        <UserCog className={`size-4 ${admin ? "text-accent" : ""}`} />
       </button>
       {user.banned ? (
         <button type="button" className="btn-ghost px-2 py-1.5" title={t("unban")} onClick={() => start(() => adminUnban(user.id))}>
-          <ShieldCheck className="size-4 text-brand-600" />
+          <ShieldCheck className="size-4 text-accent" />
         </button>
       ) : (
         <button
@@ -65,7 +65,7 @@ export function UserActions({ user, isSelf }: { user: { id: string; name: string
       )}
       <button
         type="button"
-        className="btn-ghost px-2 py-1.5 hover:text-red-600"
+        className="btn-ghost px-2 py-1.5 hover:text-danger"
         title={t("delete")}
         onClick={() => {
           if (confirm(t("confirmDelete", { name: user.name }))) start(() => adminDeleteUser(user.id));

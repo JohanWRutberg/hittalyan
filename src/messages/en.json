@@ -820,5 +820,11 @@
         "body": "The service is provided as is. We are not liable for homes you missed, for decisions you made based on information here, or for damage arising from the service being unavailable or showing something incorrect."
       }
     }
+  },
+  "theme": {
+    "label": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
   }
 }

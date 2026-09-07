@@ -43,20 +43,20 @@ export function LoginForm() {
         <div>
           <div className="flex items-baseline justify-between gap-2">
             <label className="label" htmlFor="password">{t("fields.password")}</label>
-            <Link href="/glomt-losenord" className="mb-1.5 text-xs font-medium text-brand-700 hover:underline">
+            <Link href="/glomt-losenord" className="mb-1.5 text-xs font-medium text-accent hover:underline">
               {t("forgot.link")}
             </Link>
           </div>
           <input id="password" name="password" type="password" autoComplete="current-password" required className="input" />
         </div>
-        {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? t("login.submitting") : t("login.submit")}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         {t("login.noAccount")}{" "}
-        <Link href="/register" className="font-semibold text-brand-700 hover:underline">
+        <Link href="/register" className="font-semibold text-accent hover:underline">
           {t("login.createHere")}
         </Link>
       </p>

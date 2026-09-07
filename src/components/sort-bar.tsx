@@ -41,7 +41,7 @@ export async function SortBar({ sorts, sp, market }: { sorts: Sort[]; sp: Search
             <span
               key={o.key}
               className={`chip shrink-0 gap-0 whitespace-nowrap p-0 transition ${
-                active ? "border-brand-300 bg-brand-50 text-brand-800 shadow-soft" : "hover:border-brand-300 hover:text-ink"
+                active ? "border-accent-line-strong bg-accent-soft text-accent-strong shadow-soft" : "hover:border-accent-line-strong hover:text-ink"
               }`}
             >
               <Link
@@ -57,7 +57,7 @@ export async function SortBar({ sorts, sp, market }: { sorts: Sort[]; sp: Search
                 {current && (
                   <>
                     <Icon className="size-3.5" />
-                    <span className="font-normal text-brand-700/80">{t(`options.${o.key}.${current.dir}`)}</span>
+                    <span className="font-normal text-accent/80">{t(`options.${o.key}.${current.dir}`)}</span>
                   </>
                 )}
               </Link>
@@ -67,7 +67,7 @@ export async function SortBar({ sorts, sp, market }: { sorts: Sort[]; sp: Search
                   scroll={false}
                   title={t("removeLevel")}
                   aria-label={t("removeAria", { label })}
-                  className="-ml-1 inline-flex items-center border-l border-brand-200 py-1.5 pl-1.5 pr-2 text-brand-700/70 hover:text-brand-900"
+                  className="-ml-1 inline-flex items-center border-l border-accent-line py-1.5 pl-1.5 pr-2 text-accent/70 hover:text-accent-strong"
                 >
                   <X className="size-3" />
                 </Link>

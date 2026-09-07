@@ -176,6 +176,33 @@ next-intl med språket i en **cookie**, inte i adressen, så alla URL:er är of�
 - Datum, tal och enheter formateras per språk via `src/lib/format.ts`. Använd dem,
   hårdkoda aldrig `toLocaleDateString("sv-SE")`.
 
+## Utseende: ljust och mörkt läge
+
+Färgerna ligger i två lager i `globals.css`. Underst råa toner per läge (`:root` och
+`[data-theme="dark"]`), överst semantiska namn som Tailwind gör klasser av via
+**`@theme inline`**. Utan `inline` fryser Tailwind värdet vid bygget och omskrivningen
+i körning får ingen effekt.
+
+Komponenter använder de **semantiska** klasserna (`bg-surface`, `text-accent`,
+`border-line`, `text-muted`, `bg-subtle`, `text-faint`, `text-danger`, `text-warn`),
+aldrig råa Tailwind-färger. Då byter hela gränssnittet läge av att variablerna skrivs om.
+
+- `text-accent` finns för att `text-brand-700` och `bg-brand-600` drar åt olika håll:
+  accenttext måste bli **ljus** i mörkt läge medan knappar förblir mörka. Samma ramp
+  kan inte tjäna båda.
+- Valet ligger i **localStorage**, inte i en cookie: det behövs bara i webbläsaren.
+  Priset är att servern inte känner det, så `THEME_INIT_SCRIPT` i `<head>` sätter
+  `data-theme` före första målningen. Utan det blinkar sidan ljus.
+- Växlaren läser med `useSyncExternalStore`, samma mönster som cookie-samtycket, vilket
+  ger synk mellan flikar.
+- **Kartan byter stil med temat** (OpenFreeMap `positron` / `dark`). En vit karta i ett
+  mörkt gränssnitt lyser som en ficklampa. Stilen läses ur DOM vid initiering, inte via
+  props, eftersom ett tema-beroende hade byggt om hela kartan vid varje byte.
+- Markörnålarna behåller sina färger i båda lägena: de ska sticka ut mot kartan, inte
+  smälta in. Popupens pillerfärger har däremot egna mörka toner.
+- **Mailen är kvar i ljust läge.** E-postklienter stödjer inte teman pålitligt, och
+  mallarna i `notify.ts` ska inte röras.
+
 ## Kartan
 
 MapLibre GL med gratis vektorkartor från OpenFreeMap (ingen API-nyckel). Tre fällor som

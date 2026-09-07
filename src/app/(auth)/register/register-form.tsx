@@ -68,14 +68,14 @@ export function RegisterForm({ initialMarket }: { initialMarket: Market }) {
           <p className="-mt-1 mb-2 text-xs text-muted">{tm("chooseHelp")}</p>
           <MarketPicker value={market} onSelect={setMarket} disabled={loading} />
         </div>
-        {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+        {error && <p className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? t("register.submitting") : t("register.submit")}
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         {t("register.hasAccount")}{" "}
-        <Link href="/login" className="font-semibold text-brand-700 hover:underline">
+        <Link href="/login" className="font-semibold text-accent hover:underline">
           {t("register.loginLink")}
         </Link>
       </p>

@@ -54,6 +54,26 @@ const STYLE_URLS = {
   dark: "https://tiles.openfreemap.org/styles/dark",
 } as const;
 
+/**
+ * OpenFreeMaps mörka stil är nästan svart (rgb(12,12,12)) och neutralt grå. Mot
+ * vårt kort (#18222e) blir den ett hål, och den gråa tonen krockar med den
+ * blågrå paletten. Vi lyfter därför grundlagren i stället för att lägga ett
+ * CSS-filter över canvasen: ett filter hade kostat GPU-arbete vid varje
+ * panorering, och mobilen är känslig för sådant.
+ */
+/** Något mörkare än kortet, så kartan läses som innehåll och inte som ett hål. */
+const DARK_LAND = "#16202b";
+/** Blåare än landet, så vatten fortfarande går att skilja ut. */
+const DARK_WATER = "#1d2a3a";
+
+function tuneDarkStyle(map: MapLibreMap) {
+  if (document.documentElement.dataset.theme !== "dark") return;
+  // Lagren kan saknas om OpenFreeMap gör om stilen; då lämnas den som den är.
+  if (map.getLayer("background")) map.setPaintProperty("background", "background-color", DARK_LAND);
+  if (map.getLayer("water")) map.setPaintProperty("water", "fill-color", DARK_WATER);
+  if (map.getLayer("waterway")) map.setPaintProperty("waterway", "line-color", DARK_WATER);
+}
+
 const MAX_MARKERS = 1500;
 const MIN_FIT_ZOOM = 8.3;
 
@@ -251,6 +271,8 @@ export function ListingsMap({
           cooperativeGestures: true,
         });
         map = m;
+        // Körs både vid första laddningen och efter varje setStyle.
+        m.on("styledata", () => tuneDarkStyle(m));
         m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
         m.addControl(new maplibregl.FullscreenControl(), "top-right");
         m.on("load", () => {

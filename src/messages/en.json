@@ -584,13 +584,14 @@
     "lead": "Users, runs and system status.",
     "runPoll": "Fetch listings now",
     "running": "Fetching…",
-    "summary": "{total} listings, {new} new, {notified} notifications sent",
+    "summary": "{total} listings, {new} new, {notified} notifications sent, {failed} failed",
     "stats": {
       "active": "Active listings",
       "total": "Listings in total",
       "watches": "Active watches",
       "sent": "Notifications sent",
-      "perMarket": "Active listings per agency"
+      "perMarket": "Active listings per agency",
+      "pending": "Undelivered notifications (24 h)"
     },
     "users": {
       "title": "Users ({count})",
@@ -625,7 +626,7 @@
     },
     "runs": {
       "title": "Latest fetches",
-      "lead": "Runs every 30 minutes via cron. Red row = error.",
+      "lead": "Runs every 30 minutes via cron. Red row = error. “Undelivered” is retried on the next run.",
       "started": "Started",
       "status": "Status",
       "listings": "Listings",
@@ -635,7 +636,8 @@
       "none": "No runs yet.",
       "running": "Running",
       "ok": "OK",
-      "failed": "Error"
+      "failed": "Error",
+      "undelivered": "Undelivered"
     }
   },
   "errors": {

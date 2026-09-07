@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { listingMatches } from "@/lib/matching";
 import { sendWatchEmail, sendWatchPush } from "@/lib/notify";
+import type { DeliveryResult } from "@/lib/notify";
 import type { Listing } from "@/generated/prisma/client";
 import { hasPro } from "@/lib/plan";
 import { MARKETS, marketInfo, type Market } from "@/lib/markets";
@@ -27,7 +28,10 @@ export interface MarketPollResult {
   newCount: number;
   updated: number;
   deactivated: number;
+  /** Notiser som gick fram i den här körningen, nya såväl som omförsök. */
   notified: number;
+  /** Notiser som fortfarande inte gick att leverera. */
+  notifyFailed: number;
   runId: string;
 }
 
@@ -44,6 +48,7 @@ export interface PollResult {
   updated: number;
   deactivated: number;
   notified: number;
+  notifyFailed: number;
   runId: string;
   markets: MarketPollResult[];
   /** Förmedlingar som inte gick att hämta, med felmeddelande */
@@ -103,6 +108,7 @@ export async function runPoll(options: PollOptions = {}): Promise<PollResult> {
     updated: sum((m) => m.updated),
     deactivated: sum((m) => m.deactivated),
     notified: sum((m) => m.notified),
+    notifyFailed: sum((m) => m.notifyFailed),
     runId: markets[markets.length - 1]?.runId ?? "",
     markets,
     failed,
@@ -207,11 +213,15 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
 
     // Första körningen mot en tom marknad fyller bara databasen – annars skulle
     // alla med en bevakning där få hundratals notiser på en gång.
-    const notified = isFirstRun ? 0 : await notifyWatches(market, newListings);
+    if (!isFirstRun) await recordWatchMatches(market, newListings);
+    // Leveransen är ett eget steg och tar med sig notiser som inte gick fram
+    // tidigare. Den körs även vid första körningen: då finns inget att skicka,
+    // men eventuella gamla misslyckanden ska inte bli liggande.
+    const { notified, notifyFailed } = await deliverPending(market);
 
     await prisma.pollRun.update({
       where: { id: run.id },
-      data: { finishedAt: new Date(), ok: true, total: activeIds.length, newCount: newListings.length, notified },
+      data: { finishedAt: new Date(), ok: true, total: activeIds.length, newCount: newListings.length, notified, notifyFailed },
     });
     return {
       market,
@@ -220,6 +230,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
       updated: changed.length,
       deactivated,
       notified,
+      notifyFailed,
       runId: run.id,
     };
   } catch (err) {
@@ -233,38 +244,132 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
 
 const sameImages = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
-async function notifyWatches(market: Market, newListings: Listing[]): Promise<number> {
+/**
+ * Hur länge en notis som inte gått fram är värd att försöka igen. Efter ett dygn är
+ * annonsen ändå gammal nyhet, och ett mail då gör mer skada än nytta.
+ */
+const NOTIFY_RETRY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** Antal leveransförsök innan vi ger upp. Sex försök täcker tre timmar av pollningar. */
+const NOTIFY_MAX_ATTEMPTS = 6;
+
+/** Hur många notiser en enskild körning tar sig an. Håller tiden nere vid en backlog. */
+const NOTIFY_BATCH = 100;
+
+/**
+ * Skriver ned vilka notiser som ska ut. **Inget skickas här.** Raden är kvittot på
+ * att vi lovat en notis, och den skrivs innan något nätverksanrop görs.
+ *
+ * Tidigare skrevs raden efter sändningen, och alltid som avklarad. Gick mailet inte
+ * fram – Resend nekade adressen, `RESEND_API_KEY` saknades, nätverket small – var
+ * notisen borta för gott, eftersom annonsen inte längre är ny nästa körning.
+ * Det unika indexet på (watchId, listingId) gör fortfarande att samma annons aldrig
+ * notifieras två gånger för samma bevakning.
+ */
+async function recordWatchMatches(market: Market, newListings: Listing[]): Promise<number> {
   if (!newListings.length) return 0;
   // Bevakningar följer sin egen förmedling, oavsett vilken kö användaren står i
   // just nu: man kan stå i flera köer.
   const watches = await prisma.watch.findMany({
     where: { enabled: true, market },
-    include: { user: { include: { pushSubscriptions: true } } },
+    include: { user: { select: { id: true, plan: true, planExpiresAt: true, planSource: true, role: true, stripeSubscriptionStatus: true } } },
   });
 
-  let notified = 0;
+  const rows: { userId: string; watchId: string; listingId: string }[] = [];
   for (const watch of watches) {
     if (!hasPro(watch.user)) continue; // bevakningar är en Pro-funktion
-    const matches = newListings.filter((l) => listingMatches(l, watch));
-    if (!matches.length) continue;
-
-    // Hoppa över annonser som redan notifierats för denna bevakning
-    const already = await prisma.notification.findMany({
-      where: { watchId: watch.id, listingId: { in: matches.map((m) => m.id) } },
-      select: { listingId: true },
-    });
-    const alreadyIds = new Set(already.map((a) => a.listingId));
-    const fresh = matches.filter((m) => !alreadyIds.has(m.id));
-    if (!fresh.length) continue;
-
-    const emailSent = watch.notifyEmail ? await sendWatchEmail(watch.user.email, watch, fresh, watch.user.locale) : false;
-    const pushSent = watch.notifyPush ? await sendWatchPush(watch.user.pushSubscriptions, watch, fresh, watch.user.locale) : false;
-
-    await prisma.notification.createMany({
-      data: fresh.map((l) => ({ userId: watch.userId, watchId: watch.id, listingId: l.id, emailSent, pushSent })),
-      skipDuplicates: true,
-    });
-    notified += fresh.length;
+    for (const l of newListings) {
+      if (listingMatches(l, watch)) rows.push({ userId: watch.userId, watchId: watch.id, listingId: l.id });
+    }
   }
-  return notified;
+  if (!rows.length) return 0;
+  const { count } = await prisma.notification.createMany({ data: rows, skipDuplicates: true });
+  return count;
+}
+
+/**
+ * Skickar de notiser som ännu inte gått fram: både de som nyss skrevs ned och de
+ * som misslyckades i en tidigare körning. En bevaknings annonser samlas i ett enda
+ * mail, precis som förut.
+ */
+async function deliverPending(market: Market): Promise<{ notified: number; notifyFailed: number }> {
+  const pending = await prisma.notification.findMany({
+    where: {
+      createdAt: { gte: new Date(Date.now() - NOTIFY_RETRY_WINDOW_MS) },
+      attempts: { lt: NOTIFY_MAX_ATTEMPTS },
+      // Annonsen ska fortfarande gå att söka. En borttagen annons är ingen nyhet.
+      listing: { market, active: true },
+      watch: { enabled: true },
+      OR: [
+        { emailSent: false, watch: { notifyEmail: true } },
+        { pushSent: false, watch: { notifyPush: true } },
+      ],
+    },
+    include: { listing: true, watch: { include: { user: { include: { pushSubscriptions: true } } } } },
+    orderBy: { createdAt: "asc" },
+    take: NOTIFY_BATCH,
+  });
+  if (!pending.length) return { notified: 0, notifyFailed: 0 };
+
+  // En bevakning i taget: alla dess annonser ryms i samma mail och samma push.
+  const byWatch = new Map<string, typeof pending>();
+  for (const n of pending) {
+    const list = byWatch.get(n.watchId);
+    if (list) list.push(n);
+    else byWatch.set(n.watchId, [n]);
+  }
+
+  let notified = 0;
+  let notifyFailed = 0;
+  for (const group of byWatch.values()) {
+    const { watch } = group[0];
+    const ids = group.map((n) => n.id);
+
+    // Har Pron hunnit löpa ut sedan notisen skrevs ned skickas den inte. Försöken
+    // skruvas upp till taket så att raden lämnar leveranskön direkt.
+    if (!hasPro(watch.user)) {
+      await prisma.notification.updateMany({
+        where: { id: { in: ids } },
+        data: { attempts: NOTIFY_MAX_ATTEMPTS, lastTriedAt: new Date(), emailError: "Utan Pro", pushError: "Utan Pro" },
+      });
+      continue;
+    }
+
+    // Kanalerna hålls isär: gick mailet fram men inte pushen ska annonsen inte
+    // följa med i nästa mail en gång till.
+    const needEmail = watch.notifyEmail ? group.filter((n) => !n.emailSent) : [];
+    const needPush = watch.notifyPush ? group.filter((n) => !n.pushSent) : [];
+    const email: DeliveryResult | null = needEmail.length
+      ? await sendWatchEmail(watch.user.email, watch, needEmail.map((n) => n.listing), watch.user.locale)
+      : null;
+    const push: DeliveryResult | null = needPush.length
+      ? await sendWatchPush(watch.user.pushSubscriptions, watch, needPush.map((n) => n.listing), watch.user.locale)
+      : null;
+
+    if (email) {
+      await prisma.notification.updateMany({
+        where: { id: { in: needEmail.map((n) => n.id) } },
+        data: { emailSent: email.ok, emailError: email.error },
+      });
+    }
+    if (push) {
+      await prisma.notification.updateMany({
+        where: { id: { in: needPush.map((n) => n.id) } },
+        data: { pushSent: push.ok, pushError: push.error },
+      });
+    }
+    await prisma.notification.updateMany({ where: { id: { in: ids } }, data: { attempts: { increment: 1 }, lastTriedAt: new Date() } });
+
+    // Räknas per annons och bara för det som hände nu: gick någon begärd kanal fram
+    // är användaren nådd, annars är notisen fortfarande skyldig.
+    const emailIds = new Set(needEmail.map((n) => n.id));
+    const pushIds = new Set(needPush.map((n) => n.id));
+    for (const n of group) {
+      if ((email?.ok && emailIds.has(n.id)) || (push?.ok && pushIds.has(n.id))) notified += 1;
+      else if ((email && emailIds.has(n.id)) || (push && pushIds.has(n.id))) notifyFailed += 1;
+    }
+  }
+
+  if (notifyFailed) console.error(`[poll:${market}] ${notifyFailed} notiser gick inte att leverera`);
+  return { notified, notifyFailed };
 }

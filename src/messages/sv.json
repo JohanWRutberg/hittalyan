@@ -584,13 +584,14 @@
     "lead": "Användare, körningar och systemstatus.",
     "runPoll": "Hämta annonser nu",
     "running": "Hämtar…",
-    "summary": "{total} annonser, {new} nya, {notified} notiser skickade",
+    "summary": "{total} annonser, {new} nya, {notified} notiser skickade, {failed} misslyckade",
     "stats": {
       "active": "Aktiva annonser",
       "total": "Annonser totalt",
       "watches": "Aktiva bevakningar",
       "sent": "Skickade notiser",
-      "perMarket": "Aktiva annonser per förmedling"
+      "perMarket": "Aktiva annonser per förmedling",
+      "pending": "Notiser som inte gått fram (1 dygn)"
     },
     "users": {
       "title": "Användare ({count})",
@@ -625,7 +626,7 @@
     },
     "runs": {
       "title": "Senaste hämtningar",
-      "lead": "Körs var 30:e minut via cron. Röd rad = fel.",
+      "lead": "Körs var 30:e minut via cron. Röd rad = fel. „Ej levererade” försöks om nästa körning.",
       "started": "Startad",
       "status": "Status",
       "listings": "Annonser",
@@ -635,7 +636,8 @@
       "none": "Ingen körning än.",
       "running": "Pågår",
       "ok": "OK",
-      "failed": "Fel"
+      "failed": "Fel",
+      "undelivered": "Ej levererade"
     }
   },
   "errors": {

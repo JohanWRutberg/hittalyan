@@ -258,10 +258,19 @@ model Notification {
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   emailSent Boolean  @default(false)
   pushSent  Boolean  @default(false)
+  /// Senaste felet per kanal, för felsökning. null = levererad, eller inte begärd.
+  emailError String?
+  pushError  String?
+  /// Antal leveransförsök. Raden skrivs innan något skickas, så 0 betyder
+  /// "utlovad men ännu inte försökt". Taket hindrar att en död adress mals i evighet.
+  attempts    Int       @default(0)
+  lastTriedAt DateTime?
   createdAt DateTime @default(now())
 
   @@unique([watchId, listingId])
   @@index([userId, createdAt])
+  /// Leveranskön: obesvarade notiser hämtas i tidsordning vid varje körning.
+  @@index([createdAt])
 }
 
 /// Betalningshändelser från Stripe (idempotens + spårbarhet)
@@ -280,6 +289,8 @@ model PollRun {
   total       Int      @default(0)
   newCount    Int      @default(0)
   notified    Int      @default(0)
+  /// Notiser som fortfarande inte gick att leverera efter körningens försök.
+  notifyFailed Int     @default(0)
   error       String?
 
   @@index([market, startedAt])

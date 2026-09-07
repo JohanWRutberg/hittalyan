@@ -310,6 +310,20 @@ tar ungefär 20–25 sekunder.
   hundratals mail när en ny stad läggs till. Spärren gäller per marknad, behåll den.
 - `Notification` har unikt index på `(watchId, listingId)`, så samma annons kan inte
   notifieras två gånger för samma bevakning.
+- **Notisen skrivs ned innan den skickas.** `recordWatchMatches()` sparar en `Notification`
+  med `attempts = 0`, och `deliverPending()` sköter all sändning – både det som nyss
+  skrevs ned och det som inte gick fram tidigare. Tidigare skrevs raden *efter*
+  sändningen och alltid som avklarad: gick mailet inte fram (Resend nekade adressen,
+  `RESEND_API_KEY` saknades, nätverket small) var notisen borta för gott, eftersom
+  annonsen inte längre är ny nästa körning. Vänd inte på ordningen igen.
+- Leveranskön försöks om i högst **sex försök inom ett dygn** (`NOTIFY_MAX_ATTEMPTS`,
+  `NOTIFY_RETRY_WINDOW_MS`). Efter det är annonsen ändå gammal nyhet, och en död adress
+  ska inte malas i evighet. Felet ligger kvar i `emailError`/`pushError`.
+- **Sändningarna kastar aldrig.** `sendWatchEmail()` och `sendWatchPush()` returnerar
+  `DeliveryResult`. Ett nätverksfel hos Resend fick förut hela körningen att markeras som
+  misslyckad, mitt i, med annonserna redan sparade.
+- Adminportalen visar **ej levererade notiser** per körning och totalt senaste dygnet.
+  Är den rutan röd ligger felet i mailet eller pushen, inte i hämtningen.
 - Schemat: **GitHub Actions var 30:e minut** (`.github/workflows/poll.yml`), inte Vercels
   cron, eftersom Hobby-planen bara tillåter en körning per dygn. Actions-minuter är
   gratis på publika repon. `vercel.json` har en daglig körning som skyddsnät.
@@ -334,7 +348,9 @@ runtime använder `DATABASE_URL` (poolad).
 ## Att känna till
 
 - **Resend kan bara skicka till kontots egen adress** tills en domän verifierats i Resend.
-  Andra användare får alltså inga mail förrän `hittalyan.se` är verifierad där.
+  Andra användare får alltså inga mail förrän `hittalyan.se` är verifierad där. Nekade
+  mail syns numera som "ej levererade" i adminportalen med Resends felmeddelande, i
+  stället för att försvinna tyst.
 - **Förmedlingarna fördelar efter kötid**, inte efter vem som anmäler sig först.
   Chansmätaren bygger på det. Tätare pollning ger därför inte bättre odds.
 - Kötiden kan inte hämtas automatiskt; ingen av förmedlingarna har OAuth. Användaren

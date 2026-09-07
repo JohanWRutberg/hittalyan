@@ -20,6 +20,61 @@ function ensureVapid() {
   return true;
 }
 
+/**
+ * Utfallet av ett leveransförsök. Sändningarna kastar aldrig: ett fel hos Resend
+ * eller en trasig push-prenumeration får inte avbryta pollningen, och felet ska gå
+ * att spara på notisen så att den kan göras om.
+ */
+export interface DeliveryResult {
+  /** Sant först när minst en mottagare faktiskt fick notisen. */
+  ok: boolean;
+  /** Varför det inte gick. null när det gick. */
+  error: string | null;
+}
+
+const delivered: DeliveryResult = { ok: true, error: null };
+const failed = (error: string): DeliveryResult => ({ ok: false, error: error.slice(0, 300) });
+
+/**
+ * Skickar ett mail via Resend och returnerar felet i stället för att kasta.
+ * Klienten kastar vid nätverksfel, och ett sådant fel mitt i en pollning
+ * markerade hela körningen som misslyckad.
+ *
+ * Utan `RESEND_API_KEY` loggas mailet bara, vilket är praktiskt lokalt.
+ */
+async function sendMail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  replyTo?: string;
+  preview: string;
+}): Promise<DeliveryResult> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.log(`[mail:dev] Till ${opts.to} — ${opts.subject}\n${opts.preview}`);
+    return failed("RESEND_API_KEY saknas");
+  }
+  try {
+    const resend = new Resend(key);
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>",
+      to: opts.to,
+      replyTo: opts.replyTo,
+      subject: opts.subject,
+      html: opts.html,
+    });
+    if (error) {
+      console.error("[mail] fel:", error);
+      return failed(`${error.name}: ${error.message}`);
+    }
+    return delivered;
+  } catch (err) {
+    // Nätverksfel, timeout eller nere hos Resend.
+    console.error("[mail] undantag:", (err as Error).message);
+    return failed((err as Error).message);
+  }
+}
+
 export function listingTitle(l: Listing) {
   return `${l.gatuadress}, ${l.stadsdel} (${l.kommun})`;
 }
@@ -77,37 +132,26 @@ function renderEmailHtml(watch: Watch, listings: Listing[], locale: Locale) {
 </body></html>`;
 }
 
-export async function sendWatchEmail(to: string, watch: Watch, listings: Listing[], rawLocale?: string | null): Promise<boolean> {
+export async function sendWatchEmail(to: string, watch: Watch, listings: Listing[], rawLocale?: string | null): Promise<DeliveryResult> {
   const locale = localeOf(rawLocale);
   const t = translatorFor(locale);
   const subject =
     listings.length === 1
       ? t("email.subjectSingle", { title: listingTitle(listings[0]) })
       : t("email.subjectMulti", { count: listings.length, name: watch.name });
-  const html = renderEmailHtml(watch, listings, locale);
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.log(`[mail:dev] Till ${to} — ${subject}\n` + listings.map((l) => `  - ${listingTitle(l)} ${l.url}`).join("\n"));
-    return false;
-  }
-  const resend = new Resend(key);
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>",
+  return sendMail({
     to,
     subject,
-    html,
+    html: renderEmailHtml(watch, listings, locale),
+    preview: listings.map((l) => `  - ${listingTitle(l)} ${l.url}`).join("\n"),
   });
-  if (error) {
-    console.error("[mail] fel:", error);
-    return false;
-  }
-  return true;
 }
 
 // ---------- Web Push ----------
 
-export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Listing[], rawLocale?: string | null): Promise<boolean> {
-  if (!subs.length || !ensureVapid()) return false;
+export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Listing[], rawLocale?: string | null): Promise<DeliveryResult> {
+  if (!ensureVapid()) return failed("VAPID-nycklar saknas");
+  if (!subs.length) return failed("Inga push-prenumerationer");
   const locale = localeOf(rawLocale);
   const t = translatorFor(locale);
   const first = listings[0];
@@ -124,6 +168,7 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
   });
 
   let anyOk = false;
+  const errors: string[] = [];
   await Promise.all(
     subs.map(async (s) => {
       try {
@@ -134,14 +179,18 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
       } catch (err) {
         const status = (err as { statusCode?: number }).statusCode;
         if (status === 404 || status === 410) {
+          // Prenumerationen är död (avinstallerad app, rensad webbläsare). Den städas
+          // bort, och räknas inte som ett fel att försöka om.
           await prisma.pushSubscription.delete({ where: { id: s.id } }).catch(() => undefined);
         } else {
           console.error("[push] fel:", status, (err as Error).message);
+          errors.push(`${status ?? "?"}: ${(err as Error).message}`);
         }
       }
     }),
   );
-  return anyOk;
+  if (anyOk) return delivered;
+  return failed(errors.length ? errors.join(" · ") : "Inga giltiga push-prenumerationer");
 }
 
 // ---------- Kontaktformulär ----------
@@ -188,24 +237,13 @@ export async function sendContactEmail(opts: {
   </div>
 </body></html>`;
 
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
+  // Lokalt utan nyckel räknas det som skickat, annars går formuläret aldrig att prova.
+  if (!process.env.RESEND_API_KEY) {
     console.log(`[mail:dev] Kontakt till ${CONTACT_EMAIL} — ${subject}\n${opts.message}`);
-    return true; // lokalt utan nyckel räknas det som skickat, annars går formuläret aldrig att prova
+    return true;
   }
-  const resend = new Resend(key);
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>",
-    to: CONTACT_EMAIL,
-    replyTo: opts.email,
-    subject,
-    html,
-  });
-  if (error) {
-    console.error("[mail] kontaktfel:", error);
-    return false;
-  }
-  return true;
+  const res = await sendMail({ to: CONTACT_EMAIL, replyTo: opts.email, subject, html, preview: opts.message });
+  return res.ok;
 }
 
 // ---------- Engångskoder (glömt lösenord, byte av e-post) ----------
@@ -235,16 +273,6 @@ export async function sendOtpEmail(to: string, otp: string, type: OtpType, rawLo
   </div>
 </body></html>`;
 
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.log(`[mail:dev] Kod till ${to} (${type}): ${otp}`);
-    return false;
-  }
-  const resend = new Resend(key);
-  const { error } = await resend.emails.send({ from: process.env.EMAIL_FROM ?? "Hitta Lyan <onboarding@resend.dev>", to, subject, html });
-  if (error) {
-    console.error("[mail] otp-fel:", error);
-    return false;
-  }
-  return true;
+  const res = await sendMail({ to, subject, html, preview: `Kod (${type}): ${otp}` });
+  return res.ok;
 }

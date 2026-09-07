@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { dayAgo, formatDate, formatDateTime } from "@/lib/format";
 import { RunPollButton, UserActions } from "@/components/admin-client";
 import { FadeIn } from "@/components/motion";
 import { describePlan, planState } from "@/lib/plan";
@@ -45,10 +45,22 @@ export default async function AdminPage() {
       prisma.listing.count(),
       prisma.watch.count({ where: { enabled: true } }),
       prisma.notification.count(),
+      // Notiser från det senaste dygnet som utlovats men ännu inte gått fram. Ska
+      // normalt vara noll; är den det inte ligger felet i mailet eller pushen, inte
+      // i hämtningen. Äldre än ett dygn försöks inte om och räknas därför inte.
+      prisma.notification.count({
+        where: {
+          createdAt: { gte: dayAgo() },
+          OR: [
+            { emailSent: false, watch: { notifyEmail: true } },
+            { pushSent: false, watch: { notifyPush: true } },
+          ],
+        },
+      }),
     ]),
     prisma.listing.groupBy({ by: ["market"], where: { active: true }, _count: { _all: true } }),
   ]);
-  const [active, totalListings, activeWatches, sentNotifications] = stats;
+  const [active, totalListings, activeWatches, sentNotifications, pendingNotifications] = stats;
   const activeByMarket = new Map(perMarket.map((r) => [r.market, r._count._all]));
 
   return (
@@ -61,16 +73,17 @@ export default async function AdminPage() {
         <RunPollButton />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[
-          [t("stats.active"), active],
-          [t("stats.total"), totalListings],
-          [t("stats.watches"), activeWatches],
-          [t("stats.sent"), sentNotifications],
-        ].map(([label, value], i) => (
-          <FadeIn key={String(label)} delay={i * 0.04} className="card p-5">
+          [t("stats.active"), active, false],
+          [t("stats.total"), totalListings, false],
+          [t("stats.watches"), activeWatches, false],
+          [t("stats.sent"), sentNotifications, false],
+          [t("stats.pending"), pendingNotifications, pendingNotifications > 0],
+        ].map(([label, value, warn], i) => (
+          <FadeIn key={String(label)} delay={i * 0.04} className={`card p-5 ${warn ? "border-red-200 bg-red-50/50" : ""}`}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight">{value}</p>
+            <p className={`mt-1 text-3xl font-bold tracking-tight ${warn ? "text-red-700" : ""}`}>{String(value)}</p>
           </FadeIn>
         ))}
       </div>
@@ -168,12 +181,13 @@ export default async function AdminPage() {
                 <th className="px-3 py-3 text-right">{t("runs.listings")}</th>
                 <th className="px-3 py-3 text-right">{t("runs.new")}</th>
                 <th className="px-3 py-3 text-right">{t("users.notifications")}</th>
+                <th className="px-3 py-3 text-right">{t("runs.undelivered")}</th>
                 <th className="px-6 py-3">{t("runs.error")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {runs.length === 0 && (
-                <tr><td colSpan={7} className="px-6 py-6 text-center text-muted">{t("runs.none")}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-6 text-center text-muted">{t("runs.none")}</td></tr>
               )}
               {runs.map((r) => (
                 <tr key={r.id} className={r.finishedAt && !r.ok ? "bg-red-50/50" : ""}>
@@ -183,6 +197,7 @@ export default async function AdminPage() {
                   <td className="px-3 py-3 text-right">{r.total}</td>
                   <td className="px-3 py-3 text-right">{r.newCount}</td>
                   <td className="px-3 py-3 text-right">{r.notified}</td>
+                  <td className={`px-3 py-3 text-right ${r.notifyFailed ? "font-semibold text-red-700" : ""}`}>{r.notifyFailed}</td>
                   <td className="px-6 py-3 text-xs text-red-700">{r.error ?? ""}</td>
                 </tr>
               ))}

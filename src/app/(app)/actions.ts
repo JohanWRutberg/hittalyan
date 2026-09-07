@@ -171,7 +171,7 @@ export async function adminRunPoll(): Promise<ActionState> {
     const r = await runPoll();
     revalidatePath("/lagenheter", "layout");
     const t = await getTranslations("admin");
-    return { ok: true, summary: t("summary", { total: r.total, new: r.newCount, notified: r.notified }) };
+    return { ok: true, summary: t("summary", { total: r.total, new: r.newCount, notified: r.notified, failed: r.notifyFailed }) };
   } catch (e) {
     return { error: (e as Error).message };
   }

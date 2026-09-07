@@ -206,6 +206,12 @@
       "label": "Pagination",
       "previous": "Previous page",
       "next": "Next page"
+    },
+    "layout": {
+      "label": "View",
+      "comfortable": "Grid",
+      "compact": "Dense grid",
+      "list": "List"
     }
   },
   "filters": {

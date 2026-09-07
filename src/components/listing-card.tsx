@@ -12,6 +12,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { useHoveredListing } from "@/components/hovered-listing";
 import type { Locale } from "@/i18n/config";
 import { marketInfo, marketOf } from "@/lib/markets";
+import type { CardLayout } from "@/lib/card-layout";
 
 type ListingLike = Omit<Listing, "annonseradFran" | "annonseradTill" | "firstSeenAt" | "lastSeenAt"> & {
   annonseradFran: Date | string | null;
@@ -25,6 +26,7 @@ export function ListingCard({
   userYears = null,
   showChance = true,
   canFavorite = false,
+  layout = "comfortable",
 }: {
   listing: ListingLike;
   index?: number;
@@ -32,6 +34,8 @@ export function ListingCard({
   showChance?: boolean;
   /** Får användaren favoritmarkera? Falskt för utloggade och konton utan Pro. */
   canFavorite?: boolean;
+  /** Hur kortet radas upp; `list` lägger bilden vid sidan av texten. */
+  layout?: CardLayout;
 }) {
   const t = useTranslations("listings");
   const tc = useTranslations("common");
@@ -59,6 +63,7 @@ export function ListingCard({
   ].filter(Boolean) as { key: string; cls: string }[];
 
   const images = l.images ?? [];
+  const isList = layout === "list";
 
   return (
     <motion.div
@@ -70,10 +75,14 @@ export function ListingCard({
       // markerar huset på kartan.
       onMouseEnter={noHover ? undefined : () => setHovered(l.id)}
       onMouseLeave={noHover ? undefined : () => setHovered(null)}
-      className={`card group relative flex flex-col overflow-hidden transition hover:shadow-lift ${armed ? "ring-2 ring-blue-500/60" : ""}`}
+      className={`card group relative flex overflow-hidden transition hover:shadow-lift ${
+        isList ? "flex-row items-stretch" : "flex-col"
+      } ${armed ? "ring-2 ring-blue-500/60" : ""}`}
     >
       {/* Bildspel och hjärta ligger utanför länken: en knapp får inte ligga i en <a>. */}
-      <ListingImages images={images} alt={`${l.gatuadress}, ${l.stadsdel}`} />
+      <div className={isList ? "w-32 shrink-0 sm:w-72" : ""}>
+        <ListingImages images={images} alt={`${l.gatuadress}, ${l.stadsdel}`} fill={isList} />
+      </div>
       {canFavorite && (
         <div className="absolute right-3 top-3 z-10">
           <FavoriteButton listingId={l.id} />
@@ -99,7 +108,7 @@ export function ListingCard({
         setArmedId(null);
       }}
       aria-describedby={armed ? `tap-${l.id}` : undefined}
-      className="flex flex-1 flex-col gap-2.5 p-4"
+      className={`flex flex-1 flex-col gap-2.5 ${layout === "compact" ? "p-3" : "p-4"}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -115,7 +124,10 @@ export function ListingCard({
           </div>
           <h3 className="mt-0.5 truncate text-base font-semibold tracking-tight text-ink group-hover:text-accent">{l.gatuadress}</h3>
         </div>
-        <ArrowUpRight className="size-5 shrink-0 text-faint transition group-hover:text-accent" />
+        {/* I listläge ligger hjärtat i kortets övre högra hörn, där pilen annars sitter. */}
+        {!(isList && canFavorite) && (
+          <ArrowUpRight className="size-5 shrink-0 text-faint transition group-hover:text-accent" />
+        )}
       </div>
 
       <dl className="grid grid-cols-4 gap-1.5 text-sm">

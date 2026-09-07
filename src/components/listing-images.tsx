@@ -12,19 +12,19 @@ import { useTranslations } from "next-intl";
  *
  * Ligger utanför kortets <a>, eftersom knappar inte får ligga i en länk.
  */
-export function ListingImages({ images, alt }: { images: string[]; alt: string }) {
+export function ListingImages({ images, alt, fill }: { images: string[]; alt: string; fill?: boolean }) {
   const t = useTranslations("listings.card");
   const [index, setIndex] = useState(0);
 
   // Alla annonser har inte bilder – en del publiceras helt utan. De får en
   // platshållare så att korten blir lika höga och rutnätet inte hackar.
-  if (!images.length) return <ImagePlaceholder />;
+  if (!images.length) return <ImagePlaceholder fill={fill} />;
 
   const count = images.length;
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
 
   return (
-    <div className="group/img relative aspect-16/10 w-full overflow-hidden bg-canvas">
+    <div className={`group/img relative w-full overflow-hidden bg-canvas ${fill ? "h-full min-h-28" : "aspect-16/10"}`}>
       {/* Bara den aktuella bilden ligger i DOM:en; korten kan vara 60 på en sida. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- medvetet: next/image skulle förbruka Vercels kvot för bildoptimeringar på bilder som redan är färdigskalade hos förmedlingen */}
       <img
@@ -72,10 +72,14 @@ export function ListingImages({ images, alt }: { images: string[]; alt: string }
  * Texten är synlig, så ikonen döljs för skärmläsare i stället för att sidan
  * ska säga samma sak två gånger.
  */
-function ImagePlaceholder() {
+function ImagePlaceholder({ fill }: { fill?: boolean }) {
   const t = useTranslations("listings.card");
   return (
-    <div className="relative aspect-16/10 w-full overflow-hidden bg-linear-to-br from-accent-soft via-canvas to-subtle">
+    <div
+      className={`relative w-full overflow-hidden bg-linear-to-br from-accent-soft via-canvas to-subtle ${
+        fill ? "h-full min-h-28" : "aspect-16/10"
+      }`}
+    >
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <Building2 className="size-9 text-brand-200" strokeWidth={1.5} aria-hidden />
         <span className="text-xs font-medium uppercase tracking-wider text-faint">{t("noImage")}</span>

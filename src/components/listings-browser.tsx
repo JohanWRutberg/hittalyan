@@ -9,6 +9,8 @@ import { ListingsMap, type MapBounds, type MapPoint } from "@/components/listing
 import { useHoveredListing } from "@/components/hovered-listing";
 import { isRecent } from "@/lib/format";
 import { PAGE_SIZES, pageSizeServerSnapshot, readPageSize, subscribePageSize, writePageSize } from "@/lib/page-size";
+import { LAYOUT_GRID, cardLayoutServerSnapshot, readCardLayout, subscribeCardLayout } from "@/lib/card-layout";
+import { CardLayoutSwitcher } from "@/components/card-layout-switcher";
 import type { Market } from "@/lib/markets";
 
 /** Kartans markörer har ett eget tak; korten paginerar så det räcker gott. */
@@ -48,6 +50,7 @@ export function ListingsBrowser({
   // Går att stänga av, för den som hellre bläddrar hela träfflistan.
   const [followMap, setFollowMap] = useState(true);
   const pageSize = useSyncExternalStore(subscribePageSize, readPageSize, pageSizeServerSnapshot);
+  const layout = useSyncExternalStore(subscribeCardLayout, readCardLayout, cardLayoutServerSnapshot);
 
   // Kartan skickar nytt utsnitt vid varje moveend; en ny callback får inte
   // bygga om kartan, därför useCallback.
@@ -137,6 +140,7 @@ export function ListingsBrowser({
         )}
 
         <label className="inline-flex items-center gap-2 text-sm text-muted">
+          <CardLayoutSwitcher />
           {t("perPage.label")}
           <select
             value={pageSize}
@@ -158,9 +162,16 @@ export function ListingsBrowser({
       {visible.length === 0 ? (
         <div className="card p-12 text-center text-muted">{hiddenByMap ? t("viewport.empty") : t("empty")}</div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className={LAYOUT_GRID[layout]}>
           {shown.map((l, i) => (
-            <ListingCard key={l.id} listing={l} index={i} userYears={userYears} canFavorite={canFavorite} />
+            <ListingCard
+              key={l.id}
+              listing={l}
+              index={i}
+              userYears={userYears}
+              canFavorite={canFavorite}
+              layout={layout}
+            />
           ))}
         </div>
       )}

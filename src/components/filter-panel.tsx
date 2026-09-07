@@ -12,6 +12,7 @@ import { filtersToQuery, parseFilters } from "@/lib/filters";
 import { FilterFields, Check } from "@/components/filter-fields";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { Market } from "@/lib/markets";
+import { useStickyPanel } from "@/components/sticky-panel";
 
 export function FilterPanel({
   areas,
@@ -28,6 +29,9 @@ export function FilterPanel({
 }) {
   const t = useTranslations("filters");
   const router = useRouter();
+  // Uppe i toppen är filtret en del av den fastnaglade panelen: kompaktare, raka
+  // hörn nedåt där kartan tar vid, och en utfälld panel som inte får svälja skärmen.
+  const pinned = useStickyPanel();
   const isDesktop = useIsDesktop();
   // Öppen som standard bara på desktop när filter är aktiva; på mobil skulle
   // panelen annars trycka ner kartan och resultaten en hel skärm.
@@ -47,8 +51,12 @@ export function FilterPanel({
   }
 
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-5 py-4">
+    <div className="card overflow-hidden" style={pinned ? { borderRadius: 0 } : undefined}>
+      <div
+        className={`flex items-center justify-between gap-3 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+          pinned ? "px-3 py-1.5" : "px-5 py-3"
+        }`}
+      >
         <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold" aria-expanded={open}>
           <SlidersHorizontal className="size-4 text-accent" />
           {t("title")}
@@ -77,7 +85,8 @@ export function FilterPanel({
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden border-t border-line"
           >
-            <div className="space-y-5 p-5">
+            {/* Fastnaglad och utfälld får panelen aldrig svälja skärmen. */}
+            <div className={`space-y-5 p-5 ${pinned ? "max-h-[50vh] overflow-y-auto" : ""}`}>
               <FilterFields areas={areas} initial={filters} counts={counts} market={market} />
               <Check name="nya" label={t("onlyNew")} checked={filters.nya} />
               <div className="flex justify-end gap-2">

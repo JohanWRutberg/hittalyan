@@ -129,14 +129,15 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
 
       <PushGuide variant="banner" />
 
-      <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} market={market} />
-
       <HoveredListingProvider initialFavorites={[...favoriteIds]}>
         <ListingsBrowser
           listings={listings}
           market={market}
           userYears={userYears}
           canFavorite={canFavorite}
+          filterPanel={
+            <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} market={market} />
+          }
           sortBar={<SortBar sorts={sorts} sp={sp} market={market} />}
         />
       </HoveredListingProvider>

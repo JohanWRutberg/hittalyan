@@ -30,6 +30,7 @@ export function ListingsBrowser({
   market,
   userYears,
   canFavorite,
+  filterPanel,
   sortBar,
 }: {
   listings: Listing[];
@@ -37,6 +38,7 @@ export function ListingsBrowser({
   userYears: number | null;
   canFavorite: boolean;
   /** Sorteringsraden renderas på servern och skickas in som färdigt innehåll. */
+  filterPanel: React.ReactNode;
   sortBar: React.ReactNode;
 }) {
   const t = useTranslations("listings");
@@ -106,6 +108,7 @@ export function ListingsBrowser({
         market={market}
         userYears={userYears}
         sticky
+        header={filterPanel}
         footer={sortBar}
         onBoundsChange={onBoundsChange}
       />

@@ -12,6 +12,7 @@ import { formatYearsShort } from "@/lib/format";
 import { useHoveredListing } from "@/components/hovered-listing";
 import { marketInfo, type Market } from "@/lib/markets";
 import { useResolvedTheme } from "@/lib/use-theme";
+import { StickyPanelProvider } from "@/components/sticky-panel";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { Locale } from "@/i18n/config";
 
@@ -206,6 +207,7 @@ export function ListingsMap({
   market,
   userYears = null,
   sticky = false,
+  header,
   footer,
   onBoundsChange,
 }: {
@@ -214,6 +216,8 @@ export function ListingsMap({
   market: Market;
   userYears?: number | null;
   sticky?: boolean;
+  /** Renderas inuti samma fastnaglade behållare, direkt över kartan. */
+  header?: React.ReactNode;
   /** Renderas inuti samma fastnaglade behållare, direkt under kartan. */
   footer?: React.ReactNode;
   /** Anropas när kartan flyttats eller zoomats, så listan kan följa utsnittet. */
@@ -259,6 +263,8 @@ export function ListingsMap({
   // helt, men då försvann både överblicken och förstora-knappen – och en dold rad
   // med en fokuserbar knapp i är dessutom otillgänglig (aria-hidden på fokus).
   const compactHeader = stuckNow && !isDesktop;
+  /** Panelen ligger uppe i toppen: raka hörn där delarna möts, kompaktare höjd. */
+  const pinned = stuck && stuckNow;
 
   // Initiera kartan en gång
   useEffect(() => {
@@ -281,6 +287,14 @@ export function ListingsMap({
         map = m;
         // Körs både vid första laddningen och efter varje setStyle.
         m.on("styledata", () => tuneDarkStyle(m));
+        // MapLibre fäller ut attributionen första gången den blir kompakt. Vi vill
+        // ha den invikt; ⓘ-knappen fäller ut den. Klassen läggs bara till en gång,
+        // så den kommer inte tillbaka vid omritning.
+        m.once("load", () => {
+          const attrib = containerRef.current?.querySelector(".maplibregl-ctrl-attrib");
+          attrib?.classList.remove("maplibregl-compact-show");
+          attrib?.removeAttribute("open");
+        });
         m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
         m.addControl(new maplibregl.FullscreenControl(), "top-right");
         m.on("load", () => {
@@ -435,7 +449,12 @@ export function ListingsMap({
       {/* Raka hörn när kartan ligger i topp: annars syns listan som scrollar
           bakom genom rundningarna. Inline-stil, eftersom den måste vinna över
           `rounded-2xl` i .card oavsett hur Tailwind sorterar klasserna. */}
-      <div className="card overflow-hidden" style={stuck && stuckNow ? { borderRadius: 0 } : undefined}>
+      <StickyPanelProvider value={pinned}>
+      {header && (
+        // Eget avstånd i normalläge; fastnaglat ska filtret och kartan sitta ihop.
+        <div className={pinned ? "" : "mb-6"}>{header}</div>
+      )}
+      <div className="card overflow-hidden" style={pinned ? { borderRadius: 0 } : undefined}>
       <div
         className={`flex items-center justify-between gap-3 overflow-hidden transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
           compactHeader ? "px-3 py-1" : "px-5 py-3"
@@ -494,13 +513,18 @@ export function ListingsMap({
       </div>
       {footer && (
         <div
+          // Fastnaglat blir kartan och sorteringen en panel: rak överkant mot
+          // skärmkanten, mjuk underkant där listan scrollar förbi under.
           className={`bg-canvas transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
-            stuckNow ? "py-1.5 [&_.chip]:py-0.5 [&_.chip]:text-[11px]" : "pt-4"
+            pinned
+              ? "rounded-b-2xl border border-t-0 border-line px-3 py-1.5 [&_.chip]:py-0.5 [&_.chip]:text-[11px]"
+              : "pt-4"
           }`}
         >
           {footer}
         </div>
       )}
+      </StickyPanelProvider>
     </div>
     </>
   );

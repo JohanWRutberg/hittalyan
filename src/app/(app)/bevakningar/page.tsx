@@ -12,6 +12,7 @@ import { HoveredListingProvider } from "@/components/hovered-listing";
 import { ProGate } from "@/components/pro-gate";
 import { describePlan, planState } from "@/lib/plan";
 import { formatDate } from "@/lib/format";
+import { queueYears } from "@/lib/chance";
 import type { Locale } from "@/i18n/config";
 import { marketOf } from "@/lib/markets";
 
@@ -49,6 +50,9 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
   // Favoriter kan spänna över flera köer, så chansen räknas mot ködatumet i den
   // kö annonsen faktiskt tillhör.
   const dateByMarket = new Map(queues.map((q) => [q.market, q.registeredAt]));
+  // Kötiden i år räknas här på servern; se ChanceMeter om varför den inte får
+  // räknas fram i webbläsaren.
+  const yearsByMarket = new Map(queues.map((q) => [q.market, queueYears(q.registeredAt)]));
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "bevakningar", label: t("title"), count: watches.length },
@@ -132,6 +136,7 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
                     listing={f.listing}
                     index={i}
                     userRegisteredAt={dateByMarket.get(f.listing.market) ?? null}
+                    userYears={yearsByMarket.get(f.listing.market) ?? null}
                     canFavorite={info.active}
                   />
                 </div>

@@ -134,6 +134,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
           listings={listings}
           market={market}
           userRegisteredAt={queueDate}
+          userYears={userYears}
           canFavorite={canFavorite}
           filterPanel={
             <FilterPanel areas={areas} filters={filters} activeCount={activeCount} counts={areaCounts} market={market} />

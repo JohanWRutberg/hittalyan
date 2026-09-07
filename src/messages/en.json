@@ -358,10 +358,12 @@
       }
     },
     "applicants": {
-      "none": "None of the longest-queuing have applied",
-      "some": "{count} with longer queue time applied",
-      "longest": "longest queuing since {year}"
-    }
+      "none": "none ahead of you",
+      "some": "{count} ahead of you",
+      "longest": "longest {year}"
+    },
+    "barApplicants": "The ticks are the applicants' queue times; the dot is yours.",
+    "barRange": "Similar apartments required {q1}–{q3}; the dot is your queue time."
   },
   "watches": {
     "title": "Watches",

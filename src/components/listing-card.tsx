@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMediaQuery } from "@/lib/use-media-query";
 import type { Listing } from "@/generated/prisma/client";
 import { formatDate, formatNumber, formatVaning, formatYta, isRecent } from "@/lib/format";
-import { ChanceMeter } from "@/components/chance-meter";
+import { ChanceBar, ChanceChip } from "@/components/chance-meter";
 import { ListingImages } from "@/components/listing-images";
 import { FavoriteButton } from "@/components/favorite-button";
 import { useHoveredListing } from "@/components/hovered-listing";
@@ -24,6 +24,7 @@ export function ListingCard({
   listing: l,
   index = 0,
   userRegisteredAt = null,
+  userYears = null,
   showChance = true,
   canFavorite = false,
   layout = "comfortable",
@@ -32,6 +33,8 @@ export function ListingCard({
   index?: number;
   /** Användarens ködatum i annonsens kö; behövs för att jämföra mot de sökande. */
   userRegisteredAt?: Date | null;
+  /** Kötiden i år, uträknad på servern så att hydreringen stämmer. */
+  userYears?: number | null;
   showChance?: boolean;
   /** Får användaren favoritmarkera? Falskt för utloggade och konton utan Pro. */
   canFavorite?: boolean;
@@ -152,13 +155,19 @@ export function ListingCard({
         </div>
       )}
 
-      <div className="mt-auto space-y-2.5 border-t border-line pt-3">
+      {/* Stapeln går kant i kant: den negativa marginalen tar ut kortets padding. */}
+      {showsChance && showChance && (
+        <div className={`mt-auto ${layout === "compact" ? "-mx-3" : "-mx-4"}`}>
+          <ChanceBar userRegisteredAt={userRegisteredAt} userYears={userYears} listing={l} />
+        </div>
+      )}
+      <div className={`space-y-2 border-t border-line pt-3 ${showsChance && showChance ? "" : "mt-auto"}`}>
         {showsChance &&
           (showChance ? (
-            <div className="space-y-1.5">
-              <ChanceMeter userRegisteredAt={userRegisteredAt} listing={l} />
-              {l.sokande != null && <p className="text-xs text-muted">{t("card.applicants", { count: l.sokande })}</p>}
-            </div>
+            <>
+              <ChanceChip userRegisteredAt={userRegisteredAt} userYears={userYears} listing={l} />
+              {l.sokande != null && <p className="text-[11px] text-muted">{t("card.applicants", { count: l.sokande })}</p>}
+            </>
           ) : (
             <p className="text-xs text-muted">
               <span className="font-medium text-accent">{tc("login")}</span> {t("card.loginForChance")}

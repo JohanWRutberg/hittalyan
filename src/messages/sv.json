@@ -358,10 +358,12 @@
       }
     },
     "applicants": {
-      "none": "Ingen av de längst köande har sökt",
-      "some": "{count} med längre kötid har sökt",
-      "longest": "längst i kö sedan {year}"
-    }
+      "none": "ingen före dig",
+      "some": "{count} före dig",
+      "longest": "längst {year}"
+    },
+    "barApplicants": "Strecken är kötiden hos dem som sökt; pricken är din.",
+    "barRange": "Liknande lägenheter har krävt {q1}–{q3}; pricken är din kötid."
   },
   "watches": {
     "title": "Bevakningar",

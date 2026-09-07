@@ -8,7 +8,6 @@ import { ListingCard } from "@/components/listing-card";
 import { ListingsMap, type MapBounds, type MapPoint } from "@/components/listings-map";
 import { useHoveredListing } from "@/components/hovered-listing";
 import { isRecent } from "@/lib/format";
-import { queueYears } from "@/lib/chance";
 import { PAGE_SIZES, pageSizeServerSnapshot, readPageSize, subscribePageSize, writePageSize } from "@/lib/page-size";
 import { LAYOUT_GRID, cardLayoutServerSnapshot, readCardLayout, subscribeCardLayout } from "@/lib/card-layout";
 import { CardLayoutSwitcher } from "@/components/card-layout-switcher";
@@ -32,6 +31,7 @@ export function ListingsBrowser({
   listings,
   market,
   userRegisteredAt,
+  userYears,
   canFavorite,
   filterPanel,
   sortBar,
@@ -39,6 +39,8 @@ export function ListingsBrowser({
   listings: Listing[];
   market: Market;
   userRegisteredAt: Date | null;
+  /** Uträknad på servern; se ChanceMeter. */
+  userYears: number | null;
   canFavorite: boolean;
   /** Sorteringsraden renderas på servern och skickas in som färdigt innehåll. */
   filterPanel: React.ReactNode;
@@ -110,7 +112,7 @@ export function ListingsBrowser({
       <ListingsMap
         points={points}
         market={market}
-        userYears={userRegisteredAt ? queueYears(userRegisteredAt) : null}
+        userYears={userYears}
         sticky
         header={filterPanel}
         footer={sortBar}
@@ -170,6 +172,7 @@ export function ListingsBrowser({
               listing={l}
               index={i}
               userRegisteredAt={userRegisteredAt}
+              userYears={userYears}
               canFavorite={canFavorite}
               layout={layout}
             />

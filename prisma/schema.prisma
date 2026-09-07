@@ -155,6 +155,14 @@ model Listing {
   kotidSnitt    Float?
   /// Antal sökande just nu (Boplats Väst, Boplats Syd, Uppsala)
   sokande       Int?
+  /// De längsta anmälda kötiderna bland dem som faktiskt sökt annonsen, som
+  /// registreringsdatum i kön – tidigast datum först. Bara Stockholm publicerar
+  /// dem, och bara de tre längsta. Säger mer om chansen än historiken, eftersom
+  /// det är den kö som faktiskt bildats kring just den här bostaden.
+  queueDates    DateTime[] @default([])
+  /// När kötiderna senast hämtades. De ändras medan folk söker, till skillnad
+  /// från bilderna, så de uppdateras på rullande schema.
+  queueDatesAt  DateTime?
   /// Bild-URL:er hos förmedlingen, i visningsordning. Första är omslagsbilden.
   /// Vi lagrar adresser, inte bilder: de ligger kvar hos källan.
   images        String[] @default([])

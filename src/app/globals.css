@@ -476,12 +476,20 @@ body {
 }
 
 /*
- * Nya annonser ska ligga över de vanliga. Klassen sitter på det inre elementet,
- * men staplingen mellan markörer avgörs av de yttre – därav :has().
- * Ordningen är: vanlig (auto) < ny (3) < den som hovras (5).
+ * Stapelordning på kartan. MapLibre sätter inget z-index alls på markörer och
+ * popups – de ligger efter DOM-ordning – så allt nedan är vårt, och måste hållas
+ * ihop: ger man en markör ett z-index hamnar den annars över popupen.
+ *
+ *   vanlig markör  auto
+ *   ny annons      3
+ *   hovrad markör  5
+ *   popup          6   (måste ligga över alla markörer)
  */
 .lm-marker:has(.lm-marker--new) {
   z-index: 3;
+}
+.maplibregl-popup {
+  z-index: 6;
 }
 
 /* Markören för den annons som hovras i listan */

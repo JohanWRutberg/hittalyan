@@ -356,6 +356,11 @@
       "low": {
         "hint": "Your queue time is well below the area average."
       }
+    },
+    "applicants": {
+      "none": "None of the longest-queuing have applied",
+      "some": "{count} with longer queue time applied",
+      "longest": "longest queuing since {year}"
     }
   },
   "watches": {

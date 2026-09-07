@@ -128,7 +128,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
       select: {
         id: true, refreshedAt: true, kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
         hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true, active: true,
-        images: true, imagesCheckedAt: true,
+        images: true, imagesCheckedAt: true, queueDates: true, queueDatesAt: true,
       },
     });
     const existingById = new Map(existing.map((e) => [e.id, e]));
@@ -137,7 +137,13 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     const known: Map<string, KnownListing> = new Map(
       existing.map((e) => [
         e.id,
-        { refreshedAt: e.refreshedAt, kotidSnitt: e.kotidSnitt, hasImages: e.images.length > 0, imagesCheckedAt: e.imagesCheckedAt },
+        {
+          refreshedAt: e.refreshedAt,
+          kotidSnitt: e.kotidSnitt,
+          hasImages: e.images.length > 0,
+          imagesCheckedAt: e.imagesCheckedAt,
+          queueDatesAt: e.queueDatesAt,
+        },
       ]),
     );
     const { activeIds, listings } = await SOURCES[market].fetchListings(known, deadline);
@@ -171,6 +177,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
         e.kotidQ3 !== l.kotidQ3 ||
         e.kotidSnitt !== l.kotidSnitt ||
         e.sokande !== l.sokande ||
+        (l.queueDates !== undefined && !sameDates(e.queueDates, l.queueDates)) ||
         // `images: undefined` betyder att källan inte hämtade bilder den här
         // körningen, och ska inte räknas som en ändring.
         (l.images !== undefined && !sameImages(e.images, l.images)) ||
@@ -200,6 +207,11 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     const checkedIds = listings.filter((l) => l.images !== undefined).map((l) => l.id);
     if (checkedIds.length) {
       await prisma.listing.updateMany({ where: { id: { in: checkedIds } }, data: { imagesCheckedAt: now } });
+    }
+    // Samma sak för kötiderna: stämpeln styr när annonsen står på tur igen.
+    const queueCheckedIds = listings.filter((l) => l.queueDates !== undefined).map((l) => l.id);
+    if (queueCheckedIds.length) {
+      await prisma.listing.updateMany({ where: { id: { in: queueCheckedIds } }, data: { queueDatesAt: now } });
     }
 
     const { count: deactivated } = await prisma.listing.updateMany({
@@ -243,6 +255,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
 }
 
 const sameImages = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+const sameDates = (a: Date[], b: Date[]) => a.length === b.length && a.every((v, i) => v.getTime() === b[i].getTime());
 
 /**
  * Hur länge en notis som inte gått fram är värd att försöka igen. Efter ett dygn är

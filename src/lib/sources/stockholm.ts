@@ -117,6 +117,18 @@ export async function fetchAllListings(): Promise<SourceListing[]> {
  */
 const IMAGE_CONCURRENCY = 4;
 
+/**
+ * "Längsta anmälda kötider på denna bostad" – upp till tre registreringsdatum,
+ * tidigast först. Ett tidigare datum betyder längre kötid.
+ */
+export function parseQueueDates(html: string): Date[] {
+  const block = /Längsta anmälda kötider[\s\S]{0,600}?(?=Förmedlingshistorik|<\/div>\s*<\/div>)/.exec(html);
+  if (!block) return [];
+  return [...block[0].matchAll(/\b(?:19|20)\d{2}-\d{2}-\d{2}\b/g)]
+    .map((m) => new Date(`${m[0]}T12:00:00Z`))
+    .filter((d) => !Number.isNaN(d.getTime()));
+}
+
 export function parseImages(html: string): string[] {
   // Innehållet är bara <picture>-element, inga nästlade <div>, så första
   // avslutande taggen är rätt gräns.
@@ -128,7 +140,11 @@ export function parseImages(html: string): string[] {
     .map((u) => `${BOSTAD_BASE_URL}${u}`);
 }
 
-async function fetchImages(listing: SourceListing): Promise<void> {
+/**
+ * Ett anrop till annonssidan ger både bilder och kötider. Vi hämtar bara det som
+ * behövs, men eftersom sidan ändå laddas tas det andra med när det efterfrågas.
+ */
+async function fetchDetail(listing: SourceListing, wantImages: boolean, wantQueue: boolean): Promise<void> {
   try {
     const res = await fetch(listing.url, {
       headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": USER_AGENT },
@@ -136,10 +152,12 @@ async function fetchImages(listing: SourceListing): Promise<void> {
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return;
-    listing.images = parseImages(await res.text());
+    const html = await res.text();
+    if (wantImages) listing.images = parseImages(html);
+    if (wantQueue) listing.queueDates = parseQueueDates(html);
   } catch {
-    // Bilder är en bonus; annonsen är fullt användbar utan dem och försöket
-    // görs om nästa körning.
+    // Bonusuppgifter; annonsen är fullt användbar utan dem och försöket görs
+    // om nästa körning.
   }
 }
 
@@ -150,11 +168,24 @@ async function fetchImages(listing: SourceListing): Promise<void> {
  */
 const RECHECK_AFTER_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Hur ofta kötiderna för sökande hämtas om. De ändras medan folk söker, men
+ * siffran vi visar är ett löpande maximum: den som har längst kötid söker tidigt
+ * och värdet står sedan nästan still. Var sjätte timme räcker därför gott, och
+ * håller lasten på deras server runt ett anrop varannan minut.
+ */
+const QUEUE_DATES_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
 function needsImageFetch(known: KnownListing | undefined): boolean {
   if (!known) return true; // ny annons
   if (known.hasImages) return false;
   if (!known.imagesCheckedAt) return true; // aldrig försökt
   return Date.now() - known.imagesCheckedAt.getTime() > RECHECK_AFTER_MS;
+}
+
+function needsQueueDates(known: KnownListing | undefined): boolean {
+  if (!known?.queueDatesAt) return true;
+  return Date.now() - known.queueDatesAt.getTime() > QUEUE_DATES_MAX_AGE_MS;
 }
 
 export const stockholmSource: Source = {
@@ -164,12 +195,20 @@ export const stockholmSource: Source = {
     // Ett anrop ger alla annonsers uppgifter, så de hämtas om varje körning.
     const listings = await fetchAllListings();
 
-    // Nyast först: de syns överst i listan och är de användarna faktiskt tittar på.
-    const needImages = listings
-      .filter((l) => needsImageFetch(known.get(l.id)))
-      .sort((a, b) => (b.annonseradFran?.getTime() ?? 0) - (a.annonseradFran?.getTime() ?? 0));
-    for (let i = 0; i < needImages.length && Date.now() < deadline; i += IMAGE_CONCURRENCY) {
-      await Promise.all(needImages.slice(i, i + IMAGE_CONCURRENCY).map(fetchImages));
+    // Annonssidan ger både bilder och kötider, så vi hämtar den en gång per
+    // annons som behöver något av dem. Nyast först: de syns överst i listan.
+    const todo = listings
+      .map((l) => {
+        const k = known.get(l.id);
+        return { listing: l, wantImages: needsImageFetch(k), wantQueue: needsQueueDates(k) };
+      })
+      .filter((x) => x.wantImages || x.wantQueue)
+      .sort((a, b) => (b.listing.annonseradFran?.getTime() ?? 0) - (a.listing.annonseradFran?.getTime() ?? 0));
+
+    for (let i = 0; i < todo.length && Date.now() < deadline; i += IMAGE_CONCURRENCY) {
+      await Promise.all(
+        todo.slice(i, i + IMAGE_CONCURRENCY).map((x) => fetchDetail(x.listing, x.wantImages, x.wantQueue)),
+      );
     }
 
     return { activeIds: listings.map((l) => l.id), listings };

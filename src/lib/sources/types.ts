@@ -46,6 +46,11 @@ export interface SourceListing {
    * finns sparat i fred; en tom lista betyder "hämtat, men annonsen saknar bilder".
    */
   images?: string[];
+  /**
+   * Kötiderna för dem som sökt annonsen, tidigast registreringsdatum först.
+   * `undefined` betyder "inte hämtat den här körningen" och rör inte det sparade.
+   */
+  queueDates?: Date[];
 }
 
 export interface SourceResult {
@@ -71,6 +76,8 @@ export interface KnownListing {
    * annonser inte hämtas om varje körning.
    */
   imagesCheckedAt: Date | null;
+  /** När kötiderna för sökande senast hämtades, eller null om aldrig. */
+  queueDatesAt: Date | null;
 }
 
 export interface Source {

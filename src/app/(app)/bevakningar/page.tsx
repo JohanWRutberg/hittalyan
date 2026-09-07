@@ -12,7 +12,6 @@ import { HoveredListingProvider } from "@/components/hovered-listing";
 import { ProGate } from "@/components/pro-gate";
 import { describePlan, planState } from "@/lib/plan";
 import { formatDate } from "@/lib/format";
-import { queueYears } from "@/lib/chance";
 import type { Locale } from "@/i18n/config";
 import { marketOf } from "@/lib/markets";
 
@@ -47,9 +46,9 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
     watches.map((w) => prisma.listing.count({ where: filtersToWhere(watchToFilters(w), marketOf(w.market)) })),
   );
 
-  // Favoriter kan spänna över flera köer, så chansen räknas mot kötiden i den kö
-  // annonsen faktiskt tillhör.
-  const yearsByMarket = new Map(queues.map((q) => [q.market, queueYears(q.registeredAt)]));
+  // Favoriter kan spänna över flera köer, så chansen räknas mot ködatumet i den
+  // kö annonsen faktiskt tillhör.
+  const dateByMarket = new Map(queues.map((q) => [q.market, q.registeredAt]));
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "bevakningar", label: t("title"), count: watches.length },
@@ -132,7 +131,7 @@ export default async function WatchesPage({ searchParams }: PageProps<"/bevaknin
                   <ListingCard
                     listing={f.listing}
                     index={i}
-                    userYears={yearsByMarket.get(f.listing.market) ?? null}
+                    userRegisteredAt={dateByMarket.get(f.listing.market) ?? null}
                     canFavorite={info.active}
                   />
                 </div>

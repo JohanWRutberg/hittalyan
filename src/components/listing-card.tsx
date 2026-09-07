@@ -23,14 +23,15 @@ type ListingLike = Omit<Listing, "annonseradFran" | "annonseradTill" | "firstSee
 export function ListingCard({
   listing: l,
   index = 0,
-  userYears = null,
+  userRegisteredAt = null,
   showChance = true,
   canFavorite = false,
   layout = "comfortable",
 }: {
   listing: ListingLike;
   index?: number;
-  userYears?: number | null;
+  /** Användarens ködatum i annonsens kö; behövs för att jämföra mot de sökande. */
+  userRegisteredAt?: Date | null;
   showChance?: boolean;
   /** Får användaren favoritmarkera? Falskt för utloggade och konton utan Pro. */
   canFavorite?: boolean;
@@ -155,7 +156,7 @@ export function ListingCard({
         {showsChance &&
           (showChance ? (
             <div className="space-y-1.5">
-              <ChanceMeter userYears={userYears} listing={l} />
+              <ChanceMeter userRegisteredAt={userRegisteredAt} listing={l} />
               {l.sokande != null && <p className="text-xs text-muted">{t("card.applicants", { count: l.sokande })}</p>}
             </div>
           ) : (

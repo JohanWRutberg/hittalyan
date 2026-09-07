@@ -38,6 +38,31 @@ export interface ChanceSource {
   kotidQ1: number | null;
   kotidQ3: number | null;
   kotidSnitt: number | null;
+  /** Kötider bland dem som faktiskt sökt, tidigast registreringsdatum först. */
+  queueDates?: Date[];
+}
+
+/**
+ * Hur många av de kända sökande som har längre kötid än användaren.
+ * Ett tidigare registreringsdatum betyder längre kötid.
+ */
+export function applicantsAhead(queueDates: Date[], userRegisteredAt: Date): number {
+  return queueDates.filter((d) => d.getTime() < userRegisteredAt.getTime()).length;
+}
+
+/**
+ * Bedömning utifrån dem som faktiskt sökt annonsen. Förmedlingen publicerar bara
+ * de tre längsta kötiderna, så vi kan inte räkna fram en exakt placering – men vi
+ * vet om användaren slår dem eller inte, vilket är det som avgör.
+ *
+ * Det här är ett bättre mått än historiken: den beskriver liknande lägenheter som
+ * förmedlats tidigare, inte den kö som bildats kring just den här bostaden. En
+ * attraktiv bostad drar till sig sökande med långt över snittets kötid.
+ */
+export function chanceFromApplicants(queueDates: Date[], userRegisteredAt: Date): Chance {
+  const ahead = applicantsAhead(queueDates, userRegisteredAt);
+  const level: ChanceLevel = ahead === 0 ? "excellent" : ahead === 1 ? "great" : ahead === 2 ? "good" : "slim";
+  return { level, ...STYLES[level] };
 }
 
 /**

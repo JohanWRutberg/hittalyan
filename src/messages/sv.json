@@ -356,6 +356,11 @@
       "low": {
         "hint": "Din kötid är betydligt kortare än snittet i området."
       }
+    },
+    "applicants": {
+      "none": "Ingen av de längst köande har sökt",
+      "some": "{count} med längre kötid har sökt",
+      "longest": "längst i kö sedan {year}"
     }
   },
   "watches": {

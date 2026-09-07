@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { chanceFor, chanceRange, type ChanceSource } from "@/lib/chance";
+import { applicantsAhead, chanceFor, chanceFromApplicants, chanceRange, queueYears, type ChanceSource } from "@/lib/chance";
 import { formatYearsShort } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 
@@ -16,16 +16,40 @@ const pct = (y: number) => `${Math.min(100, Math.max(0, (y / SCALE_YEARS) * 100)
  * stället och renderar inte den här mätaren alls.
  */
 export function ChanceMeter({
-  userYears,
+  userRegisteredAt,
   listing,
   compact,
 }: {
-  userYears: number | null;
+  userRegisteredAt: Date | null;
   listing: ChanceSource;
   compact?: boolean;
 }) {
   const t = useTranslations("chance");
   const locale = useLocale() as Locale;
+  const userYears = userRegisteredAt ? queueYears(userRegisteredAt) : null;
+
+  // Vet vi vilka som faktiskt sökt är det ett bättre mått än historiken, som
+  // beskriver liknande lägenheter i stort och inte kön kring just den här.
+  const applicants = listing.queueDates ?? [];
+  if (applicants.length && userRegisteredAt) {
+    const c = chanceFromApplicants(applicants, userRegisteredAt);
+    const ahead = applicantsAhead(applicants, userRegisteredAt);
+    const longest = applicants[0];
+    return (
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1" title={t(`applicants.${ahead === 0 ? "none" : "some"}`, { count: ahead })}>
+        <span className={`chip shrink-0 ${c.pill}`}>
+          <span className={`size-1.5 rounded-full ${c.dot}`} />
+          {t(`${c.level}.label`)}
+        </span>
+        <span className="text-xs text-muted">
+          {ahead === 0 ? t("applicants.none") : t("applicants.some", { count: ahead })}
+          {" · "}
+          {t("applicants.longest", { year: longest.getUTCFullYear() })}
+        </span>
+      </div>
+    );
+  }
+
   const range = chanceRange(listing);
   const c = chanceFor(userYears, range?.q1, range?.q3);
   const isAverage = listing.kotidQ1 == null && listing.kotidSnitt != null;

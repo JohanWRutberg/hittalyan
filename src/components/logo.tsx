@@ -1,14 +1,13 @@
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 
 export function Logo({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} className="flex shrink-0 items-center gap-2 text-ink">
       <span className="grid size-8 place-items-center rounded-xl bg-brand-600 text-white shadow-soft">
-        <svg viewBox="0 0 24 24" className="size-4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 11.5 12 4l9 7.5" />
-          <path d="M5 10v10h14V10" />
-          <path d="M10 20v-6h4v6" />
-        </svg>
+        {/* Hyreshus, inte villa. Samma form som platshållaren på annonser utan
+            bild, och som favicon och app-ikonerna. */}
+        <Building2 className="size-4.5" strokeWidth={2.2} />
       </span>
       <span className="whitespace-nowrap text-base font-bold tracking-tight max-[379px]:hidden sm:text-lg">Hitta Lyan</span>
     </Link>

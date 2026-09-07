@@ -475,6 +475,15 @@ body {
   outline-offset: 1px;
 }
 
+/*
+ * Nya annonser ska ligga över de vanliga. Klassen sitter på det inre elementet,
+ * men staplingen mellan markörer avgörs av de yttre – därav :has().
+ * Ordningen är: vanlig (auto) < ny (3) < den som hovras (5).
+ */
+.lm-marker:has(.lm-marker--new) {
+  z-index: 3;
+}
+
 /* Markören för den annons som hovras i listan */
 .lm-marker--active {
   z-index: 5;

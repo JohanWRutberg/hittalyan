@@ -15,6 +15,8 @@
 
   --canvas: #f5f9fb;
   --surface: #ffffff;
+  /* Ram runt kartans markörer. Ska skilja nålen från kartan utan att lysa. */
+  --marker-ring: #ffffff;
   --ink: #0f172a;
   --muted: #64748b;
   --line: #e2eaf0;
@@ -45,6 +47,7 @@
 
   --canvas: #0f1720;
   --surface: #18222e;
+  --marker-ring: #33414f;
   --ink: #e6edf3;
   --muted: #94a3b8;
   --line: #2a3543;
@@ -233,7 +236,7 @@ body {
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   background: linear-gradient(160deg, var(--color-brand-500), var(--color-brand-700));
-  border: 2.5px solid #fff;
+  border: 2.5px solid var(--marker-ring);
   box-shadow: 0 2px 6px rgb(15 23 42 / 0.25), 0 8px 18px -8px rgb(21 126 108 / 0.6);
   transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s;
   display: grid;
@@ -244,7 +247,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--marker-ring);
   opacity: 0.9;
 }
 .lm-marker__count {

@@ -228,8 +228,17 @@ alla kostat tid:
 - **Kartan är sticky** och ligger alltid på `top: 0`. Den skjuts ned med en `transform`
   lika stor som `--nav-h`. Animera aldrig `top` här: det ger layoutarbete varje bildruta
   och märkbar lagg på iPhone. Ingen `backdrop-blur` på mobil av samma skäl.
-- När kartan fastnat viks dess rubrikrad ihop på mobil så att kartan ligger högst upp.
-  Fastnaglingen mäts med en sentinel via `IntersectionObserver`, inte genom att läsa
+- När kartan fastnat **krymper** dess rubrikrad på mobil, den döljs inte. Förut vek den
+  ihop sig helt, men då försvann både överblicken och förstora-knappen – och en dold rad
+  med en fokuserbar knapp i utlöser dessutom en `aria-hidden`-varning.
+- **Sorteringsraden skickas in i kartan som `footer`** och renderas inuti dess
+  fastnaglade behållare. Den ska inte vara ett eget sticky-element: då fastnar den på
+  `top: 0`, alltså bakom kartan, och hoppar ned först när dess sentinel når toppen.
+  Med en gemensam behållare följs de åt utan att någon höjd behöver mätas.
+- **Kartan går att vika in manuellt** till bara sin rubrikrad (`collapsed`), skilt från
+  `expanded` som styr höjden i utfällt läge. Rubrikraden syns alltid vid scroll.
+- Filterpanelen är kvar i flödet och är inte fastnaglad.
+- Fastnaglingen mäts med en sentinel via `IntersectionObserver`, inte genom att läsa
   positioner under scroll.
 - **Pekskärm har inget hover.** Första trycket på ett kort markerar huset på kartan,
   andra trycket öppnar annonsen. iOS simulerar `mouseenter` vid tryck, så på enheter med

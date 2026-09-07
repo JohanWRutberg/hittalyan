@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type * as MapLibre from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Maximize2, Minimize2, MapPin } from "lucide-react";
+import { ChevronDown, ChevronUp, Maximize2, Minimize2, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatKr, formatRum, formatVaning, formatYta } from "@/lib/format";
 import { chanceFor, chanceRange } from "@/lib/chance";
@@ -206,6 +206,7 @@ export function ListingsMap({
   market,
   userYears = null,
   sticky = false,
+  footer,
   onBoundsChange,
 }: {
   points: MapPoint[];
@@ -213,6 +214,8 @@ export function ListingsMap({
   market: Market;
   userYears?: number | null;
   sticky?: boolean;
+  /** Renderas inuti samma fastnaglade behållare, direkt under kartan. */
+  footer?: React.ReactNode;
   /** Anropas när kartan flyttats eller zoomats, så listan kan följa utsnittet. */
   onBoundsChange?: (bounds: MapBounds) => void;
 }) {
@@ -235,6 +238,9 @@ export function ListingsMap({
   const markersRef = useRef<Marker[]>([]);
   const [ready, setReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  // Manuellt invikt: bara rubrikraden syns. Skilt från `expanded`, som styr höjden
+  // på den utfällda kartan.
+  const [collapsed, setCollapsed] = useState(false);
   const [failed, setFailed] = useState(false);
   const stuck = sticky && !expanded;
   const isDesktop = useIsDesktop();
@@ -249,8 +255,10 @@ export function ListingsMap({
     io.observe(el);
     return () => io.disconnect();
   }, [stuck]);
-  // På mobil döljs kartans rubrikrad när kartan är fastnaglad, så själva kartan ligger högst upp
-  const hideHeader = stuckNow && !isDesktop;
+  // På mobil krymper kartans rubrikrad när kartan är fastnaglad. Den doldes förut
+  // helt, men då försvann både överblicken och förstora-knappen – och en dold rad
+  // med en fokuserbar knapp i är dessutom otillgänglig (aria-hidden på fokus).
+  const compactHeader = stuckNow && !isDesktop;
 
   // Initiera kartan en gång
   useEffect(() => {
@@ -419,18 +427,21 @@ export function ListingsMap({
       {/* Sentinel: när den scrollat ovanför skärmen är kartan fastnaglad. Ingen höjd, ingen marginal. */}
       {stuck && <div ref={sentinelRef} aria-hidden className="h-0 !m-0" />}
     <div
-      className={`card overflow-hidden ${stuck ? "sticky top-0 z-20 will-change-transform transition-transform duration-300 ease-out motion-reduce:transition-none" : ""}`}
+      className={stuck ? "sticky top-0 z-20 will-change-transform transition-transform duration-300 ease-out motion-reduce:transition-none" : ""}
       // Fastnaglad karta ligger på top 0 och skjuts ned med en transform (GPU, inget
       // layoutarbete) så mycket som menyn är hög, i stället för att animera top.
       style={stuck && stuckNow ? { transform: "translateY(var(--nav-h, 0px))" } : undefined}
     >
+      {/* Raka hörn när kartan ligger i topp: annars syns listan som scrollar
+          bakom genom rundningarna. Inline-stil, eftersom den måste vinna över
+          `rounded-2xl` i .card oavsett hur Tailwind sorterar klasserna. */}
+      <div className="card overflow-hidden" style={stuck && stuckNow ? { borderRadius: 0 } : undefined}>
       <div
-        className={`flex items-center justify-between gap-3 overflow-hidden px-5 transition-[max-height,opacity,padding] duration-200 ease-out motion-reduce:transition-none ${
-          hideHeader ? "max-h-0 py-0 opacity-0" : "max-h-14 py-3"
+        className={`flex items-center justify-between gap-3 overflow-hidden transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+          compactHeader ? "px-3 py-1" : "px-5 py-3"
         }`}
-        aria-hidden={hideHeader || undefined}
       >
-        <div className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+        <div className={`flex min-w-0 items-center gap-2 font-semibold ${compactHeader ? "text-xs" : "text-sm"}`}>
           <MapPin className="size-4 shrink-0 text-accent" />
           {t("title")}
           <span className="truncate font-normal text-muted">
@@ -438,12 +449,38 @@ export function ListingsMap({
             {points.length > MAX_MARKERS && t("showing", { max: MAX_MARKERS })}
           </span>
         </div>
-        <button type="button" onClick={() => setExpanded(!expanded)} className="btn-ghost px-2.5 py-1.5 text-xs" title={expanded ? t("smaller") : t("larger")}>
-          {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-          {expanded ? t("smaller") : t("larger")}
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className={`btn-ghost text-xs ${compactHeader ? "px-2 py-0.5" : "px-2.5 py-1.5"}`}
+              title={expanded ? t("smaller") : t("larger")}
+            >
+              {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+              <span className="hidden sm:inline">{expanded ? t("smaller") : t("larger")}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setCollapsed(!collapsed);
+              if (!collapsed) setExpanded(false);
+            }}
+            aria-expanded={!collapsed}
+            className={`btn-ghost text-xs ${compactHeader ? "px-2 py-0.5" : "px-2.5 py-1.5"}`}
+            title={collapsed ? t("unfold") : t("fold")}
+          >
+            {collapsed ? <ChevronDown className="size-3.5" /> : <ChevronUp className="size-3.5" />}
+            <span className="hidden sm:inline">{collapsed ? t("unfold") : t("fold")}</span>
+          </button>
+        </div>
       </div>
-      <div className={`relative border-t border-line bg-canvas transition-[height] duration-300 ease-out ${expanded ? "h-[70vh] min-h-[420px]" : "h-44 sm:h-72"}`}>
+      <div
+        className={`relative bg-canvas transition-[height] duration-300 ease-out ${
+          collapsed ? "h-0 border-t-0" : `border-t border-line ${expanded ? "h-[70vh] min-h-[420px]" : "h-44 sm:h-72"}`
+        }`}
+      >
         <div ref={containerRef} className="h-full w-full" style={{ position: "absolute", inset: 0 }} />
         {!ready && !failed && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted">
@@ -454,6 +491,16 @@ export function ListingsMap({
           <div className="absolute inset-0 grid place-items-center text-sm text-muted">{t("failed")}</div>
         )}
       </div>
+      </div>
+      {footer && (
+        <div
+          className={`bg-canvas transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+            stuckNow ? "py-1.5 [&_.chip]:py-0.5 [&_.chip]:text-[11px]" : "pt-4"
+          }`}
+        >
+          {footer}
+        </div>
+      )}
     </div>
     </>
   );

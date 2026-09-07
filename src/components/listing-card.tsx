@@ -99,7 +99,7 @@ export function ListingCard({
         setArmedId(null);
       }}
       aria-describedby={armed ? `tap-${l.id}` : undefined}
-      className="flex flex-1 flex-col gap-3 p-5"
+      className="flex flex-1 flex-col gap-2.5 p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -113,12 +113,12 @@ export function ListingCard({
               {l.stadsdel} · {l.kommun}
             </span>
           </div>
-          <h3 className="mt-1 truncate text-lg font-semibold tracking-tight text-ink group-hover:text-accent">{l.gatuadress}</h3>
+          <h3 className="mt-0.5 truncate text-base font-semibold tracking-tight text-ink group-hover:text-accent">{l.gatuadress}</h3>
         </div>
         <ArrowUpRight className="size-5 shrink-0 text-faint transition group-hover:text-accent" />
       </div>
 
-      <dl className="grid grid-cols-4 gap-2 text-sm">
+      <dl className="grid grid-cols-4 gap-1.5 text-sm">
         <Stat label={t("card.rooms")} value={l.antalRum == null ? "–" : formatNumber(l.antalRum, locale)} />
         <Stat label={t("card.area")} value={formatYta(l.yta)} />
         <Stat label={t("card.rentKr")} value={l.hyra == null ? "–" : formatNumber(l.hyra, locale)} />
@@ -173,9 +173,9 @@ export function ListingCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-canvas px-2 py-2 sm:px-2.5">
+    <div className="rounded-lg bg-canvas px-2 py-1.5">
       <dt className="text-[10px] font-semibold uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="mt-0.5 whitespace-nowrap font-semibold text-ink">{value}</dd>
+      <dd className="whitespace-nowrap text-[13px] font-semibold text-ink">{value}</dd>
     </div>
   );
 }

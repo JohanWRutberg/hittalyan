@@ -10,7 +10,7 @@ import { signOut } from "@/lib/auth-client";
 export function NavLinks({ links, mobile }: { links: { href: string; label: string }[]; mobile?: boolean }) {
   const pathname = usePathname();
   return (
-    <nav className={mobile ? "flex gap-1 py-1" : "hidden items-center gap-1 sm:flex"}>
+    <nav className={mobile ? "flex gap-1 py-1" : "hidden items-center gap-1 lg:flex"}>
       {links.map((l) => {
         const active = l.href === "/lagenheter" ? pathname === "/lagenheter" : pathname.startsWith(l.href);
         return (
@@ -51,7 +51,7 @@ export function SignOutButton() {
       }}
     >
       <LogOut className="size-4" />
-      <span className="hidden sm:inline">{t("logout")}</span>
+      <span className="hidden lg:inline">{t("logout")}</span>
     </button>
   );
 }

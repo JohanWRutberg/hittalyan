@@ -98,9 +98,17 @@ export function ListingsBrowser({
 
   return (
     <div className="space-y-6">
-      <ListingsMap points={points} market={market} userYears={userYears} sticky onBoundsChange={onBoundsChange} />
-
-      {sortBar}
+      {/* Sorteringen skickas in i kartans egen fastnaglade behållare. Som eget
+          sticky-element fastnade den på top 0, alltså bakom kartan, och hoppade
+          först ned när dess sentinel nådde toppen. */}
+      <ListingsMap
+        points={points}
+        market={market}
+        userYears={userYears}
+        sticky
+        footer={sortBar}
+        onBoundsChange={onBoundsChange}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Visas bara när kartan faktiskt döljer något, så raden inte skräpar. */}

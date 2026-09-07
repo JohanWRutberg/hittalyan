@@ -49,13 +49,18 @@ export async function AppNav({ user }: { user: { name: string; email: string; ro
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <ThemeSwitcher compact />
           <LocaleSwitcher compact />
-          <Link href="/konto" className="hidden text-sm text-muted sm:block">
+          {/* Namnet är det första som får vika: det frigör ~100 px i spannet
+              där länkraden precis får plats. */}
+          <Link href="/konto" className="hidden max-w-32 truncate text-sm text-muted xl:block">
             {user.name}
           </Link>
           <SignOutButton />
         </div>
       </div>
-      <div className="border-t border-line sm:hidden">
+      {/* Under lg får länkarna en egen scrollbar rad. Med fem länkar, temaväxlare,
+          språkväljare och utloggning blir den inbakade raden ~990 px bred, och
+          fick aldrig plats mellan 640 och 1024 px. */}
+      <div className="border-t border-line lg:hidden">
         <div className="mx-auto max-w-7xl overflow-x-auto px-2">
           <NavLinks links={links} mobile />
         </div>

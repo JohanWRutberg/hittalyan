@@ -24,7 +24,7 @@ export function ListingImages({ images, alt }: { images: string[]; alt: string }
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
 
   return (
-    <div className="group/img relative aspect-4/3 w-full overflow-hidden bg-canvas">
+    <div className="group/img relative aspect-16/10 w-full overflow-hidden bg-canvas">
       {/* Bara den aktuella bilden ligger i DOM:en; korten kan vara 60 på en sida. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- medvetet: next/image skulle förbruka Vercels kvot för bildoptimeringar på bilder som redan är färdigskalade hos förmedlingen */}
       <img
@@ -75,7 +75,7 @@ export function ListingImages({ images, alt }: { images: string[]; alt: string }
 function ImagePlaceholder() {
   const t = useTranslations("listings.card");
   return (
-    <div className="relative aspect-4/3 w-full overflow-hidden bg-linear-to-br from-accent-soft via-canvas to-subtle">
+    <div className="relative aspect-16/10 w-full overflow-hidden bg-linear-to-br from-accent-soft via-canvas to-subtle">
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <Building2 className="size-9 text-brand-200" strokeWidth={1.5} aria-hidden />
         <span className="text-xs font-medium uppercase tracking-wider text-faint">{t("noImage")}</span>

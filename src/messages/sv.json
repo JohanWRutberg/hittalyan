@@ -187,7 +187,9 @@
       "popupNew": "Ny",
       "popupChanceTitle": "Liknande lägenheter: {q1}–{q3} års kötid",
       "etAl": "m.fl.",
-      "popupAverageTitle": "Liknande bostäder i området har krävt {years} kötid i snitt."
+      "popupAverageTitle": "Liknande bostäder i området har krävt {years} kötid i snitt.",
+      "fold": "Fäll in",
+      "unfold": "Visa karta"
     },
     "viewport": {
       "showing": "Visar {count} av {total} i kartans utsnitt.",

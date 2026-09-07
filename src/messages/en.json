@@ -187,7 +187,9 @@
       "popupNew": "New",
       "popupChanceTitle": "Similar apartments: {q1}–{q3} years in the queue",
       "etAl": "et al.",
-      "popupAverageTitle": "Similar homes in this area required {years} in the queue on average."
+      "popupAverageTitle": "Similar homes in this area required {years} in the queue on average.",
+      "fold": "Collapse",
+      "unfold": "Show map"
     },
     "viewport": {
       "showing": "Showing {count} of {total} within the map view.",

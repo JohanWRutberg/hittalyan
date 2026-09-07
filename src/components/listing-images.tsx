@@ -58,7 +58,10 @@ export function ListingImages({ images, alt, fill }: { images: string[]; alt: st
             ))}
           </div>
           {/* Uppe till vänster: favorithjärtat ligger i det högra hörnet. */}
-          <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-ink/60 px-2 py-0.5 text-[11px] font-medium text-white">
+          {/* Fast svart platta, inte `bg-ink`: den vänder med temat och blev ljus
+              med vit text i mörkt läge. Överlägg på foton ska se likadana ut i
+              båda lägena, för fotot gör det. */}
+          <span className="pointer-events-none absolute left-2 top-2 inline-flex h-7 items-center rounded-full bg-black/55 px-2.5 text-[11px] font-medium text-white shadow-soft">
             {index + 1}/{count}
           </span>
         </>

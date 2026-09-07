@@ -212,7 +212,10 @@
       "comfortable": "Rutnät",
       "compact": "Tätt rutnät",
       "list": "Lista"
-    }
+    },
+    "onlyFavorites": "Favoriter",
+    "noFavorites": "Du har inga sparade favoriter i den här kön än. Tryck på hjärtat på ett kort för att spara det.",
+    "favoritesExpired": "Nedtonade favoriter går inte längre att söka — annonsen har tagits bort hos förmedlingen."
   },
   "filters": {
     "title": "Filter",

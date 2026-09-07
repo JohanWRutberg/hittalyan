@@ -88,7 +88,7 @@ export function ListingCard({
         <ListingImages images={images} alt={`${l.gatuadress}, ${l.stadsdel}`} fill={isList} />
       </div>
       {canFavorite && (
-        <div className="absolute right-3 top-3 z-10">
+        <div className="absolute right-2 top-2 z-10">
           <FavoriteButton listingId={l.id} />
         </div>
       )}

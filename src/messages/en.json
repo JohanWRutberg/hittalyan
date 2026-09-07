@@ -212,7 +212,10 @@
       "comfortable": "Grid",
       "compact": "Dense grid",
       "list": "List"
-    }
+    },
+    "onlyFavorites": "Favourites",
+    "noFavorites": "You have no saved favourites in this queue yet. Tap the heart on a card to save it.",
+    "favoritesExpired": "Dimmed favourites can no longer be applied for — the agency has removed the listing."
   },
   "filters": {
     "title": "Filter",

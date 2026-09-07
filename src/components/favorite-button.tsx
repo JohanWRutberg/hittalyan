@@ -39,11 +39,14 @@ export function FavoriteButton({ listingId }: { listingId: string }) {
           setFavorite(listingId, res.favorited);
         });
       }}
-      className={`grid size-9 place-items-center rounded-full bg-surface/90 shadow-soft transition hover:bg-surface disabled:opacity-60 ${
-        on ? "text-danger" : "text-faint hover:text-danger"
+      // Samma platta som bildräknaren i motsatt hörn: fast svart, oberoende av
+      // tema. Hover och tryckyta ligger i globals.css, eftersom Tailwinds
+      // hover-variant även gäller pekskärm där tillståndet blir kvar efter tryck.
+      className={`favorite-button grid size-7 place-items-center rounded-full bg-black/55 shadow-soft transition disabled:opacity-60 ${
+        on ? "text-red-400" : "text-white/80"
       }`}
     >
-      <Heart className={`size-4.5 ${on ? "fill-current" : ""}`} />
+      <Heart className={`size-4 ${on ? "fill-current" : ""}`} />
     </button>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, MapPin } from "lucide-react";
 import type { Listing } from "@/generated/prisma/client";
 import { ListingCard } from "@/components/listing-card";
 import { ListingsMap, type MapBounds, type MapPoint } from "@/components/listings-map";
@@ -30,6 +30,7 @@ const MAX_MARKERS = 1500;
 export function ListingsBrowser({
   listings,
   market,
+  favoriteListings,
   userRegisteredAt,
   userYears,
   canFavorite,
@@ -38,6 +39,8 @@ export function ListingsBrowser({
 }: {
   listings: Listing[];
   market: Market;
+  /** Alla sparade favoriter i den här kön, oavsett filter och om de gått ut. */
+  favoriteListings: Listing[];
   userRegisteredAt: Date | null;
   /** Uträknad på servern; se ChanceMeter. */
   userYears: number | null;
@@ -58,6 +61,12 @@ export function ListingsBrowser({
   // Kartan skickar nytt utsnitt vid varje moveend; en ny callback får inte
   // bygga om kartan, därför useCallback.
   const onBoundsChange = useCallback((b: MapBounds) => setBounds(b), []);
+
+  // Rent visningsfilter, som kartutsnittet: ligger i sidans tillstånd och inte i
+  // adressen, eftersom hela träfflistan redan finns i webbläsaren.
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+  // Räknas på den separata listan, så utgångna favoriter syns i siffran.
+  const favoriteCount = useMemo(() => favoriteListings.filter((l) => favorites.has(l.id)).length, [favoriteListings, favorites]);
 
   const points: MapPoint[] = useMemo(
     () =>
@@ -88,14 +97,21 @@ export function ListingsBrowser({
   );
 
   const visible = useMemo(() => {
-    if (!followMap || !bounds) return listings;
-    return listings.filter((l) => {
+    // Favoritläget är en sparad samling, inte en sökning: det visar allt du
+    // sparat och påverkas därför varken av filtren eller av kartans utsnitt.
+    // Listan krymper direkt när du avmarkerar något, eftersom `favorites` är
+    // samma delade tillstånd som hjärtat på korten.
+    if (onlyFavorites) return favoriteListings.filter((l) => favorites.has(l.id));
+
+    const rows = listings;
+    if (!followMap || !bounds) return rows;
+    return rows.filter((l) => {
       // Annonser utan koordinater ska inte försvinna bara för att förmedlingen
       // saknar position för dem.
       if (l.lat == null || l.lng == null) return true;
       return l.lat >= bounds.south && l.lat <= bounds.north && l.lng >= bounds.west && l.lng <= bounds.east;
     });
-  }, [listings, bounds, followMap]);
+  }, [listings, bounds, followMap, onlyFavorites, favorites, favoriteListings]);
 
   const hiddenByMap = visible.length < listings.length;
   const pages = Math.max(1, Math.ceil(visible.length / pageSize));
@@ -143,6 +159,25 @@ export function ListingsBrowser({
         )}
 
         <label className="inline-flex items-center gap-2 text-sm text-muted">
+          {canFavorite && (
+            <button
+              type="button"
+              aria-pressed={onlyFavorites}
+              onClick={() => {
+                setOnlyFavorites((v) => !v);
+                setPage(1);
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition ${
+                onlyFavorites
+                  ? "border-accent-line-strong bg-accent-soft text-accent"
+                  : "border-line bg-surface text-muted hover:text-ink"
+              }`}
+            >
+              <Heart className={`size-3.5 ${onlyFavorites ? "fill-current" : ""}`} />
+              {t("onlyFavorites")}
+              <span className="text-muted">{favoriteCount}</span>
+            </button>
+          )}
           <CardLayoutSwitcher />
           {t("perPage.label")}
           <select
@@ -163,12 +198,18 @@ export function ListingsBrowser({
       </div>
 
       {visible.length === 0 ? (
-        <div className="card p-12 text-center text-muted">{hiddenByMap ? t("viewport.empty") : t("empty")}</div>
+        <div className="card p-12 text-center text-muted">
+          {onlyFavorites && favoriteCount === 0 ? t("noFavorites") : hiddenByMap ? t("viewport.empty") : t("empty")}
+        </div>
       ) : (
+        <>
+        {onlyFavorites && visible.some((l) => !l.active) && (
+          <p className="mb-3 text-sm text-muted">{t("favoritesExpired")}</p>
+        )}
         <div className={LAYOUT_GRID[layout]}>
           {shown.map((l, i) => (
+            <div key={l.id} className={onlyFavorites && !l.active ? "opacity-60" : ""}>
             <ListingCard
-              key={l.id}
               listing={l}
               index={i}
               userRegisteredAt={userRegisteredAt}
@@ -176,8 +217,10 @@ export function ListingsBrowser({
               canFavorite={canFavorite}
               layout={layout}
             />
+            </div>
           ))}
         </div>
+        </>
       )}
 
       {pages > 1 && <Pagination page={current} pages={pages} onChange={setPage} />}

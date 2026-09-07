@@ -71,6 +71,15 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
     getAreaCounts(areaWhere),
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
   ]);
+
+  // Favoriterna hämtas separat och utan filter: de ska gå att visa även när de
+  // gått ut eller faller utanför den aktuella sökningen. Egen kö bara, så en
+  // Malmöfavorit inte dyker upp i Stockholmslistan.
+  const favoriteRows = await prisma.favorite.findMany({
+    where: { userId: session.user.id, listing: { market } },
+    include: { listing: true },
+    orderBy: { createdAt: "desc" },
+  });
   const total = listings.length;
   const cutoff = dayAgo();
   const newLast24h = listings.filter((l) => l.firstSeenAt >= cutoff).length;
@@ -133,6 +142,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
         <ListingsBrowser
           listings={listings}
           market={market}
+          favoriteListings={canFavorite ? favoriteRows.map((f) => f.listing) : []}
           userRegisteredAt={queueDate}
           userYears={userYears}
           canFavorite={canFavorite}

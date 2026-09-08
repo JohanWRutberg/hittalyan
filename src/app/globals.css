@@ -503,15 +503,19 @@ body {
  *   hovrad markör  5
  *   popup          6   (måste ligga över alla markörer)
  */
-.lm-marker:has(.lm-marker--new) {
+/* `:where()` nollar specificiteten hos argumentet. Utan det väger regeln tyngre
+   än .lm-marker--active nedan, och en ny annons som hovrades blev kvar under
+   grannarna i stället för att lyftas överst. */
+.lm-marker:has(:where(.lm-marker--new)) {
   z-index: 3;
 }
 .maplibregl-popup {
   z-index: 6;
 }
 
-/* Markören för den annons som hovras i listan */
-.lm-marker--active {
+/* Markören för den annons som hovras i listan eller är öppnad på kartan. Två
+   klasser, så den vinner över :has()-regeln ovan oavsett ordning i filen. */
+.lm-marker.lm-marker--active {
   z-index: 5;
 }
 .lm-marker--active .lm-marker__pin {

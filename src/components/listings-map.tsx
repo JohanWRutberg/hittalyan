@@ -237,7 +237,7 @@ export function ListingsMap({
   const tListing = useTranslations("listings");
   const tFav = useTranslations("favorites");
   const locale = useLocale() as Locale;
-  const { hovered, favorites } = useHoveredListing();
+  const { hovered, setHovered, favorites } = useHoveredListing();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -372,6 +372,10 @@ export function ListingsMap({
             locale,
           }),
         );
+        // En öppnad popup markerar sin markör på samma sätt som hover i listan,
+        // så den blir blå och hamnar överst i stapelordningen.
+        popup.on("open", () => setHovered(g.items[0].id));
+        popup.on("close", () => setHovered(null));
         const marker = new maplibregl.Marker({ element: markerElement(g, i), anchor: "bottom" })
           .setLngLat([g.lng, g.lat])
           .setPopup(popup)

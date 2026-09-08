@@ -6,9 +6,10 @@ import { FadeIn } from "@/components/motion";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { SiteFooter } from "@/components/site-footer";
+import { SwedenMap } from "@/components/sweden-map";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { formatDateTime, formatNumber } from "@/lib/format";
+import { formatDateTime, formatList, formatNumber } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import { MARKETS, marketInfo } from "@/lib/markets";
 
@@ -59,12 +60,14 @@ export default async function LandingPage() {
         <section className="relative overflow-hidden rounded-3xl border border-line bg-surface px-6 py-16 shadow-soft sm:px-12 sm:py-24">
           <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-accent-soft blur-3xl" />
           <div className="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-full bg-sky-100 blur-3xl dark:bg-sky-500/10" />
-          <FadeIn className="relative max-w-2xl">
+          <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <FadeIn className="max-w-2xl">
             <span className="chip border-accent-line bg-accent-soft text-accent">
-              <span className="size-1.5 rounded-full bg-brand-500" /> {t("badge")}
+              <span className="size-1.5 rounded-full bg-brand-500" /> {t("badge", { count: MARKETS.length })}
             </span>
             <h1 className="mt-5 text-4xl font-bold tracking-tight text-ink sm:text-6xl">{t("title")}</h1>
-            <p className="mt-5 text-lg text-muted">{t("lead")}</p>
+            {/* Namnen räknas upp ur MARKETS, så texten stämmer så fort en kö tillkommer. */}
+            <p className="mt-5 text-lg text-muted">{t("lead", { sources: formatList(MARKETS.map((m) => marketInfo(m).name), locale) })}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href={session ? "/lagenheter" : "/register"} className="btn-primary px-6 py-3 text-base">
                 {t("cta")} <ArrowRight className="size-4" />
@@ -78,19 +81,28 @@ export default async function LandingPage() {
               {lastRun?.finishedAt && t("updatedAt", { time: formatDateTime(lastRun.finishedAt, locale) })}
             </p>
           </FadeIn>
+          {/*
+            Kartan är dold på de minsta skärmarna: hjältekortet är redan högt i
+            mobilen, och mosaiken lever på att man kan hovra över den.
+          */}
+          <FadeIn delay={0.15} className="hidden sm:block lg:w-[21rem]">
+            <SwedenMap counts={Object.fromEntries(activeByMarket)} />
+          </FadeIn>
+          </div>
         </section>
 
         <section className="mt-10">
           <FadeIn className="card p-6">
-            <h2 className="text-lg font-semibold">{t("cities.title")}</h2>
+            <h2 className="text-lg font-semibold">{t("cities.title", { count: MARKETS.length })}</h2>
             <p className="mt-1 text-sm text-muted">{t("cities.lead")}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {MARKETS.map((m) => {
                 const info = marketInfo(m);
                 return (
                   <div key={m} className="rounded-2xl border border-line bg-canvas px-4 py-3">
-                    <p className="font-semibold">{info.city}</p>
-                    <p className="truncate text-xs text-muted">{info.name}</p>
+                    <p className="font-semibold">{info.short}</p>
+                    {/* Boplats Väst och Syd heter redan sitt förmedlingsnamn i etiketten. */}
+                    {info.name !== info.short && <p className="truncate text-xs text-muted">{info.name}</p>}
                     <p className="mt-1 text-sm text-accent">
                       {t.rich("activeNow", {
                         count: formatNumber(activeByMarket.get(m) ?? 0, locale),

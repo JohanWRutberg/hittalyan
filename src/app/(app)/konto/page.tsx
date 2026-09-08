@@ -145,7 +145,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/konto">)
                   <a href={n.listing.url} target="_blank" rel="noreferrer" className="truncate font-medium text-accent hover:underline">
                     {n.listing.gatuadress}, {n.listing.stadsdel}
                   </a>
-                  <p className="text-xs text-muted">{n.watch.name} · {marketInfo(marketOf(n.listing.market)).city} · {formatDateTime(n.createdAt, locale)}</p>
+                  <p className="text-xs text-muted">{n.watch.name} · {marketInfo(marketOf(n.listing.market)).short} · {formatDateTime(n.createdAt, locale)}</p>
                 </div>
                 <div className="flex shrink-0 gap-1.5 text-xs text-muted">
                   {n.emailSent && <span className="chip">{t("history.mail")}</span>}

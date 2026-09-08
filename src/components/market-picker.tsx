@@ -35,8 +35,9 @@ export function MarketPicker({
             }`}
           >
             <span className="min-w-0">
-              <span className={`block font-semibold ${active ? "text-accent-strong" : "text-ink"}`}>{info.city}</span>
-              <span className="block truncate text-xs text-muted">{info.name}</span>
+              <span className={`block font-semibold ${active ? "text-accent-strong" : "text-ink"}`}>{info.short}</span>
+              {/* Utelämnas när etiketten redan är förmedlingens namn, som hos Boplats. */}
+              {info.name !== info.short && <span className="block truncate text-xs text-muted">{info.name}</span>}
             </span>
             {active && <Check className="size-4 shrink-0 text-accent" />}
           </button>

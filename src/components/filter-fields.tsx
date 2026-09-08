@@ -106,11 +106,15 @@ export function FilterFields({
         {info.hasFloor && <Range label={t("floor")} name="Vaning" min={initial.minVaning} max={initial.maxVaning} />}
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Check name="balkong" label={t("balcony")} checked={initial.balkong} />
-        <Check name="hiss" label={t("elevator")} checked={initial.hiss} />
-        <Check name="nyproduktion" label={t("newBuildOnly")} checked={initial.nyproduktion} />
-      </div>
+      {/* HomeQ lämnar inte ut balkong, hiss eller nyproduktion, och kryssrutor som
+          alltid ger noll träffar är värre än inga kryssrutor alls. */}
+      {info.hasAmenities && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Check name="balkong" label={t("balcony")} checked={initial.balkong} />
+          <Check name="hiss" label={t("elevator")} checked={initial.hiss} />
+          <Check name="nyproduktion" label={t("newBuildOnly")} checked={initial.nyproduktion} />
+        </div>
+      )}
 
       {/* Boplats Väst märker inte ut specialköer i annonserna, så där finns inget att välja bort. */}
       {info.hasSpecialQueues && (

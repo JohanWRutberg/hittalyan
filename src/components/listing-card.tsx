@@ -48,7 +48,11 @@ export function ListingCard({
   const info = marketInfo(market);
   // Momentum-plattformen (Syd, Uppsala) lämnar inte ut våningsplan, men anger
   // antal sökande. Där tar sökandena våningens plats bland nyckeltalen.
-  const showsChance = info.chance !== "applicants";
+  //
+  // Mätaren kräver ett kötidsunderlag: kvartiler (Stockholm) eller områdessnitt
+  // (Väst). Syd och Uppsala har bara antal sökande, HomeQ har ingenting alls –
+  // där visas ingen mätare i stället för en tom.
+  const showsChance = info.chance === "quartiles" || info.chance === "average";
   const { setHovered, armedId, setArmedId } = useHoveredListing();
   // Pekskärm utan hover: första trycket visar huset på kartan, andra öppnar annonsen.
   // iOS simulerar mouseenter vid tryck, så på sådana enheter ignoreras hover-händelserna helt.
@@ -134,15 +138,17 @@ export function ListingCard({
         )}
       </div>
 
-      <dl className="grid grid-cols-4 gap-1.5 text-sm">
+      {/* Fjärde nyckeltalet är våning där källan lämnar ut den, annars antal
+          sökande. HomeQ har varken det ena eller det andra, och då blir det tre. */}
+      <dl className={`grid gap-1.5 text-sm ${info.hasFloor || info.chance !== "none" ? "grid-cols-4" : "grid-cols-3"}`}>
         <Stat label={t("card.rooms")} value={l.antalRum == null ? "–" : formatNumber(l.antalRum, locale)} />
         <Stat label={t("card.area")} value={formatYta(l.yta)} />
         <Stat label={t("card.rentKr")} value={l.hyra == null ? "–" : formatNumber(l.hyra, locale)} />
         {info.hasFloor ? (
           <Stat label={t("card.floor")} value={formatVaning(l.vaning, locale).replace(/^\D+\s/, "")} />
-        ) : (
+        ) : info.chance !== "none" ? (
           <Stat label={t("card.applicantsShort")} value={l.sokande == null ? "–" : formatNumber(l.sokande, locale)} />
-        )}
+        ) : null}
       </dl>
 
       {tagKeys.length > 0 && (
@@ -179,10 +185,16 @@ export function ListingCard({
             {t("card.tapAgain")}
           </p>
         )}
-        <div className="flex items-center justify-between text-xs text-muted">
-          <span className="inline-flex items-center gap-1">
-            <DoorOpen className="size-3.5" /> {t("card.lastDay", { date: formatDate(l.annonseradTill, locale) })}
-          </span>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted">
+          {/* HomeQ:s annonser ligger uppe tills de är uthyrda och har ingen sista
+              dag. Raden utelämnas hellre än att visa "Sista dag –". */}
+          {info.hasDeadline ? (
+            <span className="inline-flex items-center gap-1">
+              <DoorOpen className="size-3.5" /> {t("card.lastDay", { date: formatDate(l.annonseradTill, locale) })}
+            </span>
+          ) : (
+            <span />
+          )}
           <span className="inline-flex items-center gap-1">
             <Building2 className="size-3.5" /> {l.koNamn ?? l.hyresvard ?? info.name}
           </span>

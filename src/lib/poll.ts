@@ -28,6 +28,8 @@ export interface MarketPollResult {
   newCount: number;
   updated: number;
   deactivated: number;
+  /** Gamla, borttagna annonser som städades bort. */
+  pruned: number;
   /** Notiser som gick fram i den här körningen, nya såväl som omförsök. */
   notified: number;
   /** Notiser som fortfarande inte gick att leverera. */
@@ -47,6 +49,7 @@ export interface PollResult {
   newCount: number;
   updated: number;
   deactivated: number;
+  pruned: number;
   notified: number;
   notifyFailed: number;
   runId: string;
@@ -107,6 +110,7 @@ export async function runPoll(options: PollOptions = {}): Promise<PollResult> {
     newCount: sum((m) => m.newCount),
     updated: sum((m) => m.updated),
     deactivated: sum((m) => m.deactivated),
+    pruned: sum((m) => m.pruned),
     notified: sum((m) => m.notified),
     notifyFailed: sum((m) => m.notifyFailed),
     runId: markets[markets.length - 1]?.runId ?? "",
@@ -123,15 +127,24 @@ export async function runPoll(options: PollOptions = {}): Promise<PollResult> {
 export async function runMarketPoll(market: Market, deadline = Date.now() + DEFAULT_RUN_MS - WRITE_RESERVE_MS): Promise<MarketPollResult> {
   const run = await prisma.pollRun.create({ data: { market } });
   try {
-    const existing = await prisma.listing.findMany({
-      where: { market },
-      select: {
-        id: true, refreshedAt: true, kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
-        hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true, active: true,
-        images: true, imagesCheckedAt: true, queueDates: true, queueDatesAt: true,
-      },
-    });
+    // Bildlistorna följer medvetet **inte** med här. De är den överlägset tyngsta
+    // kolumnen – ett halvdussin adresser per annons – och allt vi behöver av dem i
+    // det här läget är ja eller nej. Med några tusen annonser blev det megabyte
+    // från databasen vid varje körning, för en boolean. Vilka som har bilder
+    // hämtas som en ren id-lista i stället.
+    const [existing, withImages] = await Promise.all([
+      prisma.listing.findMany({
+        where: { market },
+        select: {
+          id: true, refreshedAt: true, kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
+          hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true, active: true,
+          imagesCheckedAt: true, queueDates: true, queueDatesAt: true,
+        },
+      }),
+      prisma.listing.findMany({ where: { market, images: { isEmpty: false } }, select: { id: true } }),
+    ]);
     const existingById = new Map(existing.map((e) => [e.id, e]));
+    const hasImages = new Set(withImages.map((r) => r.id));
     const isFirstRun = existing.length === 0;
 
     const known: Map<string, KnownListing> = new Map(
@@ -140,7 +153,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
         {
           refreshedAt: e.refreshedAt,
           kotidSnitt: e.kotidSnitt,
-          hasImages: e.images.length > 0,
+          hasImages: hasImages.has(e.id),
           imagesCheckedAt: e.imagesCheckedAt,
           queueDatesAt: e.queueDatesAt,
         },
@@ -160,11 +173,25 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
         skipDuplicates: true,
       });
     }
-    if (activeIds.length) {
+    // En rikstäckande källa har tusentals aktiva annonser, och hela id-listan i en
+    // enda IN-sats blir en fråga på hundratals kilobyte. Den delas därför upp.
+    for (const ids of chunked(activeIds)) {
       await prisma.listing.updateMany({
-        where: { id: { in: activeIds } },
+        where: { id: { in: ids } },
         data: { lastSeenAt: now, active: true },
       });
+    }
+
+    // Bilderna jämförs bara för de annonser källan faktiskt hämtade om den här
+    // körningen. För Stockholm och Väst är det en handfull, och då är det billigare
+    // att fråga efter just dem än att bära med sig allas bildlistor genom hela
+    // körningen. Källor som får bilderna gratis i listsvaret lämnar lika många id
+    // som förut – men aldrig fler.
+    const refetchedImages = listings.filter((l) => l.images !== undefined && existingById.has(l.id)).map((l) => l.id);
+    const previousImages = new Map<string, string[]>();
+    for (const ids of chunked(refetchedImages)) {
+      const rows = await prisma.listing.findMany({ where: { id: { in: ids } }, select: { id: true, images: true } });
+      for (const r of rows) previousImages.set(r.id, r.images);
     }
 
     // Befintliga annonser vars uppgifter ändrats (t.ex. kötidsstatistik, antal
@@ -180,7 +207,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
         (l.queueDates !== undefined && !sameDates(e.queueDates, l.queueDates)) ||
         // `images: undefined` betyder att källan inte hämtade bilder den här
         // körningen, och ska inte räknas som en ändring.
-        (l.images !== undefined && !sameImages(e.images, l.images)) ||
+        (l.images !== undefined && !sameImages(previousImages.get(l.id) ?? [], l.images)) ||
         e.hyra !== l.hyra ||
         e.vaning !== l.vaning ||
         e.yta !== l.yta ||
@@ -198,24 +225,28 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     // Annonser vi hämtat om utan att något ändrats räknas ändå som färska, så att
     // källor som turas om att fräscha upp går vidare till nästa annons.
     const unchangedIds = listings.filter((l) => existingById.has(l.id) && !changedIds.has(l.id)).map((l) => l.id);
-    if (unchangedIds.length) {
-      await prisma.listing.updateMany({ where: { id: { in: unchangedIds } }, data: { refreshedAt: now } });
+    for (const ids of chunked(unchangedIds)) {
+      await prisma.listing.updateMany({ where: { id: { in: ids } }, data: { refreshedAt: now } });
     }
 
     // Annonser vi faktiskt försökt hämta bilder för, oavsett om det gav något.
     // Utan den här stämpeln skulle bildlösa annonser hämtas om i all evighet.
     const checkedIds = listings.filter((l) => l.images !== undefined).map((l) => l.id);
-    if (checkedIds.length) {
-      await prisma.listing.updateMany({ where: { id: { in: checkedIds } }, data: { imagesCheckedAt: now } });
+    for (const ids of chunked(checkedIds)) {
+      await prisma.listing.updateMany({ where: { id: { in: ids } }, data: { imagesCheckedAt: now } });
     }
     // Samma sak för kötiderna: stämpeln styr när annonsen står på tur igen.
     const queueCheckedIds = listings.filter((l) => l.queueDates !== undefined).map((l) => l.id);
-    if (queueCheckedIds.length) {
-      await prisma.listing.updateMany({ where: { id: { in: queueCheckedIds } }, data: { queueDatesAt: now } });
+    for (const ids of chunked(queueCheckedIds)) {
+      await prisma.listing.updateMany({ where: { id: { in: ids } }, data: { queueDatesAt: now } });
     }
 
+    // Avaktiveringen går på tidsstämpeln i stället för på en NOT IN-lista med varje
+    // aktivt id. Allt vi sett den här körningen har just fått `lastSeenAt = now`,
+    // så det som ligger före är precis det som försvunnit hos förmedlingen. Måste
+    // därför komma efter alla skrivningar ovan – det gör den.
     const { count: deactivated } = await prisma.listing.updateMany({
-      where: { market, active: true, id: { notIn: activeIds } },
+      where: { market, active: true, lastSeenAt: { lt: now } },
       data: { active: false },
     });
 
@@ -231,6 +262,9 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     // men eventuella gamla misslyckanden ska inte bli liggande.
     const { notified, notifyFailed } = await deliverPending(market);
 
+    // Sist av allt: notiserna ska aldrig behöva vänta på städningen.
+    const pruned = await pruneOldListings(market, now);
+
     await prisma.pollRun.update({
       where: { id: run.id },
       data: { finishedAt: new Date(), ok: true, total: activeIds.length, newCount: newListings.length, notified, notifyFailed },
@@ -241,6 +275,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
       newCount: newListings.length,
       updated: changed.length,
       deactivated,
+      pruned,
       notified,
       notifyFailed,
       runId: run.id,
@@ -252,6 +287,53 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     });
     throw err;
   }
+}
+
+/**
+ * Hur många id som får plats i en enda `IN`-sats. Postgres klarar fler, men frågan
+ * skickas som text: 5 000 id är ett par hundra kilobyte SQL per anrop, och det
+ * betalar vi för både i nätverk och i Neons cpu-tid.
+ */
+const ID_CHUNK = 1_000;
+
+function* chunked(ids: string[]): Generator<string[]> {
+  for (let i = 0; i < ids.length; i += ID_CHUNK) yield ids.slice(i, i + ID_CHUNK);
+}
+
+/**
+ * Hur länge en borttagen annons sparas innan den gallras bort. Den ligger kvar en
+ * bra bit efter att den slutat vara sökbar: det är den som gör att en gammal notis
+ * och en sparad favorit fortfarande går att öppna.
+ */
+const PRUNE_AFTER_DAYS = 90;
+
+/**
+ * Hur många rader en körning gallrar. Taket är med flit lågt: gallringen ska aldrig
+ * kunna bli det som gör att en körning inte hinner klart. Med en körning varannan
+ * halvtimme räcker det ändå till mångdubbelt mer än någon källa producerar.
+ */
+const PRUNE_BATCH = 500;
+
+/**
+ * Städar bort gamla, borttagna annonser. Utan den växer tabellen för alltid: en
+ * rikstäckande källa lägger till drygt tusen annonser om dygnet, och Neons
+ * gratisnivå tar slut på ett halvår.
+ *
+ * **Favoritmarkerade annonser gallras aldrig.** Raderingen tar med sig favoriter
+ * och notishistorik via `onDelete: Cascade`, och en sparad favorit som tyst
+ * försvinner är användarens data, inte vårt skräp. Notishistoriken får däremot
+ * följa med: den är en logg, och annonsen den pekar på finns ändå inte kvar.
+ */
+async function pruneOldListings(market: Market, now: Date): Promise<number> {
+  const cutoff = new Date(now.getTime() - PRUNE_AFTER_DAYS * 86_400_000);
+  const old = await prisma.listing.findMany({
+    where: { market, active: false, lastSeenAt: { lt: cutoff }, favorites: { none: {} } },
+    select: { id: true },
+    take: PRUNE_BATCH,
+  });
+  if (!old.length) return 0;
+  const { count } = await prisma.listing.deleteMany({ where: { id: { in: old.map((o) => o.id) } } });
+  return count;
 }
 
 const sameImages = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);

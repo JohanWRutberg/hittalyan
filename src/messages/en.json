@@ -2,7 +2,7 @@
   "meta": {
     "title": "Hitta Lyan – track new rental apartments in Stockholm, Gothenburg, Malmö and Uppsala",
     "template": "%s · Hitta Lyan",
-    "description": "Get an email and a push notification the moment a new rental apartment matching your criteria is listed by Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd or Uppsala bostadsförmedling.",
+    "description": "Get an email and a push notification the moment a new rental apartment matching your criteria is listed by Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd, Uppsala bostadsförmedling or HomeQ.",
     "pages": {
       "listings": "Apartments",
       "watches": "Watches",
@@ -46,9 +46,9 @@
     "admin": "Admin"
   },
   "landing": {
-    "badge": "Checks four housing agencies every 30 minutes",
+    "badge": "Watching {count} queues every 30 minutes",
     "title": "Never miss a new rental apartment again.",
-    "lead": "Hitta Lyan keeps an eye on new listings from Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd and Uppsala bostadsförmedling, and sends you an email and a push notification the moment something matches your area, room count, rent – or a specific building you have your heart set on.",
+    "lead": "Hitta Lyan keeps an eye on new listings from {sources}, and sends you an email and a push notification the moment something matches your area, room count, rent – or a specific building you have your heart set on.",
     "cta": "Get started for free",
     "activeNow": "<strong>{count}</strong> active listings right now",
     "updatedAt": " · last updated {time}",
@@ -71,8 +71,13 @@
       }
     },
     "cities": {
-      "title": "Four queues, one service",
-      "lead": "Choose the housing agency you are queuing with, and that is what you see. Switch whenever you like."
+      "title": "{count} queues, one service",
+      "lead": "Choose the queue you want to follow, and that is what you see. Switch whenever you like."
+    },
+    "map": {
+      "title": "The queues on the map",
+      "hint": "Hover an area to see its queue. Click to show or hide it.",
+      "count": "{count} active listings"
     }
   },
   "auth": {
@@ -609,7 +614,7 @@
       "total": "Listings in total",
       "watches": "Active watches",
       "sent": "Notifications sent",
-      "perMarket": "Active listings per agency",
+      "perMarket": "Active listings per queue",
       "pending": "Undelivered notifications (24 h)"
     },
     "users": {
@@ -705,13 +710,13 @@
     }
   },
   "markets": {
-    "chooseLabel": "Which housing agency are you queuing with?",
+    "chooseLabel": "Which queue do you want to follow?",
     "chooseHelp": "You see one queue at a time. You can change this under Account.",
     "switching": "Switching queue …",
-    "publicTitle": "Choose a housing agency",
-    "publicLead": "The listings below come from the agency you pick here.",
+    "publicTitle": "Choose a queue",
+    "publicLead": "The listings below come from the queue you pick here.",
     "accountTitle": "Your housing queue",
-    "accountLead": "You see listings from one agency at a time. Switch whenever you like.",
+    "accountLead": "You see listings from one queue at a time. Switch whenever you like.",
     "accountNote": "Your queue time is saved per queue, so it is still there if you switch back. Watches you have already created keep notifying you about their own queue, whichever one you are in now."
   },
   "favorites": {
@@ -758,7 +763,7 @@
     }
   },
   "footer": {
-    "tagline": "Tracks new rental apartments at four housing agencies and gets in touch the moment something matches.",
+    "tagline": "Tracks new rental apartments at four housing agencies and HomeQ, and gets in touch the moment something matches.",
     "service": "Service",
     "contact": "Contact us",
     "about": "About",
@@ -766,7 +771,7 @@
     "disclaimer": "Disclaimer",
     "cookieSettings": "Cookie settings",
     "sources": "Data comes from {list}.",
-    "independent": "An independent service, not affiliated with the housing agencies."
+    "independent": "An independent service, not affiliated with the housing agencies or HomeQ."
   },
   "cookies": {
     "title": "May we measure how the site is used?",
@@ -781,7 +786,7 @@
     "sections": {
       "what": {
         "title": "What the service does",
-        "body": "Hitta Lyan keeps an eye on new rental apartments at Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd and Uppsala bostadsförmedling. You save a filter for what you are looking for, and get an email and a notification the moment a listing matches. You choose which queue you belong to and see one at a time."
+        "body": "Hitta Lyan keeps an eye on new rental apartments at Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd, Uppsala bostadsförmedling and HomeQ. You save a filter for what you are looking for, and get an email and a notification as soon as a listing matches. You choose which queue to follow and see one at a time."
       },
       "why": {
         "title": "Why it exists",
@@ -816,7 +821,7 @@
       },
       "noAffiliation": {
         "title": "No affiliation with the agencies",
-        "body": "Hitta Lyan is an independent service with no connection to Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB or Uppsala bostadsförmedling. Their names are used only to describe where the data comes from."
+        "body": "Hitta Lyan is an independent service with no connection to Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB, Uppsala bostadsförmedling or HomeQ. Their names are used solely to describe where the data comes from."
       },
       "noApplication": {
         "title": "We do not let any homes",

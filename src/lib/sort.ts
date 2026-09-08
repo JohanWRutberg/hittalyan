@@ -23,16 +23,19 @@ export const SORT_OPTIONS: SortOption[] = [
 ];
 
 /**
- * Sorteringar som är meningsfulla hos en viss förmedling. Momentum-plattformen
- * (Syd, Uppsala) lämnar inte ut våningsplan och har ingen kötidsstatistik, men
- * anger antal sökande. Boplats Väst har båda delarna.
+ * Sorteringar som är meningsfulla hos en viss kö. Momentum-plattformen (Syd,
+ * Uppsala) lämnar inte ut våningsplan och har ingen kötidsstatistik, men anger
+ * antal sökande. Boplats Väst har båda delarna. HomeQ har varken kötid, sökande
+ * eller sista dag – där faller tre av åtta sorteringar bort, och det är rätt:
+ * en sortering på ett fält som alltid är tomt sorterar ingenting.
  */
 export function sortOptionsFor(market: Market): SortOption[] {
   const info = marketInfo(market);
   return SORT_OPTIONS.filter((o) => {
     if (o.key === "vaning") return info.hasFloor;
-    if (o.key === "kotid") return info.chance !== "applicants";
-    if (o.key === "sokande") return info.chance !== "quartiles";
+    if (o.key === "sistadag") return info.hasDeadline;
+    if (o.key === "kotid") return info.chance === "quartiles" || info.chance === "average";
+    if (o.key === "sokande") return info.chance === "applicants" || info.chance === "average";
     return true;
   });
 }

@@ -40,6 +40,20 @@
   --warn: #92400e;
   --warn-soft: #fffbeb;
   --warn-line: #fde68a;
+
+  /* En ton per kö, till mosaikkartan på startsidan. De ligger på en båge genom
+     kortets egen färgfamilj – från blågrönt i norr till grönt i söder – och delar
+     ljushet och mättnad, så att områdena går att skilja åt utan att någon färg
+     bryter mot resten av gränssnittet. Stockholm är varumärkets egen teal.
+     Används bara i kartan, med låg fill-opacity, aldrig som text- eller
+     knappfärg: därför står de här och inte bland de semantiska namnen. */
+  --market-uppsala: #18617c;
+  --market-stockholm: #187c6f;
+  --market-vast: #187c54;
+  --market-syd: #187c36;
+  /* HomeQ täcker hela landet och ligger därför utanför bågens ordning – svalare
+     och mindre mättad, så att den läses som bakgrund och inte som ett område. */
+  --market-homeq: #30577e;
 }
 
 [data-theme="dark"] {
@@ -67,6 +81,14 @@
   --warn: #fcd34d;
   --warn-soft: #2a1f0d;
   --warn-line: #4a3714;
+
+  /* Samma båge, ljusare: rutorna ligger mot en mörk yta och ska lysa upp den,
+     inte försvinna in i den. Ljusheten vänds precis som för accenten. */
+  --market-uppsala: #70b8d2;
+  --market-stockholm: #70d2c5;
+  --market-vast: #70d2aa;
+  --market-syd: #70d28d;
+  --market-homeq: #86a8cb;
 }
 
 /* Låter `dark:`-varianten fungera mot vårt data-attribut. */

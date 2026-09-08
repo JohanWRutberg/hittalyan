@@ -3,6 +3,7 @@ import type { Source } from "@/lib/sources/types";
 import { stockholmSource } from "@/lib/sources/stockholm";
 import { boplatsVastSource } from "@/lib/sources/boplats-vast";
 import { momentumSource } from "@/lib/sources/momentum";
+import { homeqSource } from "@/lib/sources/homeq";
 
 /** Datakällan för varje förmedling. */
 export const SOURCES: Record<Market, Source> = {
@@ -10,6 +11,7 @@ export const SOURCES: Record<Market, Source> = {
   vast: boplatsVastSource,
   syd: momentumSource("syd"),
   uppsala: momentumSource("uppsala"),
+  homeq: homeqSource,
 };
 
 export type { Source, SourceListing, SourceResult, KnownListing } from "@/lib/sources/types";

@@ -93,7 +93,7 @@ export default async function AdminPage() {
         <div className="mt-2 flex flex-wrap gap-2">
           {MARKETS.map((m) => (
             <span key={m} className="chip" title={marketInfo(m).name}>
-              {marketInfo(m).city} · {activeByMarket.get(m) ?? 0}
+              {marketInfo(m).short} · {activeByMarket.get(m) ?? 0}
             </span>
           ))}
         </div>
@@ -144,7 +144,7 @@ export default async function AdminPage() {
                       );
                     })()}
                   </td>
-                  <td className="px-3 py-3 text-muted">{marketInfo(marketOf(u.market)).city}</td>
+                  <td className="px-3 py-3 text-muted">{marketInfo(marketOf(u.market)).short}</td>
                   <td className="px-3 py-3 text-muted">
                     {(() => {
                       // Kötiden gäller den kö användaren står i just nu.
@@ -192,7 +192,7 @@ export default async function AdminPage() {
               {runs.map((r) => (
                 <tr key={r.id} className={r.finishedAt && !r.ok ? "bg-danger-soft/50" : ""}>
                   <td className="px-6 py-3">{formatDateTime(r.startedAt, locale)}</td>
-                  <td className="px-3 py-3">{marketInfo(marketOf(r.market)).city}</td>
+                  <td className="px-3 py-3">{marketInfo(marketOf(r.market)).short}</td>
                   <td className="px-3 py-3">{!r.finishedAt ? t("runs.running") : r.ok ? t("runs.ok") : t("runs.failed")}</td>
                   <td className="px-3 py-3 text-right">{r.total}</td>
                   <td className="px-3 py-3 text-right">{r.newCount}</td>

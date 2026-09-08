@@ -2,7 +2,7 @@
   "meta": {
     "title": "Hitta Lyan – bevaka nya hyresrätter i Stockholm, Göteborg, Malmö och Uppsala",
     "template": "%s · Hitta Lyan",
-    "description": "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd eller Uppsala bostadsförmedling.",
+    "description": "Få mail och notis direkt när en ny hyresrätt som matchar dina önskemål läggs ut hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd, Uppsala bostadsförmedling eller HomeQ.",
     "pages": {
       "listings": "Lägenheter",
       "watches": "Bevakningar",
@@ -46,9 +46,9 @@
     "admin": "Admin"
   },
   "landing": {
-    "badge": "Bevakar fyra bostadsförmedlingar var 30:e minut",
+    "badge": "Bevakar {count} köer var 30:e minut",
     "title": "Missa aldrig en ny hyresrätt igen.",
-    "lead": "Hitta Lyan håller koll på nya annonser hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd och Uppsala bostadsförmedling, och skickar mail och notis direkt när något dyker upp som matchar ditt område, dina rum, din hyra – eller ett specifikt hus du drömmer om.",
+    "lead": "Hitta Lyan håller koll på nya annonser hos {sources}, och skickar mail och notis direkt när något dyker upp som matchar ditt område, dina rum, din hyra – eller ett specifikt hus du drömmer om.",
     "cta": "Kom igång gratis",
     "activeNow": "Just nu <strong>{count}</strong> aktiva annonser",
     "updatedAt": " · senast uppdaterat {time}",
@@ -71,8 +71,13 @@
       }
     },
     "cities": {
-      "title": "Fyra köer, en tjänst",
-      "lead": "Du väljer vilken bostadsförmedling du står i kö hos, och ser den. Byt när du vill."
+      "title": "{count} köer, en tjänst",
+      "lead": "Du väljer vilken kö du följer, och ser den. Byt när du vill."
+    },
+    "map": {
+      "title": "Köerna på kartan",
+      "hint": "Hovra över ett område för att se kön. Klicka för att tända eller släcka den.",
+      "count": "{count} aktiva annonser"
     }
   },
   "auth": {
@@ -609,7 +614,7 @@
       "total": "Annonser totalt",
       "watches": "Aktiva bevakningar",
       "sent": "Skickade notiser",
-      "perMarket": "Aktiva annonser per förmedling",
+      "perMarket": "Aktiva annonser per kö",
       "pending": "Notiser som inte gått fram (1 dygn)"
     },
     "users": {
@@ -705,13 +710,13 @@
     }
   },
   "markets": {
-    "chooseLabel": "Vilken bostadsförmedling står du i kö hos?",
+    "chooseLabel": "Vilken kö vill du följa?",
     "chooseHelp": "Du ser en kö i taget. Valet går att ändra under Konto.",
     "switching": "Byter kö …",
-    "publicTitle": "Välj bostadsförmedling",
-    "publicLead": "Annonserna nedan kommer från den förmedling du väljer här.",
+    "publicTitle": "Välj kö",
+    "publicLead": "Annonserna nedan kommer från den kö du väljer här.",
     "accountTitle": "Din bostadskö",
-    "accountLead": "Du ser annonser från en förmedling i taget. Byt när du vill.",
+    "accountLead": "Du ser annonser från en kö i taget. Byt när du vill.",
     "accountNote": "Kötiden sparas för varje kö, så den finns kvar om du byter tillbaka. Bevakningar du redan skapat fortsätter skicka notiser för sin egen kö, oavsett vilken du står i nu."
   },
   "favorites": {
@@ -758,7 +763,7 @@
     }
   },
   "footer": {
-    "tagline": "Bevakar nya hyresrätter hos fyra bostadsförmedlingar och hör av sig så fort något matchar.",
+    "tagline": "Bevakar nya hyresrätter hos fyra bostadsförmedlingar och HomeQ, och hör av sig så fort något matchar.",
     "service": "Tjänsten",
     "contact": "Kontakta oss",
     "about": "Om",
@@ -766,7 +771,7 @@
     "disclaimer": "Ansvarsfriskrivning",
     "cookieSettings": "Cookieinställningar",
     "sources": "Uppgifterna kommer från {list}.",
-    "independent": "En fristående tjänst utan koppling till bostadsförmedlingarna."
+    "independent": "En fristående tjänst utan koppling till bostadsförmedlingarna eller HomeQ."
   },
   "cookies": {
     "title": "Får vi mäta hur sajten används?",
@@ -781,7 +786,7 @@
     "sections": {
       "what": {
         "title": "Vad tjänsten gör",
-        "body": "Hitta Lyan håller koll på nya hyresrätter hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd och Uppsala bostadsförmedling. Du sparar ett filter för det du letar efter, och får mail och notis så fort en annons matchar. Du väljer själv vilken kö du tillhör och ser en i taget."
+        "body": "Hitta Lyan håller koll på nya hyresrätter hos Bostadsförmedlingen i Stockholm, Boplats Väst, Boplats Syd, Uppsala bostadsförmedling och HomeQ. Du sparar ett filter för det du letar efter, och får mail och notis så fort en annons matchar. Du väljer själv vilken kö du följer och ser en i taget."
       },
       "why": {
         "title": "Varför den finns",
@@ -816,7 +821,7 @@
       },
       "noAffiliation": {
         "title": "Ingen koppling till förmedlingarna",
-        "body": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB eller Uppsala bostadsförmedling. Deras namn används enbart för att beskriva varifrån uppgifterna kommer."
+        "body": "Hitta Lyan är en fristående tjänst och har ingen koppling till Bostadsförmedlingen i Stockholm AB, Boplats Göteborg AB, Boplats Syd AB, Uppsala bostadsförmedling eller HomeQ. Deras namn används enbart för att beskriva varifrån uppgifterna kommer."
       },
       "noApplication": {
         "title": "Vi förmedlar inga bostäder",

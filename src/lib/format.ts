@@ -14,6 +14,13 @@ const num = (locale: Locale, opts?: Intl.NumberFormatOptions) => new Intl.Number
 
 export const formatNumber = (n: number, locale: Locale = "sv") => num(locale).format(n);
 
+/**
+ * Räknar upp namn på språkets eget sätt: "a, b och c" på svenska, "a, b and c"
+ * på engelska. Hårdkodat "och" hade blivit fel så fort listan visas på engelska.
+ */
+export const formatList = (items: string[], locale: Locale = "sv") =>
+  new Intl.ListFormat(intlTag(locale), { style: "long", type: "conjunction" }).format(items);
+
 export const formatKr = (n: number | null | undefined, locale: Locale = "sv") =>
   n == null ? "–" : `${num(locale).format(n)} kr`;
 

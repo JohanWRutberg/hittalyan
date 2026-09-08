@@ -42,7 +42,7 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-lg font-semibold">{w.name}</h3>
-            <span className="chip">{info.city}</span>
+            <span className="chip">{info.short}</span>
           </div>
           <p className="mt-0.5 text-sm text-muted">{parts.length ? parts.join(" · ") : t("all")}</p>
         </div>

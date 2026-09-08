@@ -156,13 +156,13 @@ export async function sendWatchPush(subs: PushSub[], watch: Watch, listings: Lis
   const t = translatorFor(locale);
   const first = listings[0];
   // Vilken kö annonsen gäller, så att notisen går att placera direkt.
-  const city = marketInfo(marketOf(watch.market)).city;
+  const queue = marketInfo(marketOf(watch.market)).short;
   const payload = JSON.stringify({
     title:
       listings.length === 1
         ? t("pushMsg.single", { address: `${first.gatuadress}, ${first.stadsdel}` })
         : t("pushMsg.multi", { count: listings.length, name: watch.name }),
-    body: `${city} · ${listings.length === 1 ? listingSummary(first, locale, t("email.perMonth")) : listings.map((l) => l.gatuadress).slice(0, 4).join(", ")}`,
+    body: `${queue} · ${listings.length === 1 ? listingSummary(first, locale, t("email.perMonth")) : listings.map((l) => l.gatuadress).slice(0, 4).join(", ")}`,
     url: listings.length === 1 ? first.url : `${appUrl}/lagenheter`,
     tag: `watch-${watch.id}`,
   });

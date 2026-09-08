@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { MARKETS, marketInfo, type Market } from "@/lib/markets";
 import { MOSAIC_COLS, MOSAIC_MARKETS, MOSAIC_ROW_COUNT, MOSAIC_TILES } from "@/lib/sweden-mosaic";
@@ -23,6 +23,15 @@ import type { Locale } from "@/i18n/config";
 /** Rutans sida i SVG-enheter. Mellanrummet ligger inuti rutan, som marginal. */
 const CELL = 10;
 const INSET = 0.85;
+
+/**
+ * Hur fort rutorna andas, i sekunder per cykel. Spridningen är själva poängen:
+ * går de i samma takt läser ögat det som ett pulserande block i stället för
+ * enskilda rutor. Under ett par sekunder börjar det läsas som blink och blir
+ * stressigt att ha bredvid en textmassa.
+ */
+const BREATH_MIN_S = 2.4;
+const BREATH_MAX_S = 5.2;
 
 /**
  * Genomskinlighet per djup (0–3) och tillstånd. Land utan kö ligger lågt så att
@@ -53,17 +62,52 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
       return next;
     });
 
+  /**
+   * Färg, grundgenomskinlighet – och om rutan ska andas. Bara tända köer andas:
+   * släckt land ligger stilla, och den hovrade kön står still så att markeringen
+   * blir ett tydligt svar och inte ännu en sak som rör sig.
+   */
   const fillFor = (market: Market | null, depth: number) => {
     // Hela landet lyser upp när den rikstäckande kön hovras, de fyra områdena med.
     // Är den släckt lyser den inte, precis som de andra köerna.
-    if (national && nationalOn && hovered === national) return { fill: `var(--market-${national})`, opacity: OPACITY.active[depth] };
+    if (national && nationalOn && hovered === national)
+      return { fill: `var(--market-${national})`, opacity: OPACITY.active[depth], breathing: false };
     if (!market || hidden.has(market)) {
       return nationalOn
-        ? { fill: `var(--market-${national})`, opacity: OPACITY.national[depth] }
-        : { fill: "var(--ink)", opacity: OPACITY.land[depth] };
+        ? { fill: `var(--market-${national})`, opacity: OPACITY.national[depth], breathing: true }
+        : { fill: "var(--ink)", opacity: OPACITY.land[depth], breathing: false };
     }
     const state = hovered === market ? "active" : hovered ? "faded" : "market";
-    return { fill: `var(--market-${market})`, opacity: OPACITY[state][depth] };
+    return { fill: `var(--market-${market})`, opacity: OPACITY[state][depth], breathing: state !== "active" };
+  };
+
+  /**
+   * En ruta. Takten ligger i rutnätsdatan, och fördröjningen är **negativ**: då
+   * börjar varje ruta mitt i sin egen cykel redan vid första bildrutan, i stället
+   * för att hela kartan står stilla och sedan tonar ned i takt.
+   */
+  const tile = (t: (typeof MOSAIC_TILES)[number], market: Market | null) => {
+    const { fill, opacity, breathing } = fillFor(market, t.depth);
+    const duration = BREATH_MIN_S + t.speed * (BREATH_MAX_S - BREATH_MIN_S);
+    return (
+      <rect
+        key={`${t.row}-${t.col}`}
+        x={t.col * CELL + INSET}
+        y={t.row * CELL + INSET}
+        width={CELL - INSET * 2}
+        height={CELL - INSET * 2}
+        rx={2.2}
+        fill={fill}
+        className={`mosaic-tile pointer-events-none${breathing ? " mosaic-tile--breathing" : ""}`}
+        style={
+          {
+            "--tile-o": opacity,
+            "--tile-dur": `${duration.toFixed(2)}s`,
+            "--tile-delay": `${(-t.phase * duration).toFixed(2)}s`,
+          } as CSSProperties
+        }
+      />
+    );
   };
 
   // Den rikstäckande kön har inga egna rutor – dess område är resten av landet.
@@ -74,22 +118,44 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
   const shown = hovered ? marketInfo(hovered) : null;
   const shownCount = hovered ? (counts[hovered] ?? 0) : null;
 
+  /**
+   * Osynlig träffyta över hela cellen, mellanrummet inräknat.
+   *
+   * Utan den tappas hovern varje gång pekaren passerar glappet mellan två rutor i
+   * samma område, och markeringen blinkar till för varje ruta man drar musen
+   * över. Rutorna är ritade med marginal inuti cellen just för att mosaiken ska
+   * få luft – men luften ska bara synas, inte kännas. Ytorna ligger kant i kant,
+   * så inom ett område släpper hovern aldrig, och mellan två områden byter den
+   * direkt utan att passera ett dödläge.
+   */
+  const hitTile = (t: (typeof MOSAIC_TILES)[number]) => (
+    <rect
+      key={`hit-${t.row}-${t.col}`}
+      x={t.col * CELL}
+      y={t.row * CELL}
+      width={CELL}
+      height={CELL}
+      fill="transparent"
+    />
+  );
+
   return (
     <div className={`w-full rounded-3xl border border-line p-4 ${className}`}>
       {/*
         Rubriken byter innehåll i stället för att en tooltip följer pekaren: en
         etikett som svävar över mosaiken hamnar utanför kortet så fort området
         ligger i kanten, och måste mätas varje bildruta.
+
+        Här står köns **fulla namn**, inte den korta etiketten. Pillren under
+        kartan är trånga och nöjer sig med "Stockholm", men i rubriken finns
+        plats, och där är det värt att säga att det är en bostadsförmedling.
+        Höjden rymmer två rader så att kartan inte hoppar när namnet är långt.
       */}
-      <div className="min-h-14 px-1">
-        <p className="text-sm font-semibold text-ink">{shown ? shown.short : t("title")}</p>
+      <div className="min-h-16 px-1">
+        <p className="text-sm font-semibold text-ink">{shown ? shown.name : t("title")}</p>
         <p className="mt-0.5 text-xs text-muted">
           {shown ? (
-            <>
-              {/* Namnet utelämnas när etiketten redan är det, som hos Boplats. */}
-              {shown.name !== shown.short && `${shown.name} · `}
-              <span className="text-accent">{t("count", { count: formatNumber(shownCount ?? 0, locale) })}</span>
-            </>
+            <span className="text-accent">{t("count", { count: formatNumber(shownCount ?? 0, locale) })}</span>
           ) : (
             t("hint")
           )}
@@ -113,22 +179,8 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
           onMouseLeave={national ? () => setHovered((cur) => (cur === national ? null : cur)) : undefined}
           onClick={national ? () => toggle(national) : undefined}
         >
-          {MOSAIC_TILES.filter((tile) => tile.market === null).map((tile) => {
-            const { fill, opacity } = fillFor(null, tile.depth);
-            return (
-              <rect
-                key={`${tile.row}-${tile.col}`}
-                x={tile.col * CELL + INSET}
-                y={tile.row * CELL + INSET}
-                width={CELL - INSET * 2}
-                height={CELL - INSET * 2}
-                rx={2.2}
-                fill={fill}
-                fillOpacity={opacity}
-                style={{ transition: "fill-opacity 220ms ease" }}
-              />
-            );
-          })}
+          {MOSAIC_TILES.filter((t) => t.market === null).map((t) => tile(t, null))}
+          {MOSAIC_TILES.filter((t) => t.market === null).map(hitTile)}
         </g>
 
         {/*
@@ -146,22 +198,8 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
             onMouseLeave={() => setHovered((cur) => (cur === market ? null : cur))}
             onClick={() => toggle(market)}
           >
-            {MOSAIC_TILES.filter((tile) => tile.market === market).map((tile) => {
-              const { fill, opacity } = fillFor(market, tile.depth);
-              return (
-                <rect
-                  key={`${tile.row}-${tile.col}`}
-                  x={tile.col * CELL + INSET}
-                  y={tile.row * CELL + INSET}
-                  width={CELL - INSET * 2}
-                  height={CELL - INSET * 2}
-                  rx={2.2}
-                  fill={fill}
-                  fillOpacity={opacity}
-                  style={{ transition: "fill-opacity 220ms ease" }}
-                />
-              );
-            })}
+            {MOSAIC_TILES.filter((t) => t.market === market).map((t) => tile(t, market))}
+            {MOSAIC_TILES.filter((t) => t.market === market).map(hitTile)}
           </g>
         ))}
       </svg>

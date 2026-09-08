@@ -76,21 +76,35 @@ export interface MosaicTile {
   market: Market | null;
   /** 0–3. Styr hur genomskinlig rutan är, så att mosaiken får djup. */
   depth: number;
+  /** 0–1. Var i andningscykeln rutan börjar, så att de inte pulserar i takt. */
+  phase: number;
+  /** 0–1. Hur fort rutan andas. Sprider takten så mönstret aldrig upprepar sig. */
+  speed: number;
 }
 
 /**
- * Djupet ska se slumpmässigt ut men vara samma vid varje rendering – annars
- * flimrar mosaiken när servern och webbläsaren råkar räkna olika. En liten
- * heltalshash av rutans läge räcker och behöver ingen slumpgenerator.
+ * Djup, fas och takt ska se slumpmässiga ut men vara **samma vid varje
+ * rendering** – annars räknar servern och webbläsaren olika och mosaiken hoppar
+ * till vid hydrering. En liten heltalshash av rutans läge räcker; en
+ * slumpgenerator vore precis fel verktyg här.
  */
-const depthOf = (row: number, col: number) => {
-  const h = Math.imul(row * 73 + col * 151 + 17, 2654435761) >>> 0;
-  return (h >>> 13) % 4;
-};
+const hash = (row: number, col: number, salt: number) => Math.imul(row * 73 + col * 151 + salt, 2654435761) >>> 0;
+const unit = (row: number, col: number, salt: number) => ((hash(row, col, salt) >>> 11) % 1000) / 1000;
 
 export const MOSAIC_TILES: MosaicTile[] = MOSAIC_ROWS.flatMap((line, row) =>
   [...line].flatMap((ch, col) =>
-    ch === "." ? [] : [{ row, col, market: AREA_MARKET[ch] ?? null, depth: depthOf(row, col) }],
+    ch === "."
+      ? []
+      : [
+          {
+            row,
+            col,
+            market: AREA_MARKET[ch] ?? null,
+            depth: (hash(row, col, 17) >>> 13) % 4,
+            phase: unit(row, col, 101),
+            speed: unit(row, col, 211),
+          },
+        ],
   ),
 );
 

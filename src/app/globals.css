@@ -179,6 +179,49 @@ body {
   }
 }
 
+/* ---------- Mosaikkartan på startsidan ---------- */
+
+/*
+ * Rutorna andas långsamt in och ut. Varje ruta har sin egen fas och takt (se
+ * `sweden-mosaic.ts`), så mönstret aldrig går i takt och aldrig upprepar sig.
+ *
+ * Grundgenomskinligheten kommer in som `--tile-o` i stället för att sättas på
+ * `fill-opacity` direkt: en keyframe-animation vinner över presentationsattribut,
+ * så annars hade animationen ätit upp värdet och alla rutor blivit lika mycket
+ * genomskinliga.
+ *
+ * Utslaget är en **andel** av grundvärdet, inte ett fast tal: då andas svagt land
+ * svagt och ett tänt område tydligt, i stället för att de svagaste rutorna slocknar
+ * helt medan de starkaste knappt rör sig. Cykeln går över grundvärdet på topparna
+ * och en bra bit under i botten, så att medelljusstyrkan blir ungefär densamma som
+ * utan animation – kartan pulserar, den mörknar inte.
+ */
+@keyframes mosaic-breathe {
+  0%,
+  100% {
+    fill-opacity: calc(var(--tile-o) * 1.2);
+  }
+  50% {
+    fill-opacity: calc(var(--tile-o) * 0.32);
+  }
+}
+
+.mosaic-tile {
+  fill-opacity: var(--tile-o);
+  transition: fill-opacity 220ms ease;
+}
+
+.mosaic-tile--breathing {
+  animation: mosaic-breathe var(--tile-dur) ease-in-out var(--tile-delay) infinite;
+}
+
+/* Rörelse är en effekt, inte information: den som bett om lugn får en stilla karta. */
+@media (prefers-reduced-motion: reduce) {
+  .mosaic-tile--breathing {
+    animation: none;
+  }
+}
+
 /* ---------- Fäll in/ut-pilen (filter och karta) ---------- */
 
 /*

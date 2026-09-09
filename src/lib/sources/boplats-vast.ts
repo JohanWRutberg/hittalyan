@@ -21,7 +21,7 @@
 
 import { listingId, marketInfo } from "@/lib/markets";
 import type { KnownListing, Source, SourceListing, SourceResult } from "@/lib/sources/types";
-import { USER_AGENT } from "@/lib/sources/types";
+import { RETRY_WINDOW_MS, SourceHttpError, USER_AGENT, withRetry } from "@/lib/sources/types";
 
 const BASE = marketInfo("vast").siteUrl;
 const LIST_URL = `${BASE}/sok?types=1hand`;
@@ -39,13 +39,13 @@ const MONTHS = [
   "juli", "augusti", "september", "oktober", "november", "december",
 ];
 
-async function getText(url: string): Promise<string> {
+async function getText(url: string, timeoutMs = 25_000): Promise<string> {
   const res = await fetch(url, {
     headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": USER_AGENT },
     cache: "no-store",
-    signal: AbortSignal.timeout(25_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res.ok) throw new Error(`Boplats Väst svarade ${res.status} på ${url}`);
+  if (!res.ok) throw new SourceHttpError(`Boplats Väst svarade ${res.status} på ${url}`, res.status);
   return res.text();
 }
 
@@ -237,7 +237,12 @@ export const boplatsVastSource: Source = {
   market: "vast",
   usesFetchBudget: true,
   async fetchListings(known, deadline): Promise<SourceResult> {
-    const ids = parseListIds(await getText(LIST_URL));
+    // Kortare tidsgräns per försök än på objektsidorna, så att tre försök ryms
+    // i fönstret utan att äta av tiden som annonshämtningen behöver.
+    const html = await withRetry("vast", () => getText(LIST_URL, 10_000), {
+      until: Math.min(Date.now() + RETRY_WINDOW_MS, deadline),
+    });
+    const ids = parseListIds(html);
     if (!ids.length) throw new Error("Oväntat svar från Boplats Väst (inga annonser)");
     const activeIds = ids.map((id) => listingId("vast", id));
 

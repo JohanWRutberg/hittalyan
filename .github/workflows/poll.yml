@@ -14,20 +14,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger poll
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           # En förmedling per anrop: då får var och en hela funktionens tidsgräns
           # för sig, och en långsam källa kan inte tvinga fram en 504 för de andra.
-          # Alla fyra försöks även om någon misslyckas.
+          # Alla förmedlingar försöks även om någon misslyckas.
+          #
+          # --fail-with-body: vid 500 skrivs svarskroppen ut, alltså vilket fel
+          # pollningen faktiskt fick. Utan den stod bara "error: 500" i loggen och
+          # orsaken gick bara att läsa i adminportalens körningslogg.
+          poll_market() {
+            curl --fail-with-body --silent --show-error --max-time 120 --location \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "$APP_URL/api/cron/poll?market=$1"
+          }
+
           fail=0
           for market in stockholm vast syd uppsala homeq; do
             echo "--- $market"
-            if curl --fail --silent --show-error --max-time 120 --location \
-                 -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-                 "${{ secrets.APP_URL }}/api/cron/poll?market=$market"; then
+            if poll_market "$market"; then
               echo
             else
-              echo "::warning::pollningen misslyckades för $market"
-              fail=1
+              # Ett andra försök efter en paus. Förmedlingarnas servrar är vanliga
+              # webbplatser och svarar då och då 5xx, och en kall Neon-databas eller
+              # en kall serverless-funktion kan också fälla första anropet. Adaptern
+              # försöker redan om internt; det här fångar det som ligger på vår sida.
+              echo "  (misslyckades, försöker igen om 30 s)"
+              sleep 30
+              if poll_market "$market"; then
+                echo
+              else
+                echo "::warning::pollningen misslyckades för $market även vid andra försöket"
+                fail=1
+              fi
             fi
           done
           exit $fail

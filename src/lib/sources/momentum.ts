@@ -11,7 +11,7 @@
 
 import { listingId, marketInfo, type Market } from "@/lib/markets";
 import type { Source, SourceListing, SourceResult } from "@/lib/sources/types";
-import { USER_AGENT, middayUtc } from "@/lib/sources/types";
+import { SourceHttpError, USER_AGENT, middayUtc, withRetry } from "@/lib/sources/types";
 
 const QUERY = `query getRentalObjectsAvailable {
   getRentalObjectsAvailable {
@@ -158,7 +158,7 @@ export async function fetchMomentumListings(market: Market): Promise<SourceListi
     cache: "no-store",
     signal: AbortSignal.timeout(45_000),
   });
-  if (!res.ok) throw new Error(`${info.name} svarade ${res.status}`);
+  if (!res.ok) throw new SourceHttpError(`${info.name} svarade ${res.status}`, res.status);
   const body = (await res.json()) as { data?: { getRentalObjectsAvailable?: { rentalObjects?: RawObject[] } }; errors?: unknown };
   const objects = body?.data?.getRentalObjectsAvailable?.rentalObjects;
   if (!Array.isArray(objects)) throw new Error(`Oväntat svar från ${info.name} (inga objekt)`);
@@ -170,7 +170,7 @@ export function momentumSource(market: Market): Source {
   return {
     market,
     async fetchListings(): Promise<SourceResult> {
-      const listings = await fetchMomentumListings(market);
+      const listings = await withRetry(market, () => fetchMomentumListings(market));
       return { activeIds: listings.map((l) => l.id), listings };
     },
   };

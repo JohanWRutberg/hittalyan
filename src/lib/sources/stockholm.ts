@@ -5,7 +5,7 @@
 
 import { listingId } from "@/lib/markets";
 import type { KnownListing, Source, SourceListing, SourceResult } from "@/lib/sources/types";
-import { USER_AGENT } from "@/lib/sources/types";
+import { SourceHttpError, USER_AGENT, withRetry } from "@/lib/sources/types";
 
 export const BOSTAD_BASE_URL = "https://bostad.stockholm.se";
 const LIST_URL = `${BOSTAD_BASE_URL}/AllaAnnonser/`;
@@ -99,7 +99,7 @@ export async function fetchAllListings(): Promise<SourceListing[]> {
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
-    throw new Error(`Bostadsförmedlingen svarade ${res.status}`);
+    throw new SourceHttpError(`Bostadsförmedlingen svarade ${res.status}`, res.status);
   }
   const data = (await res.json()) as unknown;
   if (!Array.isArray(data)) {
@@ -193,7 +193,7 @@ export const stockholmSource: Source = {
   usesFetchBudget: true,
   async fetchListings(known, deadline): Promise<SourceResult> {
     // Ett anrop ger alla annonsers uppgifter, så de hämtas om varje körning.
-    const listings = await fetchAllListings();
+    const listings = await withRetry("stockholm", fetchAllListings);
 
     // Annonssidan ger både bilder och kötider, så vi hämtar den en gång per
     // annons som behöver något av dem. Nyast först: de syns överst i listan.

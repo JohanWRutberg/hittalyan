@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Bell, Filter, Mail, Clock3, ArrowRight } from "lucide-react";
+import { Bell, Filter, Mail, Clock3, ArrowRight, LogIn } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Logo } from "@/components/logo";
 import { FadeIn } from "@/components/motion";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { SignOutButton } from "@/components/nav-client";
 import { SiteFooter } from "@/components/site-footer";
 import { SwedenMap } from "@/components/sweden-map";
 import { getSession } from "@/lib/session";
@@ -34,21 +35,28 @@ export default async function LandingPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-6 py-5">
+      {/*
+        Sidhuvudet får plats på en telefon, och det kräver att något viker. Måtten
+        vid 390 px: logotypen 115, temaväxlaren 88, språkväljaren 74 – bara
+        växlarna tar alltså 162 px. Med "Logga in" som text (89) och "Skapa konto"
+        (116) blev raden 566 px bred, och sidan gick att dra i sidled.
+        Registreringsknappen är den som får stå över: den finns som stor knapp i
+        hjältekortet strax under, medan inloggning inte finns någon annanstans.
+      */}
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-5 sm:gap-3 sm:px-6">
         <Logo />
-        <nav className="flex items-center gap-2">
+        <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeSwitcher compact />
           <LocaleSwitcher compact />
           {session ? (
-            <Link href="/lagenheter" className="btn-primary">
-              {tc("toApp")} <ArrowRight className="size-4" />
-            </Link>
+            <SignOutButton />
           ) : (
             <>
-              <Link href="/login" className="btn-ghost">
-                {tc("login")}
+              <Link href="/login" title={tc("login")} aria-label={tc("login")} className="btn-ghost px-2 sm:px-4">
+                <LogIn className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">{tc("login")}</span>
               </Link>
-              <Link href="/register" className="btn-primary">
+              <Link href="/register" className="btn-primary hidden sm:inline-flex">
                 {tc("register")}
               </Link>
             </>
@@ -81,11 +89,7 @@ export default async function LandingPage() {
               {lastRun?.finishedAt && t("updatedAt", { time: formatDateTime(lastRun.finishedAt, locale) })}
             </p>
           </FadeIn>
-          {/*
-            Kartan är dold på de minsta skärmarna: hjältekortet är redan högt i
-            mobilen, och mosaiken lever på att man kan hovra över den.
-          */}
-          <FadeIn delay={0.15} className="hidden sm:block lg:w-[21rem]">
+          <FadeIn delay={0.15} className="lg:w-[21rem]">
             <SwedenMap counts={Object.fromEntries(activeByMarket)} />
           </FadeIn>
           </div>

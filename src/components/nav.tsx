@@ -21,7 +21,9 @@ export async function PublicNav() {
             <LogIn className="size-4 sm:hidden" />
             <span className="hidden sm:inline">{t("login")}</span>
           </Link>
-          <Link href="/register" className="btn-primary px-3 text-xs sm:px-4 sm:text-sm">
+          {/* Samma avvägning som på startsidan: raden blev 448 px bred på en
+              390 px skärm. Registreringen finns i teaser-kortet i listan. */}
+          <Link href="/register" className="btn-primary hidden px-3 text-xs sm:inline-flex sm:px-4 sm:text-sm">
             {t("register")}
           </Link>
         </nav>

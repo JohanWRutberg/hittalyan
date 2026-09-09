@@ -25,7 +25,7 @@
 
 import { listingId } from "@/lib/markets";
 import type { Source, SourceListing, SourceResult } from "@/lib/sources/types";
-import { USER_AGENT } from "@/lib/sources/types";
+import { SourceHttpError, USER_AGENT, withRetry } from "@/lib/sources/types";
 
 const API = "https://api.homeq.se";
 const SITE = "https://www.homeq.se";
@@ -78,7 +78,7 @@ async function fetchAll(): Promise<RawResult[]> {
     cache: "no-store",
     signal: AbortSignal.timeout(45_000),
   });
-  if (!res.ok) throw new Error(`HomeQ svarade ${res.status}`);
+  if (!res.ok) throw new SourceHttpError(`HomeQ svarade ${res.status}`, res.status);
   const body = (await res.json()) as { results?: RawResult[] };
   if (!Array.isArray(body?.results)) throw new Error("Oväntat svar från HomeQ (inga träffar)");
   return body.results.filter((r) => typeof r?.id === "number" && r.type === "individual");
@@ -170,7 +170,7 @@ function normalize(raw: RawResult, landlords: Map<number, string>): SourceListin
 export const homeqSource: Source = {
   market: "homeq",
   async fetchListings(): Promise<SourceResult> {
-    const [raw, landlords] = await Promise.all([fetchAll(), fetchLandlords()]);
+    const [raw, landlords] = await Promise.all([withRetry("homeq", fetchAll), fetchLandlords()]);
     const listings = raw.map((r) => normalize(r, landlords));
     return { activeIds: listings.map((l) => l.id), listings };
   },

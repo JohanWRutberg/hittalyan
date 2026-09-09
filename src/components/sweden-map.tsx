@@ -4,6 +4,7 @@ import { useState, type CSSProperties } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { MARKETS, marketInfo, type Market } from "@/lib/markets";
 import { MOSAIC_COLS, MOSAIC_MARKETS, MOSAIC_ROW_COUNT, MOSAIC_TILES } from "@/lib/sweden-mosaic";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { formatNumber } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 
@@ -52,6 +53,16 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
   const t = useTranslations("landing.map");
   const locale = useLocale() as Locale;
   const [hovered, setHovered] = useState<Market | null>(null);
+  /*
+   * Pekskärm har ingen hover, och iOS simulerar mouseenter vid tryck – samma
+   * fälla som annonskorten går i. Därför ignoreras hover-händelserna helt där,
+   * och områdena får i stället samma tvåstegstryck som korten: **första trycket
+   * pekar ut kön** (rubriken säger vilken, området tänds), andra trycket släcker
+   * eller tänder den. Områdena är omärkta, så ett enda tryck som direkt släckte
+   * en kö hade lämnat användaren utan att veta vilken som försvann. Pillren är
+   * märkta och behöver inget mellansteg.
+   */
+  const noHover = useMediaQuery("(hover: none)");
   // Köer användaren släckt. Tom mängd = alla syns, vilket är utgångsläget.
   const [hidden, setHidden] = useState<Set<Market>>(new Set());
 
@@ -115,6 +126,16 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
   const national = MARKETS.find((m) => marketInfo(m).coverage === "national") ?? null;
   const nationalOn = national !== null && !hidden.has(national);
 
+  /** Händelser för ett område på kartan, med eller utan hover. */
+  const areaProps = (market: Market) =>
+    noHover
+      ? { onClick: () => (hovered === market ? toggle(market) : setHovered(market)) }
+      : {
+          onMouseEnter: () => setHovered(market),
+          onMouseLeave: () => setHovered((cur) => (cur === market ? null : cur)),
+          onClick: () => toggle(market),
+        };
+
   const shown = hovered ? marketInfo(hovered) : null;
   const shownCount = hovered ? (counts[hovered] ?? 0) : null;
 
@@ -157,14 +178,24 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
           {shown ? (
             <span className="text-accent">{t("count", { count: formatNumber(shownCount ?? 0, locale) })}</span>
           ) : (
-            t("hint")
+            // Hovra går inte på en pekskärm. Instruktionen ska beskriva det man
+            // faktiskt kan göra, inte det som råkar gälla på en mus.
+            t(noHover ? "hintTouch" : "hint")
           )}
         </p>
       </div>
 
+      {/*
+        Kartan är hög och smal, och det är just det som gör den användbar i
+        mobilen: i stället för att staplas under texten och göra hjältekortet
+        ännu högre ställer den sig **bredvid** kölistan. Formen som är en
+        spalt på skrivbordet blir en rad på telefonen, och blocket blir lika
+        högt som listan i stället för dubbelt så högt.
+      */}
+      <div className="flex items-center gap-4 sm:block">
       <svg
         viewBox={`0 0 ${MOSAIC_COLS * CELL} ${MOSAIC_ROW_COUNT * CELL}`}
-        className="mx-auto block h-auto w-full max-w-[16rem]"
+        className="block h-auto w-28 shrink-0 sm:mx-auto sm:w-full sm:max-w-[16rem]"
         role="presentation"
       >
         {/*
@@ -172,13 +203,7 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
           det är ju precis de orter där den är den enda kön. Finns ingen sådan tar
           gruppen inga pekarhändelser alls.
         */}
-        <g
-          aria-hidden="true"
-          className={national ? "cursor-pointer" : "pointer-events-none"}
-          onMouseEnter={national ? () => setHovered(national) : undefined}
-          onMouseLeave={national ? () => setHovered((cur) => (cur === national ? null : cur)) : undefined}
-          onClick={national ? () => toggle(national) : undefined}
-        >
+        <g aria-hidden="true" className={national ? "cursor-pointer" : "pointer-events-none"} {...(national ? areaProps(national) : {})}>
           {MOSAIC_TILES.filter((t) => t.market === null).map((t) => tile(t, null))}
           {MOSAIC_TILES.filter((t) => t.market === null).map(hitTile)}
         </g>
@@ -190,21 +215,14 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
           fast som riktiga knappar.
         */}
         {MOSAIC_MARKETS.map((market) => (
-          <g
-            key={market}
-            aria-hidden="true"
-            className="cursor-pointer"
-            onMouseEnter={() => setHovered(market)}
-            onMouseLeave={() => setHovered((cur) => (cur === market ? null : cur))}
-            onClick={() => toggle(market)}
-          >
+          <g key={market} aria-hidden="true" className="cursor-pointer" {...areaProps(market)}>
             {MOSAIC_TILES.filter((t) => t.market === market).map((t) => tile(t, market))}
             {MOSAIC_TILES.filter((t) => t.market === market).map(hitTile)}
           </g>
         ))}
       </svg>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:mt-4 sm:flex-row sm:flex-wrap sm:justify-center">
         {[...MOSAIC_MARKETS, ...(national ? [national] : [])].map((market) => {
           const info = marketInfo(market);
           const off = hidden.has(market);
@@ -218,7 +236,7 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
               onFocus={() => setHovered(market)}
               onBlur={() => setHovered((cur) => (cur === market ? null : cur))}
               onClick={() => toggle(market)}
-              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+              className={`flex w-full items-center gap-1.5 rounded-full border px-3 py-2 text-xs transition sm:w-auto sm:px-2.5 sm:py-1 ${
                 off ? "border-line text-faint" : "border-accent-line text-ink"
               }`}
             >
@@ -226,11 +244,16 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
                 className="size-2 rounded-full"
                 style={{ backgroundColor: off ? "var(--faint)" : `var(--market-${market})` }}
               />
-              {info.short}
-              <span className={off ? "text-faint" : "text-muted"}>{formatNumber(counts[market] ?? 0, locale)}</span>
+              <span className="truncate">{info.short}</span>
+              {/* Antalet skjuts ut till kanten i mobilens lista, men ligger tätt
+                  intill namnet när pillren radas upp på skrivbordet. */}
+              <span className={`ml-auto sm:ml-0 ${off ? "text-faint" : "text-muted"}`}>
+                {formatNumber(counts[market] ?? 0, locale)}
+              </span>
             </button>
           );
         })}
+      </div>
       </div>
     </div>
   );

@@ -113,3 +113,60 @@ export function middayUtc(value: string | null | undefined): Date | null {
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
   return Number.isNaN(d.getTime()) ? null : d;
 }
+
+/** HTTP-fel från en förmedling, med statuskoden kvar så att den går att bedöma. */
+export class SourceHttpError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "SourceHttpError";
+  }
+}
+
+/**
+ * Går felet över av sig självt? Nätverksfel och avbrutna anrop gör det, liksom
+ * 5xx, 429 och 408. Ett 404 eller 403 gör det inte: då är det vi som gör fel,
+ * och att fråga om tre gånger hjälper ingen.
+ */
+function transient(err: unknown): boolean {
+  if (err instanceof SourceHttpError) return err.status >= 500 || err.status === 429 || err.status === 408;
+  return true;
+}
+
+/** Hur länge återförsök på listhämtningen får hålla på, om inget annat sägs. */
+export const RETRY_WINDOW_MS = 20_000;
+
+/**
+ * Försöker om vid tillfälliga fel.
+ *
+ * Förmedlingarnas servrar är inga API:er utan vanliga webbplatser, och de
+ * svarar då och då 5xx eller bryter anslutningen mitt i. Tidigare fällde ett
+ * enda sådant svar på **listhämtningen** hela körningen för förmedlingen, och
+ * eftersom cron-jobbet kör en förmedling per anrop blev det ett rött
+ * Actions-jobb – trots att nästa försök tio sekunder senare hade gått bra.
+ *
+ * Bara listhämtningen försöks om. Extraanropen per annons är redan valfria,
+ * delar på tidsbudgeten och tas nästa körning om de missar.
+ */
+export async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  opts: { attempts?: number; until?: number } = {},
+): Promise<T> {
+  const attempts = opts.attempts ?? 3;
+  const until = opts.until ?? Date.now() + RETRY_WINDOW_MS;
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      last = err;
+      if (!transient(err) || i === attempts - 1) break;
+      // Kort paus med slump, så att flera körningar inte träffar samtidigt.
+      const wait = 600 * 2 ** i + Math.random() * 400;
+      if (Date.now() + wait >= until) break;
+      console.warn(`[poll:${label}] försök ${i + 1}/${attempts} misslyckades:`, (err as Error).message);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  throw last;
+}

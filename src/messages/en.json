@@ -31,7 +31,6 @@
     "edit": "Edit",
     "show": "Show",
     "hide": "Hide",
-    "toApp": "Open the app",
     "viewListings": "View apartments",
     "language": "Language",
     "swedish": "Svenska",
@@ -77,7 +76,8 @@
     "map": {
       "title": "The queues on the map",
       "hint": "Hover an area to see its queue. Click to show or hide it.",
-      "count": "{count} active listings"
+      "count": "{count} active listings",
+      "hintTouch": "Tap an area to see its queue. Tap again to show or hide it."
     }
   },
   "auth": {

@@ -35,7 +35,8 @@
     "language": "Language",
     "swedish": "Svenska",
     "english": "English",
-    "send": "Send"
+    "send": "Send",
+    "loading": "Loading…"
   },
   "nav": {
     "listings": "Apartments",

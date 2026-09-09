@@ -11,7 +11,7 @@ import { HoveredListingProvider } from "@/components/hovered-listing";
 import type { Locale } from "@/i18n/config";
 import { getSession } from "@/lib/session";
 import { hasPro } from "@/lib/plan";
-import { getCurrentMarket, getQueueDate } from "@/lib/market-context";
+import { getCurrentMarket, getCurrentUser, getQueueDate } from "@/lib/market-context";
 import { marketInfo, type Market } from "@/lib/markets";
 import { MarketSwitcher } from "@/components/market-switcher";
 import { watchToFilters } from "@/lib/watch-filters";
@@ -63,38 +63,42 @@ export default async function ListingsPage({ searchParams }: PageProps<"/lagenhe
   // filtrering efter kartans utsnitt och "visa fler". Det tog bort tre frågor per
   // sidvisning (antal, antal nya och en separat hämtning för kartan), och gör att
   // panorering av kartan inte kostar ett enda anrop.
-  const [areas, listings, lastRun, queueDate, areaCounts, me] = await Promise.all([
+  //
+  // **Allt som kan hämtas samtidigt hämtas samtidigt.** Favoriterna låg tidigare
+  // efter det här blocket och väntade på att det skulle bli klart, fast de inte
+  // beror på något i det: två extra tur och retur till databasen per sidvisning,
+  // och i produktion ligger databasen inte i samma rum som funktionen.
+  //
+  // Favoriterna hämtas utan filter: de ska gå att visa även när de gått ut eller
+  // faller utanför den aktuella sökningen. Egen kö bara i listan, så en
+  // Malmöfavorit inte dyker upp i Stockholmslistan – men id:na tas för alla köer,
+  // eftersom hjärtat ska vara ifyllt var man än ser annonsen. Favoriter är en
+  // Pro-funktion, så för övriga hämtas de inte alls.
+  // Redan hämtad av getCurrentMarket ovan, så det här kostar ingen ny fråga.
+  const me = (await getCurrentUser())!;
+  const canFavorite = hasPro(me);
+  const [areas, listings, lastRun, queueDate, areaCounts, favoriteRows, favoriteIdRows] = await Promise.all([
     getAreaMap(market),
     prisma.listing.findMany({ where, orderBy: sortsToOrderBy(sorts, market), take: MAX_LISTINGS }),
     prisma.pollRun.findFirst({ where: { ok: true, market }, orderBy: { startedAt: "desc" } }),
     getQueueDate(session.user.id, market),
     getAreaCounts(areaWhere),
-    prisma.user.findUniqueOrThrow({ where: { id: session.user.id } }),
+    canFavorite
+      ? prisma.favorite.findMany({
+          where: { userId: session.user.id, listing: { market } },
+          include: { listing: true },
+          orderBy: { createdAt: "desc" },
+        })
+      : [],
+    canFavorite
+      ? prisma.favorite.findMany({ where: { userId: session.user.id }, select: { listingId: true } })
+      : [],
   ]);
 
-  // Favoriterna hämtas separat och utan filter: de ska gå att visa även när de
-  // gått ut eller faller utanför den aktuella sökningen. Egen kö bara, så en
-  // Malmöfavorit inte dyker upp i Stockholmslistan.
-  const favoriteRows = await prisma.favorite.findMany({
-    where: { userId: session.user.id, listing: { market } },
-    include: { listing: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const favoriteIds = new Set(favoriteIdRows.map((f) => f.listingId));
   const total = listings.length;
   const cutoff = dayAgo();
   const newLast24h = listings.filter((l) => l.firstSeenAt >= cutoff).length;
-
-  // Favoriter är en Pro-funktion. Hela användarens lista hämtas: kartan visar
-  // fler annonser än korten, och alla ska kunna få hjärta. En användares
-  // favoriter är en liten mängd.
-  const canFavorite = hasPro(me);
-  const favoriteIds = canFavorite
-    ? new Set(
-        (await prisma.favorite.findMany({ where: { userId: session.user.id }, select: { listingId: true } })).map(
-          (f) => f.listingId,
-        ),
-      )
-    : new Set<string>();
 
 
   const activeCount = countActiveFilters(filters);

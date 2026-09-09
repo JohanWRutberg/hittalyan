@@ -77,7 +77,44 @@ function tuneDarkStyle(map: MapLibreMap) {
 }
 
 const MAX_MARKERS = 1500;
-const MIN_FIT_ZOOM = 8.3;
+
+/**
+ * Hur stort område kartan som mest ramar in när den öppnas, i grader latitud.
+ * Sverige är knappt 14 grader från Smygehuk till Treriksröset, så det här är
+ * ungefär halva landet.
+ *
+ * En rikstäckande kö har annonser från Ystad till Kiruna, och att rama in dem
+ * alla gör varje nål till ett stoft mitt i en nästan tom karta. Tidigare fanns
+ * i stället ett *golv* för zoomen (8.3): då hamnade rikstäckande köer på
+ * förmedlingens centrumkoordinat med resten av landet utanför rutan – och
+ * eftersom listan följer kartans utsnitt såg man bara en bråkdel av annonserna
+ * när sidan öppnades. Ett tak på hur stort område som ramas in gör i stället
+ * rätt sak för både en enskild stad och hela landet.
+ */
+const MAX_FIT_SPAN_DEG = 7;
+
+/**
+ * Rutan kartan ska öppna i: annonsernas utbredning, men aldrig större än
+ * MAX_FIT_SPAN_DEG. Blir den för stor behålls den halva av landet som har
+ * annonserna – **medianens** latitud i mitten, inte utbredningens mittpunkt,
+ * eftersom en ensam annons i Kiruna annars drar ramen norrut genom ren tomhet.
+ * De annonser som hamnar utanför får man panorera till.
+ */
+function fitArea(groups: Group[]): [[number, number], [number, number]] {
+  const lats = groups.map((g) => g.lat).sort((a, b) => a - b);
+  let inside = groups;
+  if (lats[lats.length - 1] - lats[0] > MAX_FIT_SPAN_DEG) {
+    const mid = lats[Math.floor(lats.length / 2)];
+    const near = groups.filter((g) => Math.abs(g.lat - mid) <= MAX_FIT_SPAN_DEG / 2);
+    if (near.length) inside = near;
+  }
+  const lat = inside.map((g) => g.lat);
+  const lng = inside.map((g) => g.lng);
+  return [
+    [Math.min(...lng), Math.min(...lat)],
+    [Math.max(...lng), Math.max(...lat)],
+  ];
+}
 
 /**
  * maplibre-gl levereras som UMD. Beroende på bundler hamnar API:t antingen
@@ -241,6 +278,12 @@ export function ListingsMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
+  /**
+   * Ramen kartan senast ställdes in på. `points` byter identitet varje gång ett
+   * hjärta klickas i, och utan den här spärren hade kameran hoppat tillbaka till
+   * helhetsbilden mitt i att man tittade på ett kvarter.
+   */
+  const framedRef = useRef("");
   const [ready, setReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
   // Manuellt invikt: bara rubrikraden syns. Skilt från `expanded`, som styr höjden
@@ -356,7 +399,6 @@ export function ListingsMap({
       markersRef.current = [];
 
       const groups = groupPoints(points);
-      const bounds = new maplibregl.LngLatBounds();
       groups.forEach((g, i) => {
         const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(
           popupHtml(g, userYears, {
@@ -381,20 +423,24 @@ export function ListingsMap({
           .setPopup(popup)
           .addTo(map);
         markersRef.current.push(marker);
-        bounds.extend([g.lng, g.lat]);
       });
 
-      if (groups.length > 0) {
-        // Enstaka annonser långt bort (Eskilstuna, Norrtälje) ska inte zooma ut hela kartan;
-        // då hamnar vi hellre på stadens centrum och låter användaren zooma själv.
-        const camera = map.cameraForBounds(bounds, { padding: 48, maxZoom: 15 });
-        if (camera && (camera.zoom ?? 0) < MIN_FIT_ZOOM) {
-          map.easeTo({ center, zoom: MIN_FIT_ZOOM, duration: 900, essential: true });
+      // Kartan öppnar utzoomad nog att hela annonsområdet syns – också när det är
+      // en hel landsände. Enstaka annonser långt bort får alltså zooma ut kartan:
+      // ligger de utanför rutan döljs de även i listan, som följer utsnittet.
+      const area = groups.length > 0 ? fitArea(groups) : null;
+      const frame = area ? area.flat().join(",") : "tom";
+      if (framedRef.current !== frame) {
+        framedRef.current = frame;
+        if (area) {
+          // Marginalen måste rymmas i behållaren. Kartan är bara 176 px hög i
+          // fällt läge på mobil, och 48 px runt om hade ätit upp hela höjden.
+          const el = map.getContainer();
+          const padding = Math.max(8, Math.min(48, Math.floor(Math.min(el.clientWidth, el.clientHeight) / 6)));
+          map.fitBounds(area, { padding, maxZoom: 15, duration: 900, essential: true });
         } else {
-          map.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 900, essential: true });
+          map.easeTo({ center, zoom: 9, duration: 600 });
         }
-      } else {
-        map.easeTo({ center, zoom: 9, duration: 600 });
       }
     })();
     return () => {

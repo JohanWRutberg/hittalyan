@@ -129,6 +129,24 @@ sökparametrar till Prisma-frågor, `chance.ts` bedömer chansen, `plan.ts` avg�
 tråkigt ut. `next.config.ts` har permanenta omdirigeringar från de gamla adresserna,
 behåll dem: hemskärmsinstallationer och bokmärken pekar dit.
 
+## Sidbyten
+
+Alla sidor är dynamiska: de läser session, vald kö och databas, så varje sidbyte kostar
+ett anrop till servern. Utan `loading.tsx` står webbläsaren kvar på den gamla sidan under
+tiden – det ser ut som att ingenting händer – och Next hoppar dessutom över förhämtningen
+av dynamiska sidor helt, eftersom det inte finns något att förhämta.
+
+- `src/app/(app)/loading.tsx` är skelettet för alla inloggade sidor, och
+  `lagenheter/loading.tsx` det egna för annonslistan. Byggstenarna finns i
+  `components/skeleton.tsx`. **Lägg till ett skelett när du lägger till en tung sida.**
+- Frågor som inte beror på varandra ska ligga i samma `Promise.all`. Databasen ligger
+  inte i samma rum som funktionen i produktion, så varje extra led i kedjan syns.
+- `getCurrentUser()` i `market-context.ts` är `cache()`ad och hämtar användarraden en
+  gång per anrop. Använd den i stället för en egen `prisma.user.findUnique`, annars
+  hämtas samma rad två gånger (kön är ju redan läst ur den).
+- Neons gratisnivå sover efter inaktivitet. Första sidbytet efter en paus tar några
+  sekunder oavsett vad vi gör – skelettet gör åtminstone att det syns att något händer.
+
 ## Behörighet och läge
 
 | Läge | Ser |
@@ -187,6 +205,16 @@ Komponenter använder de **semantiska** klasserna (`bg-surface`, `text-accent`,
 `border-line`, `text-muted`, `bg-subtle`, `text-faint`, `text-danger`, `text-warn`),
 aldrig råa Tailwind-färger. Då byter hela gränssnittet läge av att variablerna skrivs om.
 
+**Allt klickbart ska ha `cursor: pointer`.** Länkar, knappar, växlar, flikar – ser det
+ut att gå att klicka på ska pekaren säga det. Tailwind 4 slutade sätta det på `<button>`
+och följer webbläsarens `cursor: default`, vilket gjorde att lägesväljaren och "logga ut"
+kändes döda bredvid länkarna. Regeln står därför **en gång** i `globals.css`
+(`button:not(:disabled)`, `summary`, `label[for]`, `select`, kryss- och radioknappar,
+`[role="button"]`, `[role="tab"]`) i stället för som `cursor-pointer` på varje komponent.
+Utslagna knappar undantas – de har `disabled:cursor-not-allowed`. Klickbara element som
+varken är knapp eller länk (kartans mosaikområden, filterpanelens rad) behöver klassen
+själva.
+
 - `text-accent` finns för att `text-brand-700` och `bg-brand-600` drar åt olika håll:
   accenttext måste bli **ljus** i mörkt läge medan knappar förblir mörka. Samma ramp
   kan inte tjäna båda.
@@ -219,6 +247,18 @@ alla kostat tid:
 3. **Markörernas transform.** MapLibre positionerar markörer med `transform`. Animerar
    man `transform` på samma element hamnar alla markörer i ett högerhörn. Animera ett
    inre element i stället.
+
+**Utsnittet vid start** ramar in annonserna, aldrig ett fast zoomläge. Det spelar roll
+för mer än överblicken: listan följer kartans utsnitt, så det som ligger utanför rutan
+syns inte heller i listan. `MAX_FIT_SPAN_DEG` (7 grader latitud, ungefär halva Sverige)
+är taket för hur stort område som ramas in – en rikstäckande kö har annonser från Ystad
+till Kiruna, och att få med allt gör varje nål till ett stoft. Blir det för stort ramas
+den halva in som har annonserna, med **medianens** latitud i mitten, inte utbredningens
+mittpunkt: en ensam annons i Kiruna ska inte dra ramen norrut genom ren tomhet.
+
+Kameran flyttas bara när ramen faktiskt ändrats (`framedRef`). Markörernas `points` byter
+identitet varje gång ett hjärta klickas i, och utan spärren hoppar kartan tillbaka till
+helhetsbilden mitt i att man tittar på ett kvarter.
 
 ## Mobil
 
@@ -273,8 +313,13 @@ bilder var skulle äta upp i onödan, och bilderna är redan färdigskalade hos 
 
 I **inloggat läge** hämtas hela träfflistan i en enda fråga och skickas till webbläsaren,
 som sköter både filtrering efter kartans utsnitt och sidbläddring (`listings-browser.tsx`).
-Hela Stockholm är ~33 kB brotli, mindre än ett enda annonsfoto, så det är billigare att
+Hela Stockholm är ~43 kB brotli, mindre än ett enda annonsfoto, så det är billigare att
 skicka allt än att fråga servern varje gång kartan flyttas.
+
+Räkningen ser annorlunda ut för en **rikstäckande** kö: HomeQ har tusentals aktiva
+annonser, och `MAX_LISTINGS` (2 000) rader väger ~2,5 MB rått och ~234 kB brotli, mest
+bild-URL:er (drygt halva payloaden). Det är fortfarande en enda hämtning, men det är
+sidans tyngsta post – börja där om annonslistan känns seg, inte i antalet frågor.
 
 - **Att panorera kartan, byta sida eller ändra antal per sida kostar noll anrop.**
   Gör det inte till serveranrop igen: en enda panorering hade då blivit en full sidladdning.

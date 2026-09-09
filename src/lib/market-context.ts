@@ -13,12 +13,23 @@ import { MARKET_COOKIE, marketOf, type Market } from "@/lib/markets";
  * sessionen i fem minuter och ett kösbyte ska slå igenom direkt.
  */
 export const getCurrentMarket = cache(async (): Promise<Market> => {
-  const session = await getSession();
-  if (session) {
-    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { market: true } });
-    return marketOf(user?.market);
-  }
+  const user = await getCurrentUser();
+  if (user) return marketOf(user.market);
   return marketOf((await cookies()).get(MARKET_COOKIE)?.value);
+});
+
+/**
+ * Den inloggade användarens rad, hämtad **en gång per anrop**.
+ *
+ * Sidorna behöver nästan alltid både vald kö och planen, och hämtade tidigare
+ * raden en gång var: en fråga för kön här och en till i sidan. `cache()` gör
+ * dem till samma fråga. Ur databasen och inte ur sessionen, av samma skäl som
+ * ovan – Better Auth cachar sessionen i fem minuter.
+ */
+export const getCurrentUser = cache(async () => {
+  const session = await getSession();
+  if (!session) return null;
+  return prisma.user.findUnique({ where: { id: session.user.id } });
 });
 
 /** Användarens registreringsdatum i en viss kö, eller null om det inte angetts. */

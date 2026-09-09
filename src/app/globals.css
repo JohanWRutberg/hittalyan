@@ -52,8 +52,11 @@
   --market-vast: #187c54;
   --market-syd: #187c36;
   /* HomeQ täcker hela landet och ligger därför utanför bågens ordning – svalare
-     och mindre mättad, så att den läses som bakgrund och inte som ett område. */
-  --market-homeq: #30577e;
+     och mindre mättad, så att den läses som bakgrund och inte som ett område.
+     Ljusheten (L* ~46) ligger medvetet på samma nivå som bågens toner: eftersom
+     tonen målar **hela** landet blev en mörkare blå ett tungt block i ljust läge,
+     långt mörkare än de fyra områdena ovanpå. */
+  --market-homeq: #3f71a4;
 }
 
 [data-theme="dark"] {
@@ -88,7 +91,11 @@
   --market-stockholm: #70d2c5;
   --market-vast: #70d2aa;
   --market-syd: #70d28d;
-  --market-homeq: #86a8cb;
+  /* HomeQ ligger ett snäpp under bågen i mörkt läge, av samma skäl som den
+     ligger ett snäpp över i ljust: ytan är hela landet, och en lika ljus ton
+     som områdena lyste upp kartan i stället för att ligga bakom dem. Nu väger
+     kön ungefär lika mycket i båda lägena. */
+  --market-homeq: #7299c2;
 }
 
 /* Låter `dark:`-varianten fungera mot vårt data-attribut. */
@@ -160,6 +167,25 @@ body {
 
 ::selection {
   background: var(--color-brand-200);
+}
+
+/*
+ * Allt som går att klicka på ska se klickbart ut. Tailwind 4 slutade sätta
+ * `cursor: pointer` på knappar och följer webbläsarens `cursor: default`, vilket
+ * gjorde att lägesväljaren, "logga ut" och andra rena knappar såg döda ut medan
+ * länkar bredvid dem fick handen. Regeln står här, en gång, i stället för som
+ * `cursor-pointer` på varje knapp – då kan den inte glömmas bort i nästa
+ * komponent. Utslagna knappar undantas: de har `disabled:cursor-not-allowed`.
+ */
+button:not(:disabled),
+summary,
+label[for],
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"]:not([aria-disabled="true"]) {
+  cursor: pointer;
 }
 
 /* iOS Safari zoomar in på fält med text under 16px. */

@@ -6,8 +6,10 @@ export function Logo({ href = "/" }: { href?: string }) {
     <Link href={href} className="flex shrink-0 items-center gap-2 text-ink">
       <span className="grid size-8 place-items-center rounded-xl bg-brand-600 text-white shadow-soft">
         {/* Hyreshus, inte villa. Samma form som platshållaren på annonser utan
-            bild, och som favicon och app-ikonerna. */}
-        <Building2 className="size-4.5" strokeWidth={2.2} />
+            bild, och som favicon och app-ikonerna – och samma andel av plattan
+            som de (~64 %), så att logotypen och ikonen ser lika ut bredvid
+            varandra. Ritas om av scripts/generate-icons.mjs. */}
+        <Building2 className="size-5" strokeWidth={2.2} />
       </span>
       <span className="whitespace-nowrap text-base font-bold tracking-tight max-[379px]:hidden sm:text-lg">Hitta Lyan</span>
     </Link>

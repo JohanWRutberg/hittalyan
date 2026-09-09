@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: t("description"),
     applicationName: "Hitta Lyan",
     appleWebApp: { capable: true, title: "Hitta Lyan", statusBarStyle: "default" },
-    icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
+    icons: { icon: "/icon-192.png", apple: "/apple-icon.png" },
   };
 }
 

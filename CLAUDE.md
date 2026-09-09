@@ -22,6 +22,7 @@ Web Push (VAPID) · MapLibre GL + OpenFreeMap · Stripe.
 | `npm run poll` | Kör en hämtning + notiser manuellt |
 | `npm run db:studio` | Prisma Studio |
 | `npx prisma migrate dev --name x` | Ny migrering lokalt |
+| `node scripts/generate-icons.mjs` | Ritar om favicon och app-ikoner |
 
 Lokal databas körs i Docker: `docker start hittalyan-postgres` (port **5433**, användare,
 lösenord och databas heter alla `hittalyan`).
@@ -262,6 +263,25 @@ själva.
   smälta in. Popupens pillerfärger har däremot egna mörka toner.
 - **Mailen är kvar i ljust läge.** E-postklienter stödjer inte teman pålitligt, och
   mallarna i `notify.ts` ska inte röras.
+
+## Ikoner
+
+Favicon och app-ikoner ritas av `scripts/generate-icons.mjs` ur samma symbol som
+gränssnittet använder (Lucides `building-2`), så att huset i fliken, på hemskärmen och i
+menyn är ett och samma hus. Kör om skriptet i stället för att redigera PNG:erna – de är
+resultat, inte källa.
+
+- **Huset fyller ~64 % av plattan.** Det låg tidigare på drygt hälften, och då gick det
+  inte att se vad symbolen föreställde i en flik. Måttet gäller husets bläck (22×20 av
+  Lucides 24×24-ruta), inte symbolens ruta.
+- **Den maskerbara ikonen är en egen fil.** Android klipper ikonen till sin egen form och
+  garanterar bara den inre cirkeln på 80 %, så `icon-512-maskable.png` har mindre hus och
+  färg ut i kanterna. Rundade hörn och genomskinlighet runt om är plattformens sak.
+- **`apple-icon.png` är också fyrkantig och heltäckande.** iOS lägger sin egen rundning
+  över hela kvadraten och målar genomskinliga bildpunkter svarta – en ikon med egna
+  rundade hörn får svarta hörn på hemskärmen.
+- I 16 px byts detaljer mot tjockare linjer. Mindre hus med grövre streck läser bättre än
+  ett stort hus vars linjer hamnar mellan bildpunkterna och gråsuddas.
 
 ## Kartan
 

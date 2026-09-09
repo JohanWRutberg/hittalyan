@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { ImageLightbox } from "@/components/image-lightbox";
 
 /**
  * Bildspel på annonskortet. Bilderna ligger kvar hos förmedlingen och länkas hit,
@@ -15,6 +16,9 @@ import { useTranslations } from "next-intl";
 export function ListingImages({ images, alt, fill }: { images: string[]; alt: string; fill?: boolean }) {
   const t = useTranslations("listings.card");
   const [index, setIndex] = useState(0);
+  // Förstoringen delar bildnummer med kortet: stänger man den står kortet kvar
+  // på den bild man tittade på, i stället för att hoppa tillbaka till den första.
+  const [zoomed, setZoomed] = useState(false);
 
   // Alla annonser har inte bilder – en del publiceras helt utan. De får en
   // platshållare så att korten blir lika höga och rutnätet inte hackar.
@@ -25,19 +29,39 @@ export function ListingImages({ images, alt, fill }: { images: string[]; alt: st
 
   return (
     <div className={`group/img relative w-full overflow-hidden bg-canvas ${fill ? "h-full min-h-28" : "aspect-16/10"}`}>
-      {/* Bara den aktuella bilden ligger i DOM:en; korten kan vara 60 på en sida. */}
-      {/* eslint-disable-next-line @next/next/no-img-element -- medvetet: next/image skulle förbruka Vercels kvot för bildoptimeringar på bilder som redan är färdigskalade hos förmedlingen */}
-      <img
-        src={images[index]}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className="size-full object-cover"
-        // Trasiga bild-URL:er hos källan ska inte lämna ett brutet ikonkryss.
-        onError={(e) => {
-          e.currentTarget.style.visibility = "hidden";
-        }}
-      />
+      {/* Bilden är en knapp: ett klick förstorar den. Kortet runt omkring är en
+          länk till annonsen hos förmedlingen, men bildspelet ligger utanför den
+          länken, så de två klicken krockar inte. */}
+      <button
+        type="button"
+        onClick={() => setZoomed(true)}
+        aria-label={t("openImage")}
+        className="block size-full cursor-zoom-in"
+      >
+        {/* Bara den aktuella bilden ligger i DOM:en; korten kan vara 60 på en sida. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- medvetet: next/image skulle förbruka Vercels kvot för bildoptimeringar på bilder som redan är färdigskalade hos förmedlingen */}
+        <img
+          src={images[index]}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className="size-full object-cover"
+          // Trasiga bild-URL:er hos källan ska inte lämna ett brutet ikonkryss.
+          onError={(e) => {
+            e.currentTarget.style.visibility = "hidden";
+          }}
+        />
+      </button>
+
+      {zoomed && (
+        <ImageLightbox
+          images={images}
+          alt={alt}
+          index={index}
+          onIndex={setIndex}
+          onClose={() => setZoomed(false)}
+        />
+      )}
 
       {count > 1 && (
         <>

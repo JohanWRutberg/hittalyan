@@ -168,7 +168,10 @@
       "applicantsShort": "Sökande",
       "prevImage": "Föregående bild",
       "nextImage": "Nästa bild",
-      "noImage": "Bilder saknas"
+      "noImage": "Bilder saknas",
+      "openImage": "Förstora bilden",
+      "closeImage": "Stäng",
+      "imageCount": "Bild {index} av {count}"
     },
     "tags": {
       "nyproduktion": "Nyproduktion",

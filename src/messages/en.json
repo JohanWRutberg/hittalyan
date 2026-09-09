@@ -168,7 +168,10 @@
       "applicantsShort": "Applicants",
       "prevImage": "Previous image",
       "nextImage": "Next image",
-      "noImage": "No photos"
+      "noImage": "No photos",
+      "openImage": "Enlarge image",
+      "closeImage": "Close",
+      "imageCount": "Image {index} of {count}"
     },
     "tags": {
       "nyproduktion": "New build",

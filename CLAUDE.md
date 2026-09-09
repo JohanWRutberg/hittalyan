@@ -2,8 +2,8 @@
 
 # Hitta Lyan
 
-Bevakar nya hyresrätter hos fyra bostadsförmedlingar och hör av sig via mail och
-push-notis så fort en annons matchar användarens filter. Drivs på hittalyan.se (Vercel).
+Bevakar nya hyresrätter hos fyra bostadsförmedlingar och en rikstäckande marknadsplats,
+och hör av sig via mail och push-notis så fort en annons matchar användarens filter. Drivs på hittalyan.se (Vercel).
 
 Kommentarer och dokumentation i det här projektet skrivs på **svenska**, i klarspråk.
 Användargränssnittet finns på svenska och engelska.
@@ -31,22 +31,34 @@ fångar dessutom fel som bara syns vid produktionsbygge.
 
 ## Marknaderna
 
-Fyra bostadsförmedlingar, definierade i `src/lib/markets.ts`. En användare **tillhör en
-kö i taget**: valet görs vid registrering och byts under Konto. Utloggade styr valet med
-en cookie (`hl_market`) och får Stockholm om de inte valt något. `getCurrentMarket()` i
-`src/lib/market-context.ts` avgör vad som visas, och läser användarens val ur databasen
-och inte ur sessionen, eftersom Better Auth cachar sessionen i fem minuter.
+Fem källor, definierade i `src/lib/markets.ts`: fyra bostadsförmedlingar med kö och
+kötid, plus HomeQ, som är något annat – en marknadsplats där drygt tvåtusen privata
+hyresvärdar annonserar, var och en med sin egen kö. Där finns varken gemensam kötid,
+kötidsstatistik eller sista dag att söka, och den skillnaden ska synas i gränssnittet
+i stället för att jämnas ut.
 
-| Kod | Förmedling | Källa | Chansmätare | Våning | Specialköer |
-| --- | --- | --- | --- | --- | --- |
-| `stockholm` | Bostadsförmedlingen i Stockholm | JSON | kvartiler | ja | ja |
-| `vast` | Boplats Väst | HTML + JSON | områdessnitt | ja | nej |
-| `syd` | Boplats Syd | GraphQL | antal sökande | nej | ja |
-| `uppsala` | Uppsala bostadsförmedling | GraphQL | antal sökande | nej | ja |
+En användare **tillhör en kö i taget**: valet görs vid registrering och byts under
+Konto. Utloggade styr valet med en cookie (`hl_market`) och får Stockholm om de inte
+valt något. `getCurrentMarket()` i `src/lib/market-context.ts` avgör vad som visas, och
+läser användarens val ur databasen och inte ur sessionen, eftersom Better Auth cachar
+sessionen i fem minuter.
+
+| Kod | Källa | Hämtas som | Chansmätare | Våning | Utrustning | Sista dag | Område |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `stockholm` | Bostadsförmedlingen i Stockholm | JSON | kvartiler | ja | ja | ja | region |
+| `vast` | Boplats Väst | HTML + JSON | områdessnitt | ja | ja | ja | region |
+| `syd` | Boplats Syd | GraphQL | antal sökande | nej | ja | ja | region |
+| `uppsala` | Uppsala bostadsförmedling | GraphQL | antal sökande | nej | ja | ja | region |
+| `homeq` | HomeQ | JSON | ingen | nej | nej | nej | hela landet |
 
 Skillnaderna är inte kosmetiska: sorteringar, filterfält och chansmätare tas bort där
-källan saknar underlag (`sortOptionsFor()`, `MarketInfo.hasFloor`, `hasSpecialQueues`).
-Lägg inte tillbaka dem "för symmetrins skull".
+källan saknar underlag (`sortOptionsFor()`, `MarketInfo.hasFloor`, `hasAmenities`,
+`hasSpecialQueues`, `hasDeadline`). Lägg inte tillbaka dem "för symmetrins skull" – en
+tom chansmätare eller en kryssruta som alltid ger noll träffar är sämre än ingen alls.
+
+`MarketInfo.coverage` skiljer `region` från `national`. Bara HomeQ är rikstäckande, och
+det syns på flera ställen: mosaiken på startsidan tänder hela landet i stället för ett
+område, och kartan på `/lagenheter` ramar in halva Sverige i stället för en stad.
 
 `Listing.id` är `"<marknad>:<id hos källan>"`, eftersom förmedlingarna har var sin
 id-serie i olika format (heltal, stora heltal, hexadecimala strängar).
@@ -56,6 +68,10 @@ id-serie i olika format (heltal, stora heltal, hexadecimala strängar).
 Ingen av förmedlingarna har ett publikt API. Vi använder samma endpoints som deras egna
 webbplatser anropar. De är odokumenterade och kan ändras utan förvarning. En adapter per
 källa ligger i `src/lib/sources/`, bakom ett gemensamt `Source`-gränssnitt.
+
+Listhämtningen försöks om vid tillfälliga fel (`withRetry()` i `sources/types.ts`): 5xx,
+429, 408 och nätverksfel går över av sig själva, ett 404 gör det inte. Extraanropen per
+annons försöks **inte** om – de är valfria, delar på tidsbudgeten och tas nästa körning.
 
 **Stockholm** (`sources/stockholm.ts`)
 
@@ -97,6 +113,22 @@ kötiden hos dem som fått liknande lägenheter.
 - Objektsidan hämtas bara för **nya** annonser (högst 30 per körning) plus ett fåtal äldre
   (12 per körning, äldst först) så att antalet sökande inte blir inaktuellt. Rör inte
   taken utan att tänka på att det är en vanlig webbplats, inte ett API.
+
+**HomeQ** (`sources/homeq.ts`) är den enda källan med ett riktigt API.
+
+- **`POST https://api.homeq.se/api/v3/search`** med tom kropp – hela utbudet i **ett**
+  anrop: adress, kommun, ort, koordinat, hyra, rum, yta, bilder, tillträde och målgrupp.
+  ~8 MB på ~4 sekunder, drygt sextusen annonser.
+- **`GET /api/v1/landlords/list`** – hyresvärdarnas namn, som annonserna bara refererar
+  till med ett id.
+- **Objektfrågan `/api/v1/object/<id>` används med flit inte.** Den skulle ge våning,
+  balkong, hiss och nyproduktion, men bara med ett anrop per annons, och HomeQ
+  rate-limitar den: några hundra i rad svarade 429 på var och en. Därför står
+  `hasFloor` och `hasAmenities` på false för HomeQ.
+- Projektannonser (`type: "project"`) sorteras bort: de beskriver ett nybygge och inte en
+  bestämd lägenhet, och saknar både hyra, rum och yta.
+- Eftersom ett anrop ger allt tar källan **ingen** del av tidsbudgeten för extraanrop
+  (`usesFetchBudget` är inte satt) – den lämnas till Stockholm och Väst.
 
 **Var sparsam med anropen.** Var 30:e minut är avsiktligt valt, dels för Neons
 CU-timmar, dels av hänsyn till servrar som inte är byggda för att vara öppna API:er.
@@ -294,16 +326,34 @@ vår domän).
 - Momentum (Syd, Uppsala) ger dem gratis i GraphQL-svaret. `?width=480` är den enda
   storleksparameter CDN:et lyssnar på och tar bilden från ~265 kB till ~83 kB.
 - Boplats Väst har omslagsbilden på objektsidan och resten på `/objekt/1hand/<id>/photos`.
+- HomeQ ger dem i sökresultatet, sorterade på `position`, alltså utan extraanrop.
 - **Stockholm har inga bilder i JSON-flödet.** De ligger i `<div class="image-slider">`
   på annonsens egen sida, som därför hämtas en gång per annons. Det är enda anledningen
   till att Stockholm behöver extraanrop alls. Ungefär **hälften av Stockholms annonser
-  publiceras helt utan bilder**; övriga tre förmedlingar har bild på i princip allt.
+  publiceras helt utan bilder**; övriga källor har bild på i princip allt.
 - `Listing.imagesCheckedAt` skiljer "annonsen har inga bilder" från "vi har inte försökt
   än". Utan den hämtades de bildlösa om vid varje körning i all evighet, och blockerade
   uppbyggnaden av resten. Bildlösa prövas igen en gång per dygn, ifall förmedlingen
   lägger till bilder i efterhand.
 - Annonser utan bilder får en platshållare (`ImagePlaceholder`) med texten "Bilder
   saknas", så att korten blir lika höga och rutnätet inte hackar.
+
+**Klick på en bild förstorar den** (`image-lightbox.tsx`). På skrivbordet en modal med
+bilden hel, på telefonen hela skärmen – och där fyller bilden skärmens **höjd**, inte
+bredden: bilderna är nästan alltid liggande och telefonen står upp, så att passa in dem på
+bredden hade gett ett frimärke mellan två svarta fält. Det som hamnar utanför panoreras
+fram i sidled, och bilden öppnas centrerad. Att svepa panorerar alltså, det byter inte
+bild – därför finns pilarna alltid, tillsammans med krysset.
+
+- Panoreringen är vanlig sidledsscroll, inte drag med pekarhändelser: tröghet och studs
+  kommer gratis och beter sig som systemet i övrigt.
+- Det inre elementet i scroll-behållaren måste vara **`w-max min-w-full`**. En vanlig
+  blockruta blir lika bred som behållaren och växer inte med innehåll som svämmar över,
+  och då räknas bara den högra halvan in i scrollbredden: bildens vänstra kant gick inte
+  att nå. Centrera aldrig heller med `justify-center` på själva scroll-behållaren, av
+  samma skäl.
+- Renderas i en **portal till `document.body`**. Korten är `motion.div` med `transform`,
+  och ett transformerat föräldraelement gör `position: fixed` relativt kortet.
 
 Korten använder medvetet vanliga `<img>` med `loading="lazy"`, **inte** `next/image`:
 Vercels Hobby-plan har en månadskvot för bildoptimeringar som ~1 400 annonser med flera
@@ -369,7 +419,7 @@ Frågorna är batchade eftersom serverless-funktioner har kort tidsgräns. En he
 tar ungefär 20–25 sekunder.
 
 - **Cron-jobbet anropar en förmedling i taget** (`?market=<kod>`), så att var och en får
-  hela funktionens 60 sekunder för sig. När alla fyra trängdes i samma anrop slog
+  hela funktionens 60 sekunder för sig. När alla trängdes i samma anrop slog
   bildhämtningen i taket och Vercel svarade 504.
 - **`DEFAULT_RUN_MS` gäller hela körningen**, inte bara extraanropen. Listhämtningar och
   databasskrivningar räknas in – de är långsammare i produktion än lokalt, och det var

@@ -91,9 +91,12 @@ export function ListingsBrowser({
           kotidSnitt: l.kotidSnitt,
           sokande: l.sokande,
           isNew: isRecent(l.firstSeenAt),
-          favorited: favorites.has(l.id),
         })),
-    [listings, favorites],
+    // Favoriterna ligger **inte** här. Hade de gjort det hade `points` bytt
+    // identitet vid varje hjärtklick, och kartan byggt om alla markörer (upp till
+    // 1 500) och ramat om kameran. Hjärtat på markören sätts i stället av en egen
+    // effekt i kartan, på just den markör det gäller.
+    [listings],
   );
 
   const visible = useMemo(() => {

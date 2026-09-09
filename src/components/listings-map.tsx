@@ -35,8 +35,6 @@ export interface MapPoint {
   kotidSnitt: number | null;
   sokande: number | null;
   isNew: boolean;
-  /** Sparad som favorit av den inloggade användaren */
-  favorited: boolean;
 }
 
 interface Group {
@@ -45,7 +43,6 @@ interface Group {
   lng: number;
   items: MapPoint[];
   hasNew: boolean;
-  hasFavorite: boolean;
 }
 
 // OpenFreeMap: fria vektorkartor utan API-nyckel. Positron är den ljusa, rena
@@ -146,9 +143,8 @@ function groupPoints(points: MapPoint[]): Group[] {
     if (g) {
       g.items.push(p);
       g.hasNew ||= p.isNew;
-      g.hasFavorite ||= p.favorited;
     } else {
-      map.set(key, { key, lat: p.lat, lng: p.lng, items: [p], hasNew: p.isNew, hasFavorite: p.favorited });
+      map.set(key, { key, lat: p.lat, lng: p.lng, items: [p], hasNew: p.isNew });
     }
   }
   return [...map.values()];
@@ -167,7 +163,13 @@ interface PopupText {
   locale: Locale;
 }
 
-function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
+/**
+ * Popupens innehåll byggs som HTML-sträng, och **när den öppnas** – inte när
+ * markören skapas. Markörerna byggs inte om när man favoritmarkerar (de kan vara
+ * 1 500), så hjärtat här måste läsas ur favoritmängden i det ögonblick popupen
+ * visas, annars visar den läget som gällde när kartan senast ritades om.
+ */
+function popupHtml(g: Group, userYears: number | null, tx: PopupText, favorites: ReadonlySet<string>) {
   const first = g.items[0];
   const rows = g.items
     .slice(0, 6)
@@ -192,7 +194,7 @@ function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
         <span class="lm-popup__main">${escapeHtml(formatRum(p.antalRum, tx.locale))} · ${escapeHtml(formatYta(p.yta))} · ${escapeHtml(formatVaning(p.vaning, tx.locale))}</span>
         <span class="lm-popup__rent">${escapeHtml(formatKr(p.hyra, tx.locale))}</span>
         ${chance}
-        ${p.favorited ? `<span class="lm-popup__fav" title="${escapeHtml(tx.favorite)}">${HEART_SVG}</span>` : ""}
+        ${favorites.has(p.id) ? `<span class="lm-popup__fav" title="${escapeHtml(tx.favorite)}">${HEART_SVG}</span>` : ""}
         ${p.isNew ? `<span class="lm-popup__new">${escapeHtml(tx.isNew)}</span>` : ""}
       </a>`;
     })
@@ -213,7 +215,7 @@ function popupHtml(g: Group, userYears: number | null, tx: PopupText) {
 const HEART_SVG =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.8 6.9 13.8C3 10.3 .5 8 .5 5.2.5 2.9 2.3 1.1 4.6 1.1c1.3 0 2.5.6 3.4 1.6.9-1 2.1-1.6 3.4-1.6 2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6L8 14.8z"/></svg>';
 
-function markerElement(g: Group, index: number) {
+function markerElement(g: Group, index: number, favorites: ReadonlySet<string>) {
   // Yttre element positioneras av MapLibre (via transform) och får därför inte animeras.
   // All animation sker på det inre elementet.
   const el = document.createElement("div");
@@ -226,7 +228,7 @@ function markerElement(g: Group, index: number) {
   inner.innerHTML = `
     <span class="lm-marker__halo"></span>
     <span class="lm-marker__pin">${g.items.length > 1 ? `<span class="lm-marker__count">${g.items.length}</span>` : ""}</span>
-    ${g.hasFavorite ? `<span class="lm-marker__fav">${HEART_SVG}</span>` : ""}
+    ${g.items.some((i) => favorites.has(i.id)) ? `<span class="lm-marker__fav">${HEART_SVG}</span>` : ""}
   `;
   el.appendChild(inner);
   return el;
@@ -284,6 +286,13 @@ export function ListingsMap({
    * helhetsbilden mitt i att man tittade på ett kvarter.
    */
   const framedRef = useRef("");
+  /**
+   * Favoriterna som de ser ut just nu. Markörerna byggs inte om när man
+   * favoritmarkerar, så popupen och nyskapade markörer läser hjärtat härifrån i
+   * stället för ur `points` – låg favoritläget i `points` byttes hela markörlagret
+   * ut vid varje hjärtklick, alla 1 500.
+   */
+  const favoritesRef = useRef(favorites);
   const [ready, setReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
   // Manuellt invikt: bara rubrikraden syns. Skilt från `expanded`, som styr höjden
@@ -400,25 +409,35 @@ export function ListingsMap({
 
       const groups = groupPoints(points);
       groups.forEach((g, i) => {
-        const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(
-          popupHtml(g, userYears, {
-            more: (n) => t("popupMore", { count: n }),
-            isNew: t("popupNew"),
-            newBuild: tListing("tags.nyproduktion"),
-            chanceLabel: (level) => tChance(`${level}.label`),
-            chanceTitle: (q1, q3) => t("popupChanceTitle", { q1, q3 }),
-            averageTitle: (years) => t("popupAverageTitle", { years }),
-            applicants: (count) => tListing("card.applicants", { count }),
-            favorite: tFav("title"),
-            etAl: t("etAl"),
-            locale,
-          }),
-        );
+        const html = () =>
+          popupHtml(
+            g,
+            userYears,
+            {
+              more: (n) => t("popupMore", { count: n }),
+              isNew: t("popupNew"),
+              newBuild: tListing("tags.nyproduktion"),
+              chanceLabel: (level) => tChance(`${level}.label`),
+              chanceTitle: (q1, q3) => t("popupChanceTitle", { q1, q3 }),
+              averageTitle: (years) => t("popupAverageTitle", { years }),
+              applicants: (count) => tListing("card.applicants", { count }),
+              favorite: tFav("title"),
+              etAl: t("etAl"),
+              locale,
+            },
+            favoritesRef.current,
+          );
+        const popup = new maplibregl.Popup({ offset: 22, maxWidth: "320px", closeButton: false }).setHTML(html());
         // En öppnad popup markerar sin markör på samma sätt som hover i listan,
-        // så den blir blå och hamnar överst i stapelordningen.
-        popup.on("open", () => setHovered(g.items[0].id));
+        // så den blir blå och hamnar överst i stapelordningen. Innehållet byggs om
+        // vid varje öppning, så hjärtat stämmer även om man favoritmarkerat sedan
+        // markörerna skapades.
+        popup.on("open", () => {
+          popup.setHTML(html());
+          setHovered(g.items[0].id);
+        });
         popup.on("close", () => setHovered(null));
-        const marker = new maplibregl.Marker({ element: markerElement(g, i), anchor: "bottom" })
+        const marker = new maplibregl.Marker({ element: markerElement(g, i, favoritesRef.current), anchor: "bottom" })
           .setLngLat([g.lng, g.lat])
           .setPopup(popup)
           .addTo(map);
@@ -455,6 +474,7 @@ export function ListingsMap({
    * bort på just de markörer det gäller.
    */
   useEffect(() => {
+    favoritesRef.current = favorites;
     const container = containerRef.current;
     if (!container) return;
     container.querySelectorAll<HTMLElement>(".lm-marker").forEach((m) => {

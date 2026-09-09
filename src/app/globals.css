@@ -232,6 +232,23 @@ input[type="radio"]:not(:disabled),
   }
 }
 
+/* Bildförstoringen tonar in. Kort och stillsamt: den täcker hela skärmen, och
+   ett långsamt intoning känns som att sidan hänger sig. */
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [role="dialog"] {
+    animation: none !important;
+  }
+}
+
 .mosaic-tile {
   fill-opacity: var(--tile-o);
   transition: fill-opacity 220ms ease;

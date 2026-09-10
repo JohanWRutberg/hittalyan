@@ -4,7 +4,7 @@ import { Check, Crown, Sparkles } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
-import { describePlan, planState } from "@/lib/plan";
+import { describePlan, planButton, planState } from "@/lib/plan";
 import { priceDefs, stripeConfigured } from "@/lib/stripe";
 import { formatDate } from "@/lib/format";
 import { FadeIn } from "@/components/motion";
@@ -68,6 +68,7 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
       <div className="grid gap-4 sm:grid-cols-3">
         {prices.map((p, i) => {
           const highlight = p.key === "pass";
+          const button = planButton(info, p, user.stripePriceId);
           return (
             <FadeIn key={p.key} delay={0.05 * i} className={`card relative flex flex-col p-6 ${highlight ? "border-accent-line-strong ring-4 ring-brand-100" : ""}`}>
               {highlight && (
@@ -81,8 +82,12 @@ export default async function ProPage({ searchParams }: PageProps<"/pro">) {
               <p className="mt-3 flex-1 text-sm text-muted">{t(`prices.${p.key}.description`)}</p>
               <form action="/api/stripe/checkout" method="post" className="mt-5">
                 <input type="hidden" name="price" value={p.key} />
-                <button type="submit" disabled={!p.id || !stripeConfigured()} className={`w-full ${highlight ? "btn-primary" : "btn-secondary"}`}>
-                  {info.active && info.source !== "trial" ? t("extend") : t("choose")}
+                <button
+                  type="submit"
+                  disabled={!p.id || !stripeConfigured() || button.disabled}
+                  className={`w-full ${highlight ? "btn-primary" : "btn-secondary"}`}
+                >
+                  {t(`button.${button.key}`)}
                 </button>
               </form>
             </FadeIn>

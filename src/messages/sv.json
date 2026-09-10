@@ -548,8 +548,15 @@
     "yourPlan": "Din plan:",
     "manage": "Hantera betalning",
     "popular": "Populärast",
-    "extend": "Förläng",
-    "choose": "Välj",
+    "button": {
+      "choose": "Välj",
+      "renew": "Förnya",
+      "upgrade": "Uppgradera",
+      "extend": "Förläng",
+      "buy": "Köp",
+      "current": "Din plan",
+      "included": "Ingår"
+    },
     "included": "Ingår i Pro",
     "alwaysFree": "Alltid gratis",
     "footer": "Betalningen hanteras av Stripe. Prenumerationer förnyas automatiskt tills du säger upp dem under “Hantera betalning”. Pass är en engångsbetalning och förnyas inte.",

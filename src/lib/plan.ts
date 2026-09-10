@@ -60,4 +60,47 @@ export function describePlan(state: PlanState, t: Translate, formatDate: (d: Dat
   };
 }
 
+/** Det knappvalet behöver veta om ett pris. Formen matchar `PriceDef` i stripe.ts. */
+export interface PlanPrice {
+  id: string | undefined;
+  mode: "subscription" | "payment";
+}
+
+export type PlanButtonKey = "choose" | "renew" | "upgrade" | "extend" | "buy" | "current" | "included";
+
+/**
+ * Vad köpknappen ska heta, utifrån vad den faktiskt gör för just den här
+ * användaren och just det priset. Etiketterna översätts via `pro.button.*`.
+ *
+ * Förut stod det "Förläng" på alla tre korten så fort man hade Pro – även för en
+ * admin, som har Pro för alltid och alltså inte har någonting att förlänga.
+ *
+ * Ordningen går från det mest bestämda fallet till det minst.
+ */
+export function planButton(state: PlanState, price: PlanPrice, currentPriceId: string | null): { key: PlanButtonKey; disabled: boolean } {
+  // Administratörer har alltid Pro, utan slutdatum. Det finns ingenting att köpa,
+  // och en knapp som tar betalt för det man redan har hör inte hemma där.
+  //
+  // Kontrollen går på `labelKey`, inte på `source`: en **vanlig** användare som
+  // fått Pro tilldelad av en admin har också `source === "admin"`, men hennes Pro
+  // tar slut ett datum, och hon ska kunna förlänga det som vem som helst.
+  if (state.labelKey === "admin") return { key: "included", disabled: true };
+
+  // Utan Pro: "Förnya" om man haft det förut, annars ett vanligt val.
+  if (!state.active) return { key: state.detailKey === "lapsed" ? "renew" : "choose", disabled: false };
+
+  // Provperioden tar slut av sig själv – det här är steget till en riktig plan.
+  if (state.source === "trial") return { key: "upgrade", disabled: false };
+
+  // Löpande prenumeration: den man redan betalar för går inte att köpa igen.
+  if (state.renewing) {
+    if (price.id && price.id === currentPriceId) return { key: "current", disabled: true };
+    return { key: "buy", disabled: false };
+  }
+
+  // Aktiv Pro som inte förnyas, alltså ett pass. Ett nytt pass lägger sin tid
+  // ovanpå den som är kvar (se `applyPass` i stripe.ts), så där stämmer "Förläng".
+  return { key: price.mode === "payment" ? "extend" : "choose", disabled: false };
+}
+
 export const PRICE_KEYS = ["monthly", "pass", "yearly"] as const;

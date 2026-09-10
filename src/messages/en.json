@@ -548,8 +548,15 @@
     "yourPlan": "Your plan:",
     "manage": "Manage billing",
     "popular": "Most popular",
-    "extend": "Extend",
-    "choose": "Choose",
+    "button": {
+      "choose": "Choose",
+      "renew": "Renew",
+      "upgrade": "Upgrade",
+      "extend": "Extend",
+      "buy": "Buy",
+      "current": "Your plan",
+      "included": "Included"
+    },
     "included": "Included in Pro",
     "alwaysFree": "Always free",
     "footer": "Payments are handled by Stripe. Subscriptions renew automatically until you cancel them under “Manage billing”. Passes are a one-off payment and do not renew.",

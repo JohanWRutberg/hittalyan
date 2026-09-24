@@ -132,20 +132,31 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     // det här läget är ja eller nej. Med några tusen annonser blev det megabyte
     // från databasen vid varje körning, för en boolean. Vilka som har bilder
     // hämtas som en ren id-lista i stället.
-    const [existing, withImages] = await Promise.all([
+    // Bara de **aktiva** annonserna läses i sin helhet. Borttagna ligger kvar i
+    // tabellen i 90 dagar innan de gallras, och hos en rikstäckande källa blir de
+    // snabbt fler än de aktiva – HomeQ tappar runt tusen om dygnet. Att läsa alla
+    // deras kolumner varje halvtimme var en växande post i Neons datatrafik, för
+    // uppgifter som inte används. Av de inaktiva behövs bara id:t: en annons som
+    // dyker upp igen ska kännas igen och inte notifieras som ny en gång till.
+    //
+    // Bildlistorna följer inte heller med. Allt vi behöver av dem här är ja eller
+    // nej, så vilka som har bilder hämtas som en ren id-lista.
+    const [existing, inactive, withImages] = await Promise.all([
       prisma.listing.findMany({
-        where: { market },
+        where: { market, active: true },
         select: {
           id: true, refreshedAt: true, kotidQ1: true, kotidQ3: true, kotidSnitt: true, sokande: true,
           hyra: true, annonseradTill: true, vaning: true, yta: true, antalRum: true, active: true,
           imagesCheckedAt: true, queueDates: true, queueDatesAt: true,
         },
       }),
-      prisma.listing.findMany({ where: { market, images: { isEmpty: false } }, select: { id: true } }),
+      prisma.listing.findMany({ where: { market, active: false }, select: { id: true } }),
+      prisma.listing.findMany({ where: { market, active: true, images: { isEmpty: false } }, select: { id: true } }),
     ]);
     const existingById = new Map(existing.map((e) => [e.id, e]));
+    const inactiveIds = new Set(inactive.map((r) => r.id));
     const hasImages = new Set(withImages.map((r) => r.id));
-    const isFirstRun = existing.length === 0;
+    const isFirstRun = existing.length === 0 && inactiveIds.size === 0;
 
     const known: Map<string, KnownListing> = new Map(
       existing.map((e) => [
@@ -166,7 +177,7 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     const now = new Date();
 
     // Få frågor i stället för en per annons: serverless-funktioner har kort tidsgräns.
-    const incomingNew = listings.filter((l) => !existingById.has(l.id));
+    const incomingNew = listings.filter((l) => !existingById.has(l.id) && !inactiveIds.has(l.id));
     if (incomingNew.length) {
       await prisma.listing.createMany({
         data: incomingNew.map((l) => ({ ...l, firstSeenAt: now, lastSeenAt: now, refreshedAt: now, active: true })),
@@ -197,6 +208,9 @@ export async function runMarketPoll(market: Market, deadline = Date.now() + DEFA
     // Befintliga annonser vars uppgifter ändrats (t.ex. kötidsstatistik, antal
     // sökande eller sista dag) uppdateras individuellt. Det är sällan, så det kostar lite.
     const changed = listings.filter((l) => {
+      // En annons som tagits bort och nu dykt upp igen skrivs alltid om: vi har inte
+      // läst hennes gamla uppgifter att jämföra med, och de kan ha ändrats sedan dess.
+      if (inactiveIds.has(l.id)) return true;
       const e = existingById.get(l.id);
       if (!e) return false;
       return (

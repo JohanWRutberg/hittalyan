@@ -117,9 +117,17 @@ kötiden hos dem som fått liknande lägenheter.
 
 **HomeQ** (`sources/homeq.ts`) är den enda källan med ett riktigt API.
 
-- **`POST https://api.homeq.se/api/v3/search`** med tom kropp – hela utbudet i **ett**
-  anrop: adress, kommun, ort, koordinat, hyra, rum, yta, bilder, tillträde och målgrupp.
-  ~8 MB på ~4 sekunder, drygt sextusen annonser.
+- **`POST https://api.homeq.se/api/v3/search`** med `{"amount": 10000}` – hela utbudet i
+  **ett** anrop: adress, kommun, ort, koordinat, hyra, rum, yta, bilder, tillträde och
+  målgrupp. ~8 MB på ~3 sekunder, drygt sextusen annonser. **10 000 är HomeQ:s tak**
+  (10 001 ger tomt svar) och `offset` ignoreras, så det finns ingen sidbläddring.
+- **En tom kropp ger bara tio träffar.** HomeQ ändrade det i september 2026 utan
+  förvarning. Tio är inte noll, så det gick förbi spärren mot tomma svar, och varje
+  körning avaktiverade allt utom tio annonser. Källan kastar därför nu ett fel när
+  `results` är färre än `total_hits` – ett stympat svar får aldrig nå pollningen.
+- Bilderna skickas bara vidare för annonser som saknar sparade bilder (`images:
+  undefined` annars). Att jämföra drygt sextusen bildlistor varje halvtimme var den
+  största posten i Neons datatrafik, och adresserna ändras inte för en annons.
 - **`GET /api/v1/landlords/list`** – hyresvärdarnas namn, som annonserna bara refererar
   till med ett id.
 - **Objektfrågan `/api/v1/object/<id>` används med flit inte.** Den skulle ge våning,
@@ -453,6 +461,10 @@ tar ungefär 20–25 sekunder.
   kommer efter. Använd **inte** fasta tak per körning för hur många nya annonser som får
   hämtas: det gjorde att hela utbudet inte syntes förrän efter flera pollningar.
 
+- **Bara aktiva annonser läses i sin helhet.** Av de inaktiva läses bara id:t, som
+  behövs för att en annons som dyker upp igen inte ska notifieras som ny. De inaktiva
+  ligger kvar i 90 dagar och blir hos HomeQ snabbt fler än de aktiva; att läsa alla
+  deras kolumner varje halvtimme åt av Neons månadskvot för datatrafik (5 GB).
 - **Körningarna är oberoende.** Går Boplats Väst ned ska Stockholm ändå uppdateras. Fel
   samlas i `failed` och kastas bara om ingen enda förmedling gick att hämta.
 - **Ett tomt svar behandlas som fel**, inte som en tom bostadskö. Utan den spärren hade

@@ -5,9 +5,9 @@
  * ligger uppe tills den är uthyrd. Det är också den enda av våra källor som är
  * rikstäckande: annonserna ligger i drygt tvåhundra kommuner.
  *
- * - **`POST /api/v3/search` med tom kropp** – alla annonser med adress, kommun,
- *   ort, koordinat, hyra, rum, yta, bilder, tillträde och målgrupp. ~8 MB på
- *   ~4 sekunder, och därmed hela utbudet i **ett** anrop.
+ * - **`POST /api/v3/search` med `{"amount": 10000}`** – alla annonser med adress,
+ *   kommun, ort, koordinat, hyra, rum, yta, bilder, tillträde och målgrupp. ~8 MB
+ *   på ~3 sekunder, och därmed hela utbudet i **ett** anrop. Se `PAGE_SIZE`.
  * - **`GET /api/v1/landlords/list`** – hyresvärdarnas namn, som annonserna bara
  *   refererar till med ett id.
  *
@@ -24,7 +24,7 @@
  */
 
 import { listingId } from "@/lib/markets";
-import type { Source, SourceListing, SourceResult } from "@/lib/sources/types";
+import type { KnownListing, Source, SourceListing, SourceResult } from "@/lib/sources/types";
 import { SourceHttpError, USER_AGENT, withRetry } from "@/lib/sources/types";
 
 const API = "https://api.homeq.se";
@@ -70,17 +70,37 @@ function stadsdelOf(raw: RawResult): string {
   return city && city.toLowerCase() === kommun.toLowerCase() ? "" : city;
 }
 
+/**
+ * Hur många träffar sökningen ska lämna ut. **10 000 är HomeQ:s tak**: 10 001 ger
+ * ett tomt svar. Det räcker med god marginal – utbudet ligger runt 6 500.
+ *
+ * I september 2026 slutade en tom kropp ge hela utbudet och började ge de första
+ * **tio**, utan förvarning. Eftersom tio inte är noll gick det förbi spärren mot
+ * tomma svar i pollningen, och varje körning avaktiverade allt utom tio annonser.
+ * `offset` i kroppen ignoreras, så det finns ingen sidbläddring att falla tillbaka
+ * på – det är ett anrop eller inget.
+ */
+const PAGE_SIZE = 10_000;
+
 async function fetchAll(): Promise<RawResult[]> {
   const res = await fetch(`${API}/api/v3/search`, {
     method: "POST",
     headers,
-    body: "{}",
+    body: JSON.stringify({ amount: PAGE_SIZE }),
     cache: "no-store",
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new SourceHttpError(`HomeQ svarade ${res.status}`, res.status);
-  const body = (await res.json()) as { results?: RawResult[] };
+  const body = (await res.json()) as { results?: RawResult[]; total_hits?: number };
   if (!Array.isArray(body?.results)) throw new Error("Oväntat svar från HomeQ (inga träffar)");
+  // Spärren som saknades: färre träffar än HomeQ själv säger att det finns betyder
+  // ett stympat svar, inte att annonserna försvunnit. Ett stympat svar får aldrig
+  // nå pollningen – då avaktiveras allt som inte kom med. Hellre en misslyckad
+  // körning som syns i adminportalen än tusentals annonser som tyst försvinner.
+  // Växer utbudet förbi PAGE_SIZE blir det också ett högljutt fel, inte ett tyst.
+  if (typeof body.total_hits === "number" && body.results.length < body.total_hits) {
+    throw new Error(`HomeQ gav ${body.results.length} av ${body.total_hits} träffar – svaret är stympat`);
+  }
   return body.results.filter((r) => typeof r?.id === "number" && r.type === "individual");
 }
 
@@ -166,12 +186,25 @@ function normalize(raw: RawResult, landlords: Map<number, string>): SourceListin
  * Ett anrop ger allt, så varje körning hämtar om alla annonser. Källan tar därför
  * ingen del av tidsbudgeten för extraanrop – den lämnas till Stockholm och Väst,
  * som behöver ett anrop per annons.
+ *
+ * **Bilderna skickas bara vidare för annonser vi inte redan har bilder på.**
+ * Sökningen ger dem för alla varje gång, men för en annons som redan har bilder
+ * sparade blir `images` `undefined` – samma kontrakt som Stockholm använder, och
+ * det betyder "inte hämtat den här körningen". Annars jämförde pollningen
+ * drygt sextusen bildlistor varje halvtimme, och att läsa de gamla ur databasen
+ * för jämförelsen var den enskilt största posten i Neons datatrafik (~3 MB per
+ * körning). Adresserna är S3-nycklar som inte ändras för en annons, så jämförelsen
+ * gav ändå aldrig något. Annonser utan bilder får fortsatt listan varje gång, så
+ * att bilder som läggs till i efterhand kommer med.
  */
 export const homeqSource: Source = {
   market: "homeq",
-  async fetchListings(): Promise<SourceResult> {
+  async fetchListings(known: ReadonlyMap<string, KnownListing>): Promise<SourceResult> {
     const [raw, landlords] = await Promise.all([withRetry("homeq", fetchAll), fetchLandlords()]);
-    const listings = raw.map((r) => normalize(r, landlords));
+    const listings = raw.map((r) => {
+      const l = normalize(r, landlords);
+      return known.get(l.id)?.hasImages ? { ...l, images: undefined } : l;
+    });
     return { activeIds: listings.map((l) => l.id), listings };
   },
 };

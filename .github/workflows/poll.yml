@@ -1,4 +1,6 @@
-# Anropar poll-endpointen var 30:e minut, en kö per anrop. Vercel Hobby tillåter bara cron en gång per dag,
+# Anropar poll-endpointen var 30:e minut, en kö per anrop. Hur ofta varje kö faktiskt hämtas
+# bestäms i koden (pollEveryMinutes i src/lib/markets.ts): en kö som inte står på tur hoppas
+# över av endpointen, så loopen nedan behöver inte känna till takten. Vercel Hobby tillåter bara cron en gång per dag,
 # så detta workflow ger den täta pollningen gratis (obegränsade Actions-minuter på publika repon).
 # Kör på :05 och :35 för att undvika de mest belastade tiderna i GitHub Actions-schemaläggaren
 # (hel- och halvtimmar). Sätt secrets APP_URL och CRON_SECRET i GitHub.

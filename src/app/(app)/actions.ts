@@ -168,7 +168,8 @@ export async function adminSetPlan(userId: string, plan: "free" | "pro", months:
 export async function adminRunPoll(): Promise<ActionState> {
   await requireAdmin();
   try {
-    const r = await runPoll();
+    // Manuell körning: alla köer oavsett takt, och en stoppad avaktivering godkänns.
+    const r = await runPoll({ force: true });
     revalidatePath("/lagenheter", "layout");
     const t = await getTranslations("admin");
     return { ok: true, summary: t("summary", { total: r.total, new: r.newCount, notified: r.notified, failed: r.notifyFailed }) };

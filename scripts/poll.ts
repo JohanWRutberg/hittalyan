@@ -2,7 +2,7 @@ import "dotenv/config";
 import { runPoll } from "../src/lib/poll";
 import { marketInfo } from "../src/lib/markets";
 
-runPoll()
+runPoll({ force: true })
   .then((r) => {
     for (const m of r.markets) {
       console.log(

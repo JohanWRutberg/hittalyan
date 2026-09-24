@@ -80,6 +80,17 @@ export interface MarketInfo {
   quickLetTagKey: "bostadssnabben" | "bostadDirekt" | null;
   /** Kartans utgångsläge när inga annonser har koordinater */
   center: { lat: number; lng: number };
+  /**
+   * Hur ofta kön hämtas, i minuter. Cron-jobbet anropar var 30:e minut, så 30 är
+   * det tätaste som går; en längre takt gör att kön hoppas över tills den står på
+   * tur (se `isDue()` i poll.ts).
+   *
+   * Förmedlingarna ligger på 30: det är kärnan i tjänsten, de kostar lite, och
+   * Bostadssnabben och Bostad Direkt förmedlas **utan kötid** – där är det
+   * snabbheten som avgör. HomeQ har inget sådant snabbspår men står för två
+   * tredjedelar av pollningens datatrafik mot Neon, så den tar en gång i timmen.
+   */
+  pollEveryMinutes: number;
 }
 
 export const MARKET_INFO: Record<Market, MarketInfo> = {
@@ -96,6 +107,7 @@ export const MARKET_INFO: Record<Market, MarketInfo> = {
     hasDeadline: true,
     quickLetTagKey: "bostadssnabben",
     center: { lat: 59.3293, lng: 18.0686 },
+    pollEveryMinutes: 30,
   },
   vast: {
     code: "vast",
@@ -110,6 +122,7 @@ export const MARKET_INFO: Record<Market, MarketInfo> = {
     hasDeadline: true,
     quickLetTagKey: null,
     center: { lat: 57.7089, lng: 11.9746 },
+    pollEveryMinutes: 30,
   },
   syd: {
     code: "syd",
@@ -124,6 +137,7 @@ export const MARKET_INFO: Record<Market, MarketInfo> = {
     hasDeadline: true,
     quickLetTagKey: "bostadDirekt",
     center: { lat: 55.605, lng: 13.0038 },
+    pollEveryMinutes: 30,
   },
   uppsala: {
     code: "uppsala",
@@ -138,6 +152,7 @@ export const MARKET_INFO: Record<Market, MarketInfo> = {
     hasDeadline: true,
     quickLetTagKey: "bostadDirekt",
     center: { lat: 59.8586, lng: 17.6389 },
+    pollEveryMinutes: 30,
   },
   homeq: {
     code: "homeq",
@@ -156,6 +171,7 @@ export const MARKET_INFO: Record<Market, MarketInfo> = {
     // Mitt i landet: annonserna ligger i drygt 200 kommuner, så det finns ingen
     // stad att utgå från.
     center: { lat: 62.5, lng: 16.5 },
+    pollEveryMinutes: 60,
   },
 };
 

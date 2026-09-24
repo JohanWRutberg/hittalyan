@@ -46,7 +46,7 @@
     "admin": "Admin"
   },
   "landing": {
-    "badge": "Watching {count} queues every 30 minutes",
+    "badge": "Watching {count} queues around the clock",
     "title": "Never miss a new rental apartment again.",
     "lead": "Hitta Lyan keeps an eye on new listings from {sources}, and sends you an email and a push notification the moment something matches your area, room count, rent – or a specific building you have your heart set on.",
     "cta": "Get started for free",
@@ -404,7 +404,7 @@
       "saveChanges": "Save changes",
       "create": "Create watch",
       "marketNote": "This watch covers {source}.",
-      "pollNote": "We check {source} every 30 minutes and let you know as soon as a new listing matches."
+      "pollNote": "We check {source} {minutes, select, 60 {once an hour} other {every {minutes} minutes}} and let you know as soon as a new listing matches."
     },
     "card": {
       "all": "All listings (regular queue)",
@@ -661,7 +661,7 @@
     },
     "runs": {
       "title": "Latest fetches",
-      "lead": "Runs every 30 minutes via cron. Red row = error. “Undelivered” is retried on the next run.",
+      "lead": "Cron calls every 30 minutes, and each queue runs at its own pace. Red row = error. “Undelivered” is retried on the next run.",
       "started": "Started",
       "status": "Status",
       "listings": "Listings",

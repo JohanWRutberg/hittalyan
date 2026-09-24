@@ -469,6 +469,19 @@ tar ungefär 20–25 sekunder.
   samlas i `failed` och kastas bara om ingen enda förmedling gick att hämta.
 - **Ett tomt svar behandlas som fel**, inte som en tom bostadskö. Utan den spärren hade
   en sådan körning avaktiverat allt vi har för den förmedlingen.
+- **Spärr mot massavaktivering** (`MAX_DEACTIVATE_SHARE`): saknas mer än hälften av en
+  kös aktiva annonser i svaret stoppas avaktiveringen, och körningen markeras röd i
+  adminportalen med en förklaring. Nya annonser, uppdateringar och notiser går igenom
+  som vanligt. Spärren kom till när HomeQ började lämna ut tio träffar i stället för
+  alla – tio är inte noll, så spärren mot tomma svar räckte inte. Köer under 20 aktiva
+  undantas, de svänger för mycket. **Godkänn** en stoppad avaktivering med "Hämta
+  annonser nu" i adminportalen (`runPoll({ force: true })`), efter att ha kollat källan.
+- **Varje kö har sin egen takt** (`MarketInfo.pollEveryMinutes`): förmedlingarna var
+  30:e minut, HomeQ en gång i timmen. Cron anropar ändå var 30:e minut och en kö som
+  inte står på tur hoppas över (`notDue` i svaret). Takten räknas från senaste
+  *lyckade* körning, med 15 minuters marginal eftersom GitHubs schemaläggning ofta är
+  sen. Förmedlingarna ska stå kvar på 30: Bostadssnabben och Bostad Direkt förmedlas
+  utan kötid, där avgör snabbheten. Manuella körningar kör alla köer oavsett takt.
 - **Första körningen mot en tom marknad skickar inga notiser.** Annars hade alla fått
   hundratals mail när en ny stad läggs till. Spärren gäller per marknad, behåll den.
 - `Notification` har unikt index på `(watchId, listingId)`, så samma annons kan inte
@@ -487,7 +500,7 @@ tar ungefär 20–25 sekunder.
   misslyckad, mitt i, med annonserna redan sparade.
 - Adminportalen visar **ej levererade notiser** per körning och totalt senaste dygnet.
   Är den rutan röd ligger felet i mailet eller pushen, inte i hämtningen.
-- Schemat: **GitHub Actions var 30:e minut** (`.github/workflows/poll.yml`), inte Vercels
+- Schemat: **GitHub Actions anropar var 30:e minut** (`.github/workflows/poll.yml`), inte Vercels
   cron, eftersom Hobby-planen bara tillåter en körning per dygn. Actions-minuter är
   gratis på publika repon. `vercel.json` har en daglig körning som skyddsnät.
 - Anropet använder `curl --location`. Utan det svarar apex-domänens 308-omdirigering och

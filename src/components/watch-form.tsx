@@ -71,7 +71,7 @@ export function WatchForm({
         <p className="flex flex-wrap items-center gap-3 text-xs text-muted">
           <span className="inline-flex items-center gap-1"><Mail className="size-3.5" /> Mail</span>
           <span className="inline-flex items-center gap-1"><Bell className="size-3.5" /> Push</span>
-          {t("pollNote", { source: info.name })}
+          {t("pollNote", { source: info.name, minutes: String(info.pollEveryMinutes) })}
         </p>
       </form>
     </FadeIn>

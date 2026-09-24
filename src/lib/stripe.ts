@@ -79,6 +79,21 @@ function periodEnd(sub: Stripe.Subscription): Date | null {
   return ts ? new Date(ts * 1000) : null;
 }
 
+/**
+ * Det senaste av två slutdatum. Betald tid får **aldrig** kortas av en händelse
+ * som egentligen bara handlar om något annat.
+ *
+ * Utan den skrev varje prenumerationshändelse `planExpiresAt` till periodens slut
+ * rakt av, och då försvann tid som användaren redan betalat för: ett pass som
+ * gällde till december nollades av en nytecknad månadsprenumeration i september,
+ * och ett pass köpt ovanpå en löpande prenumeration raderades vid nästa förnyelse.
+ */
+function laterOf(a: Date | null, b: Date | null): Date | null {
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
+}
+
 async function userForCustomer(customerId: string) {
   return prisma.user.findUnique({ where: { stripeCustomerId: customerId } });
 }
@@ -126,6 +141,9 @@ export async function applyStripeEvent(event: Stripe.Event): Promise<string> {
       const activeStatuses = new Set(["active", "trialing", "past_due"]);
       const end = periodEnd(sub);
       const isActive = activeStatuses.has(sub.status) && event.type !== "customer.subscription.deleted";
+      // Har användaren ett pass som räcker längre än prenumerationsperioden är det
+      // passet som gäller – den tiden är redan betald.
+      const expires = laterOf(user.planExpiresAt, end);
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -133,9 +151,9 @@ export async function applyStripeEvent(event: Stripe.Event): Promise<string> {
           stripeSubscriptionStatus: event.type === "customer.subscription.deleted" ? "canceled" : sub.status,
           stripePriceId: sub.items.data[0]?.price?.id ?? null,
           ...(isActive
-            ? { plan: "pro", planSource: "stripe", planExpiresAt: end }
-            : // Uppsagd/avslutad: Pro gäller till periodens slut (end), därefter free
-              { plan: end && end > new Date() ? "pro" : "free", planSource: "stripe", planExpiresAt: end }),
+            ? { plan: "pro", planSource: "stripe", planExpiresAt: expires }
+            : // Uppsagd/avslutad: Pro gäller till slutdatumet, därefter free
+              { plan: expires && expires > new Date() ? "pro" : "free", planSource: "stripe", planExpiresAt: expires }),
         },
       });
       return `${event.type} ${sub.status} för ${user.email}`;
@@ -151,7 +169,11 @@ export async function applyStripeEvent(event: Stripe.Event): Promise<string> {
       const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
       const user = await userForCustomer(customerId);
       if (!user) return "invoice.paid: okänd kund";
-      await prisma.user.update({ where: { id: user.id }, data: { plan: "pro", planSource: "stripe", planExpiresAt: periodEnd(sub), stripeSubscriptionStatus: sub.status } });
+      await prisma.user.update({
+        where: { id: user.id },
+        // Samma sak vid förnyelse: ett pass ovanpå prenumerationen ska ligga kvar.
+        data: { plan: "pro", planSource: "stripe", planExpiresAt: laterOf(user.planExpiresAt, periodEnd(sub)), stripeSubscriptionStatus: sub.status },
+      });
       return `förnyelse för ${user.email}`;
     }
     default:

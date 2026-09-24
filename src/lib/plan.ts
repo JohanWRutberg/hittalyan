@@ -25,11 +25,23 @@ export interface PlanState {
   renewing: boolean;
 }
 
+/**
+ * Har användaren en prenumeration som löper och förnyas?
+ *
+ * Regeln står **en** gång: både chansen att teckna en ny (checkout-routen) och
+ * knapptexten på /pro hänger på den, och två kopior hade förr eller senare glidit
+ * isär – då tecknas en andra prenumeration vid sidan av den första och båda
+ * debiterar.
+ */
+export function isRenewing(u: Pick<PlanUser, "planSource" | "stripeSubscriptionStatus">): boolean {
+  return u.planSource === "stripe" && (u.stripeSubscriptionStatus === "active" || u.stripeSubscriptionStatus === "trialing");
+}
+
 export function planState(u: PlanUser, now = new Date()): PlanState {
   const active = hasPro(u, now);
   const expiresAt = u.planExpiresAt ?? null;
   const daysLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / 86_400_000)) : null;
-  const renewing = u.planSource === "stripe" && (u.stripeSubscriptionStatus === "active" || u.stripeSubscriptionStatus === "trialing");
+  const renewing = isRenewing(u);
 
   if (u.role === "admin") return { active: true, labelKey: "admin", detailKey: "admin", expiresAt: null, source: "admin", daysLeft: null, renewing: false };
   if (!active) {
@@ -66,7 +78,7 @@ export interface PlanPrice {
   mode: "subscription" | "payment";
 }
 
-export type PlanButtonKey = "choose" | "renew" | "upgrade" | "extend" | "buy" | "current" | "included";
+export type PlanButtonKey = "choose" | "renew" | "upgrade" | "extend" | "switch" | "current" | "included";
 
 /**
  * Vad köpknappen ska heta, utifrån vad den faktiskt gör för just den här
@@ -92,10 +104,12 @@ export function planButton(state: PlanState, price: PlanPrice, currentPriceId: s
   // Provperioden tar slut av sig själv – det här är steget till en riktig plan.
   if (state.source === "trial") return { key: "upgrade", disabled: false };
 
-  // Löpande prenumeration: den man redan betalar för går inte att köpa igen.
+  // Löpande prenumeration. Den man redan betalar för går inte att köpa igen, och
+  // den andra tecknas inte heller – ett planbyte görs i kundportalen, dit knappen
+  // leder (se checkout-routen). Passet däremot lägger sina tre månader ovanpå.
   if (state.renewing) {
     if (price.id && price.id === currentPriceId) return { key: "current", disabled: true };
-    return { key: "buy", disabled: false };
+    return { key: price.mode === "payment" ? "extend" : "switch", disabled: false };
   }
 
   // Aktiv Pro som inte förnyas, alltså ett pass. Ett nytt pass lägger sin tid

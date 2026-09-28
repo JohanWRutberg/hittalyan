@@ -74,22 +74,23 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
     });
 
   /**
-   * Färg, grundgenomskinlighet – och om rutan ska andas. Bara tända köer andas:
-   * släckt land ligger stilla, och den hovrade kön står still så att markeringen
-   * blir ett tydligt svar och inte ännu en sak som rör sig.
+   * Färg, grundgenomskinlighet – och om rutan ska andas. Bara tända köer andas;
+   * släckt land ligger stilla. Den hovrade kön andas vidare men i starkare ton
+   * (`strong`, se `.mosaic-tile--strong` i globals.css): förut stod den still och
+   * helt tänd, vilket läste som ett block i stället för som en del av mosaiken.
    */
   const fillFor = (market: Market | null, depth: number) => {
     // Hela landet lyser upp när den rikstäckande kön hovras, de fyra områdena med.
     // Är den släckt lyser den inte, precis som de andra köerna.
     if (national && nationalOn && hovered === national)
-      return { fill: `var(--market-${national})`, opacity: OPACITY.active[depth], breathing: false };
+      return { fill: `var(--market-${national})`, opacity: OPACITY.active[depth], breathing: true, strong: true };
     if (!market || hidden.has(market)) {
       return nationalOn
-        ? { fill: `var(--market-${national})`, opacity: OPACITY.national[depth], breathing: true }
-        : { fill: "var(--ink)", opacity: OPACITY.land[depth], breathing: false };
+        ? { fill: `var(--market-${national})`, opacity: OPACITY.national[depth], breathing: true, strong: false }
+        : { fill: "var(--ink)", opacity: OPACITY.land[depth], breathing: false, strong: false };
     }
     const state = hovered === market ? "active" : hovered ? "faded" : "market";
-    return { fill: `var(--market-${market})`, opacity: OPACITY[state][depth], breathing: state !== "active" };
+    return { fill: `var(--market-${market})`, opacity: OPACITY[state][depth], breathing: true, strong: state === "active" };
   };
 
   /**
@@ -98,7 +99,7 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
    * för att hela kartan står stilla och sedan tonar ned i takt.
    */
   const tile = (t: (typeof MOSAIC_TILES)[number], market: Market | null) => {
-    const { fill, opacity, breathing } = fillFor(market, t.depth);
+    const { fill, opacity, breathing, strong } = fillFor(market, t.depth);
     const duration = BREATH_MIN_S + t.speed * (BREATH_MAX_S - BREATH_MIN_S);
     return (
       <rect
@@ -109,7 +110,7 @@ export function SwedenMap({ counts, className = "" }: { counts: Partial<Record<M
         height={CELL - INSET * 2}
         rx={2.2}
         fill={fill}
-        className={`mosaic-tile pointer-events-none${breathing ? " mosaic-tile--breathing" : ""}`}
+        className={`mosaic-tile pointer-events-none${breathing ? " mosaic-tile--breathing" : ""}${strong ? " mosaic-tile--strong" : ""}`}
         style={
           {
             "--tile-o": opacity,

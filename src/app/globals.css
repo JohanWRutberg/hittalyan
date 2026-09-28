@@ -225,10 +225,10 @@ input[type="radio"]:not(:disabled),
 @keyframes mosaic-breathe {
   0%,
   100% {
-    fill-opacity: calc(var(--tile-o) * 1.2);
+    fill-opacity: calc(var(--tile-o) * var(--tile-hi));
   }
   50% {
-    fill-opacity: calc(var(--tile-o) * 0.32);
+    fill-opacity: calc(var(--tile-o) * var(--tile-lo));
   }
 }
 
@@ -250,8 +250,23 @@ input[type="radio"]:not(:disabled),
 }
 
 .mosaic-tile {
+  --tile-lo: 0.32;
+  --tile-hi: 1.2;
   fill-opacity: var(--tile-o);
   transition: fill-opacity 220ms ease;
+}
+
+/*
+ * Den hovrade kön andas vidare, i starkare ton och med grundare utslag: den ska
+ * pulsera tydligt men aldrig tona ned till blekt, så att markeringen går att läsa
+ * mitt i en cykel. Det är **samma** animation som för de andra rutorna, bara med
+ * andra värden i variablerna. Keyframes med var() räknas om när variablerna ändras,
+ * så en ruta som hovras byter ton mitt i sin cykel i stället för att börja om –
+ * ett eget animationsnamn hade startat om alla rutor och fått området att hoppa.
+ */
+.mosaic-tile--strong {
+  --tile-lo: 0.55;
+  --tile-hi: 1.1;
 }
 
 .mosaic-tile--breathing {

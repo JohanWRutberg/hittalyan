@@ -17,6 +17,7 @@ import { MARKETS, marketInfo } from "@/lib/markets";
 export default async function LandingPage() {
   const t = await getTranslations("landing");
   const tc = await getTranslations("common");
+  const tn = await getTranslations("nav");
   const locale = (await getLocale()) as Locale;
   const [session, activeCount, lastRun, perMarket] = await Promise.all([
     getSession(),
@@ -45,7 +46,7 @@ export default async function LandingPage() {
       */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-5 sm:gap-3 sm:px-6">
         <Logo />
-        <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <nav aria-label={tn("ariaAccount")} className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeSwitcher compact />
           <LocaleSwitcher compact />
           {session ? (

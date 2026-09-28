@@ -10,11 +10,12 @@ import { AutoHideHeader } from "@/components/auto-hide-header";
 /** Meny för utloggade besökare i det öppna listläget. */
 export async function PublicNav() {
   const t = await getTranslations("common");
+  const tn = await getTranslations("nav");
   return (
     <AutoHideHeader>
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
         <Logo href="/" />
-        <nav className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <nav aria-label={tn("ariaAccount")} className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeSwitcher compact />
           <LocaleSwitcher compact />
           <Link href="/login" title={t("login")} aria-label={t("login")} className="btn-ghost px-2 sm:px-4">

@@ -43,7 +43,9 @@
     "watches": "Watches",
     "account": "Account",
     "pro": "Pro",
-    "admin": "Admin"
+    "admin": "Admin",
+    "ariaMain": "Main menu",
+    "ariaAccount": "Settings and account"
   },
   "landing": {
     "badge": "Watching {count} queues around the clock",
@@ -171,7 +173,9 @@
       "noImage": "No photos",
       "openImage": "Enlarge image",
       "closeImage": "Close",
-      "imageCount": "Image {index} of {count}"
+      "imageCount": "Image {index} of {count}",
+      "identical": "{count} identical apartments",
+      "identicalHint": "Same address, size, rent and deadline. The agency lists them as separate units."
     },
     "tags": {
       "nyproduktion": "New build",
@@ -310,8 +314,8 @@
       },
       "sokande": {
         "label": "Applicants",
-        "asc": "fewest first",
-        "desc": "most first"
+        "asc": "Fewest first",
+        "desc": "Most first"
       }
     }
   },

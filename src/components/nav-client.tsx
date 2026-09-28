@@ -9,8 +9,9 @@ import { signOut } from "@/lib/auth-client";
 
 export function NavLinks({ links, mobile }: { links: { href: string; label: string }[]; mobile?: boolean }) {
   const pathname = usePathname();
+  const t = useTranslations("nav");
   return (
-    <nav className={mobile ? "flex gap-1 py-1" : "hidden items-center gap-1 lg:flex"}>
+    <nav aria-label={t("ariaMain")} className={mobile ? "flex gap-1 py-1" : "hidden items-center gap-1 lg:flex"}>
       {links.map((l) => {
         const active = l.href === "/lagenheter" ? pathname === "/lagenheter" : pathname.startsWith(l.href);
         return (

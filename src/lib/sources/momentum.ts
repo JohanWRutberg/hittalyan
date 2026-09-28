@@ -34,7 +34,6 @@ const QUERY = `query getRentalObjectsAvailable {
       districtName
       balcony
       elevator
-      region { regionId }
       boendeTyp { name }
       bostadsTyp { name }
       kontraktsTyp { name }
@@ -65,7 +64,6 @@ interface RawObject {
   districtName: string | null;
   balcony: boolean | null;
   elevator: boolean | null;
-  region: { regionId: number | null } | null;
   imageCdn: string | null;
   images: { imageId: number | null; sortingOrder: number | null }[] | null;
   boendeTyp: Named[] | null;
@@ -99,10 +97,11 @@ function imageUrls(raw: RawObject): string[] {
 
 function normalize(market: Market, raw: RawObject): SourceListing {
   const info = marketInfo(market);
-  // Objektet visas i förmedlingens egen app; det finns ingen delbar adress per
-  // annons, så vi länkar till söklistan med rätt region förvald.
-  const regionId = raw.region?.regionId;
-  const url = `${info.siteUrl}/mypages/app/${regionId ? `?region=${regionId}` : ""}`;
+  // Direktlänk till objektet i förmedlingens app. Förut länkade vi till söklistan
+  // med rätt region förvald, i tron att det inte fanns någon delbar adress per
+  // annons – och användarna hittade inte fram till bostaden. Appen har en route
+  // `/visa/<id>` som öppnar objektet med intresseanmälan, utan inloggning.
+  const url = `${info.siteUrl}/mypages/app/visa/${raw.rentalObjectId}`;
 
   return {
     id: listingId(market, raw.rentalObjectId),

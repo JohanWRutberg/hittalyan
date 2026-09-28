@@ -19,8 +19,10 @@ export async function SiteFooter() {
           <p className="mt-2 max-w-sm text-sm text-muted">{t("tagline")}</p>
         </div>
 
-        <nav>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("service")}</h2>
+        {/* Etiketten tas från rubriken. Två <nav> utan namn går inte att skilja åt
+            för en skärmläsare, och axe flaggar det. */}
+        <nav aria-labelledby="footer-service">
+          <h2 id="footer-service" className="text-xs font-semibold uppercase tracking-wide text-muted">{t("service")}</h2>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link href="/lagenheter" className="hover:text-accent">{tn("listings")}</Link>
@@ -35,8 +37,8 @@ export async function SiteFooter() {
           </ul>
         </nav>
 
-        <nav>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">{t("about")}</h2>
+        <nav aria-labelledby="footer-about">
+          <h2 id="footer-about" className="text-xs font-semibold uppercase tracking-wide text-muted">{t("about")}</h2>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link href="/om-oss" className="hover:text-accent">{t("aboutUs")}</Link>

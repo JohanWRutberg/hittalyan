@@ -98,8 +98,12 @@ kötiden hos dem som fått liknande lägenheter.
 - Plattformen lämnar **inte** ut våningsplan i listan (bara i objektfrågan, som kräver ett
   anrop per annons) och har **ingen kötidsstatistik**. Statistiken på deras webbplatser
   ligger i inbäddade Power BI-rapporter och går inte att hämta.
-- Det finns ingen delbar adress per annons, så vi länkar till söklistan med rätt region
-  förvald (`?region=<regionId>`).
+- **Direktlänk till objektet: `<bas>/mypages/app/visa/<rentalObjectId>`.** Den öppnar
+  lägenheten med intresseanmälan, utan inloggning. Vi trodde länge att det inte fanns
+  någon delbar adress och länkade till söklistan, och testarna hittade inte fram.
+- Förmedlingen lägger ofta ut **flera likadana objekt** – olika id, samma adress, storlek
+  och hyra (Rackarbergsgatan 14 i Uppsala hade elva studentrum). Listan slår ihop dem
+  till ett kort med "N likadana lägenheter" (`groupIdentical()` i `src/lib/identical.ts`).
 
 **Boplats Väst** (`sources/boplats-vast.ts`) har inget JSON-flöde.
 
@@ -269,6 +273,11 @@ själva.
   props, eftersom ett tema-beroende hade byggt om hela kartan vid varje byte.
 - Markörnålarna behåller sina färger i båda lägena: de ska sticka ut mot kartan, inte
   smälta in. Popupens pillerfärger har däremot egna mörka toner.
+- **Intoningar körs bara för det som monteras efter hydreringen** (`useAnimateEntrance()`
+  i `src/lib/use-entrance.ts`). Framer Motion skriver startvärdet i serverns HTML, så en
+  intoning från `opacity: 0` gör innehållet osynligt tills JavaScript laddat: 60 osynliga
+  element på /lagenheter och ett Speed Index på nästan åtta sekunder. Starta aldrig en
+  intoning på serverritat innehåll från `opacity: 0`.
 - **Mailen är kvar i ljust läge.** E-postklienter stödjer inte teman pålitligt, och
   mallarna i `notify.ts` ska inte röras.
 
@@ -307,6 +316,10 @@ alla kostat tid:
 3. **Markörernas transform.** MapLibre positionerar markörer med `transform`. Animerar
    man `transform` på samma element hamnar alla markörer i ett högerhörn. Animera ett
    inre element i stället.
+
+**MapLibre laddas först när webbläsaren är ledig** (`whenIdle()` i `listings-map.tsx`).
+Det är sidans tyngsta skript – runt 260 kB som tar ett par sekunder att köra på en
+mobil – och laddades förut direkt vid hydreringen, mitt i sidans första målning.
 
 **Utsnittet vid start** ramar in annonserna, aldrig ett fast zoomläge. Det spelar roll
 för mer än överblicken: listan följer kartans utsnitt, så det som ligger utanför rutan

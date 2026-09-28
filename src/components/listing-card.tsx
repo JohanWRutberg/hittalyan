@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, Building2, DoorOpen, Sparkles } from "lucide-react";
+import { ArrowUpRight, Building2, DoorOpen, Layers, Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMediaQuery } from "@/lib/use-media-query";
+import { useAnimateEntrance } from "@/lib/use-entrance";
 import type { Listing } from "@/generated/prisma/client";
 import { formatDate, formatNumber, formatVaning, formatYta, isRecent } from "@/lib/format";
 import { ChanceBar, ChanceChip } from "@/components/chance-meter";
@@ -28,6 +29,7 @@ export function ListingCard({
   showChance = true,
   canFavorite = false,
   layout = "comfortable",
+  identicalCount = 1,
 }: {
   listing: ListingLike;
   index?: number;
@@ -40,6 +42,8 @@ export function ListingCard({
   canFavorite?: boolean;
   /** Hur kortet radas upp; `list` lägger bilden vid sidan av texten. */
   layout?: CardLayout;
+  /** Hur många likadana lägenheter kortet står för (se `groupIdentical`). */
+  identicalCount?: number;
 }) {
   const t = useTranslations("listings");
   const tc = useTranslations("common");
@@ -72,10 +76,13 @@ export function ListingCard({
 
   const images = l.images ?? [];
   const isList = layout === "list";
+  // Kort som servern ritat syns direkt; bara nya kort – en ny sida, en ny
+  // sortering – tonas in. Se useAnimateEntrance.
+  const animateEntrance = useAnimateEntrance();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={animateEntrance ? { opacity: 0, y: 10 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index, 12) * 0.03, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -2 }}
@@ -151,8 +158,15 @@ export function ListingCard({
         ) : null}
       </dl>
 
-      {tagKeys.length > 0 && (
+      {(tagKeys.length > 0 || identicalCount > 1) && (
         <div className="flex flex-wrap gap-1.5">
+          {/* Förmedlingen har lagt ut flera identiska objekt. Utan märkningen såg de
+              ut som dubbletter; nu står de som ett kort som säger hur många det är. */}
+          {identicalCount > 1 && (
+            <span className="chip border-accent-line bg-accent-soft text-accent" title={t("card.identicalHint")}>
+              <Layers className="size-3" /> {t("card.identical", { count: identicalCount })}
+            </span>
+          )}
           {tagKeys.map((tag) => (
             <span key={tag.key} className={`chip ${tag.cls}`}>
               {t(`tags.${tag.key}`)}

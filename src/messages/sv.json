@@ -43,7 +43,9 @@
     "watches": "Bevakningar",
     "account": "Konto",
     "pro": "Pro",
-    "admin": "Admin"
+    "admin": "Admin",
+    "ariaMain": "Huvudmeny",
+    "ariaAccount": "Inställningar och konto"
   },
   "landing": {
     "badge": "Bevakar {count} köer dygnet runt",
@@ -171,7 +173,9 @@
       "noImage": "Bilder saknas",
       "openImage": "Förstora bilden",
       "closeImage": "Stäng",
-      "imageCount": "Bild {index} av {count}"
+      "imageCount": "Bild {index} av {count}",
+      "identical": "{count} likadana lägenheter",
+      "identicalHint": "Samma adress, storlek, hyra och sista dag. Förmedlingen har lagt ut dem som separata objekt."
     },
     "tags": {
       "nyproduktion": "Nyproduktion",
@@ -310,8 +314,8 @@
       },
       "sokande": {
         "label": "Sökande",
-        "asc": "färst först",
-        "desc": "flest först"
+        "asc": "Färst först",
+        "desc": "Flest först"
       }
     }
   },

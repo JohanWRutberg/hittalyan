@@ -12,6 +12,8 @@ import { PAGE_SIZES, pageSizeServerSnapshot, readPageSize, subscribePageSize, wr
 import { LAYOUT_GRID, cardLayoutServerSnapshot, readCardLayout, subscribeCardLayout } from "@/lib/card-layout";
 import { CardLayoutSwitcher } from "@/components/card-layout-switcher";
 import type { Market } from "@/lib/markets";
+import { groupIdentical } from "@/lib/identical";
+import { ListingsNavProvider, useListingsNavState } from "@/components/listings-nav";
 
 /** Kartans markörer har ett eget tak; korten paginerar så det räcker gott. */
 const MAX_MARKERS = 1500;
@@ -51,6 +53,9 @@ export function ListingsBrowser({
 }) {
   const t = useTranslations("listings");
   const { favorites } = useHoveredListing();
+  // Sortering och filter navigerar via listan, så att den kan tonas ned medan
+  // servern räknar fram den nya (se listings-nav.tsx).
+  const nav = useListingsNavState();
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [page, setPage] = useState(1);
   // Går att stänga av, för den som hellre bläddrar hela träfflistan.
@@ -116,14 +121,23 @@ export function ListingsBrowser({
     });
   }, [listings, bounds, followMap, onlyFavorites, favorites, favoriteListings]);
 
+  // Likadana lägenheter blir ett kort. Inte i favoritläget: där är varje sparad
+  // lägenhet ett eget val, och ska synas som en egen rad.
+  const cards = useMemo(
+    () => (onlyFavorites ? visible.map((listing) => ({ listing, count: 1 })) : groupIdentical(visible, favorites)),
+    [visible, onlyFavorites, favorites],
+  );
+
   const hiddenByMap = visible.length < listings.length;
-  const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+  // Sidbläddringen räknar kort, inte lägenheter: det är korten som tar plats.
+  const pages = Math.max(1, Math.ceil(cards.length / pageSize));
   // Panorering kan krympa listan under den sida man står på.
   const current = Math.min(page, pages);
   const start = (current - 1) * pageSize;
-  const shown = visible.slice(start, start + pageSize);
+  const shown = cards.slice(start, start + pageSize);
 
   return (
+    <ListingsNavProvider value={nav}>
     <div className="space-y-6">
       {/* Sorteringen skickas in i kartans egen fastnaglade behållare. Som eget
           sticky-element fastnade den på top 0, alltså bakom kartan, och hoppade
@@ -209,8 +223,13 @@ export function ListingsBrowser({
         {onlyFavorites && visible.some((l) => !l.active) && (
           <p className="mb-3 text-sm text-muted">{t("favoritesExpired")}</p>
         )}
-        <div className={LAYOUT_GRID[layout]}>
-          {shown.map((l, i) => (
+        {/* Tonas ned medan en ny sortering eller ett nytt filter laddas: den gamla
+            listan står kvar, men syns vara på väg att bytas. */}
+        <div
+          aria-busy={nav.pending || undefined}
+          className={`${LAYOUT_GRID[layout]} transition-opacity duration-200 ${nav.pending ? "opacity-50" : ""}`}
+        >
+          {shown.map(({ listing: l, count }, i) => (
             <div key={l.id} className={onlyFavorites && !l.active ? "opacity-60" : ""}>
             <ListingCard
               listing={l}
@@ -219,6 +238,7 @@ export function ListingsBrowser({
               userYears={userYears}
               canFavorite={canFavorite}
               layout={layout}
+              identicalCount={count}
             />
             </div>
           ))}
@@ -228,6 +248,7 @@ export function ListingsBrowser({
 
       {pages > 1 && <Pagination page={current} pages={pages} onChange={setPage} />}
     </div>
+    </ListingsNavProvider>
   );
 }
 

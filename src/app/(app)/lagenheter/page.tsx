@@ -22,6 +22,7 @@ import { ListingsBrowser } from "@/components/listings-browser";
 import { SortBar } from "@/components/sort-bar";
 import { PushGuide } from "@/components/push-guide";
 import { parseSorts, sortsToOrderBy } from "@/lib/sort";
+import { groupIdentical } from "@/lib/identical";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("meta.pages");
@@ -257,15 +258,16 @@ async function PublicListings({ sp, market }: { sp: SearchParams; market: Market
           {hiddenCount > 0 && page === 1 && <HiddenTeaser count={hiddenCount} label={delayLabel} />}
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {listings.map((l, i) => (
-              <ListingCard key={l.id} listing={l} index={i} showChance={false} />
+            {/* Sidbläddringen här sker på servern, så likadana slås bara ihop inom sidan. */}
+            {groupIdentical(listings).map(({ listing: l, count }, i) => (
+              <ListingCard key={l.id} listing={l} index={i} showChance={false} identicalCount={count} />
             ))}
           </div>
         </div>
       </HoveredListingProvider>
 
       {pages > 1 && (
-        <nav className="flex flex-wrap items-center justify-center gap-2 text-sm">
+        <nav aria-label={t("pagination.label")} className="flex flex-wrap items-center justify-center gap-2 text-sm">
           {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
             <Link key={p} href={`/lagenheter?sida=${p}`} className={p === page ? "btn-primary px-3 py-1.5" : "btn-secondary px-3 py-1.5"}>
               {p}

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ListingsNavLink } from "@/components/listings-nav";
 import { ArrowDown, ArrowUp, ArrowUpDown, RotateCcw, X } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { SearchParams } from "@/lib/filters";
@@ -44,9 +44,8 @@ export async function SortBar({ sorts, sp, market }: { sorts: Sort[]; sp: Search
                 active ? "border-accent-line-strong bg-accent-soft text-accent-strong shadow-soft" : "hover:border-accent-line-strong hover:text-ink"
               }`}
             >
-              <Link
+              <ListingsNavLink
                 href={`/lagenheter?${withSorts(sp, toggled)}`}
-                scroll={false}
                 title={active ? t("switchTo", { dir: t(`options.${o.key}.${nextDir}`) }) : t("add", { dir: t(`options.${o.key}.${o.defaultDir}`) })}
                 className="inline-flex items-center gap-1 py-1.5 pl-2.5 pr-2.5"
               >
@@ -60,25 +59,24 @@ export async function SortBar({ sorts, sp, market }: { sorts: Sort[]; sp: Search
                     <span className="font-normal text-accent/80">{t(`options.${o.key}.${current.dir}`)}</span>
                   </>
                 )}
-              </Link>
+              </ListingsNavLink>
               {removable && (
-                <Link
+                <ListingsNavLink
                   href={`/lagenheter?${withSorts(sp, removed)}`}
-                  scroll={false}
-                  title={t("removeLevel")}
+                    title={t("removeLevel")}
                   aria-label={t("removeAria", { label })}
                   className="-ml-1 inline-flex items-center border-l border-accent-line py-1.5 pl-1.5 pr-2 text-accent/70 hover:text-accent-strong"
                 >
                   <X className="size-3" />
-                </Link>
+                </ListingsNavLink>
               )}
             </span>
           );
         })}
         {explicit.length > 0 && (
-          <Link href={`/lagenheter?${withSorts(sp, [])}`} scroll={false} className="btn-ghost shrink-0 px-2.5 py-1.5 text-xs">
+          <ListingsNavLink href={`/lagenheter?${withSorts(sp, [])}`} className="btn-ghost shrink-0 px-2.5 py-1.5 text-xs">
             <RotateCcw className="size-3.5" /> {t("reset")}
-          </Link>
+          </ListingsNavLink>
         )}
       </div>
       {multi && (

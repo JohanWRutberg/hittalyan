@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type * as MapLibre from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -111,6 +111,21 @@ function fitArea(groups: Group[]): [[number, number], [number, number]] {
     [Math.min(...lng), Math.min(...lat)],
     [Math.max(...lng), Math.max(...lat)],
   ];
+}
+
+/**
+ * Väntar tills webbläsaren är ledig. MapLibre är sidans tyngsta skript – runt
+ * 260 kB som tar ett par sekunder att köra på en mobil – och laddades förut direkt
+ * när kartan monterades. Det hamnade då mitt i sidans första målning: Lighthouse
+ * såg sidans största text vänta 2,6 s på att ritas, lika länge som MapLibre körde.
+ * Nu ritas sidan först och kartan laddas i första lediga ögonblick efter. Taket
+ * gör att kartan ändå kommer på en upptagen sida.
+ */
+function whenIdle(): Promise<void> {
+  return new Promise((resolve) => {
+    if ("requestIdleCallback" in window) requestIdleCallback(() => resolve(), { timeout: 2000 });
+    else setTimeout(resolve, 200);
+  });
 }
 
 /**
@@ -327,6 +342,43 @@ export function ListingsMap({
   const compactHeader = stuckNow && !isDesktop;
   /** Panelen ligger uppe i toppen: raka hörn där delarna möts, kompaktare höjd. */
   const pinned = stuck && stuckNow;
+
+  // Blocket behåller sin plats i sidans flöde medan det sitter fast. När det
+  // fastnar blir det lägre – rubrikraden kompaktare, marginalen under filtret
+  // borta – och eftersom det ligger i flödet flyttade allt under det uppåt: listan
+  // ryckte till precis när man scrollade förbi. Fälldes filtret ut medan blocket
+  // satt fast knuffades listan i stället nedåt.
+  //
+  // Nu mäts höjden medan blocket ligger på sin plats, och så länge det sitter fast
+  // jämnar marginalen under ut skillnaden: krymper det fylls platsen upp, växer
+  // det äter marginalen upp tillväxten (negativt), och blocket lägger sig över
+  // listan i stället för att flytta den. Stilen skrivs direkt på elementet från en
+  // ResizeObserver, eftersom höjden ändras bildruta för bildruta under övergången
+  // och en React-rendering per bildruta vore onödigt dyrt.
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const natural = useRef({ height: 0, margin: 0 });
+  // Layout-effekt: den måste köra innan webbläsaren ritar första bildrutan i nytt
+  // läge. Med en vanlig effekt hann den gamla observern mäta en bildruta av
+  // övergången och spara den som "naturlig" höjd.
+  useLayoutEffect(() => {
+    const el = stickyRef.current;
+    if (!el || !stuck) return;
+    const sync = () => {
+      if (!pinned) {
+        el.style.marginBottom = "";
+        natural.current = { height: el.offsetHeight, margin: parseFloat(getComputedStyle(el).marginBottom) || 0 };
+      } else {
+        el.style.marginBottom = `${natural.current.margin + natural.current.height - el.offsetHeight}px`;
+      }
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      el.style.marginBottom = "";
+    };
+  }, [stuck, pinned]);
   const toggleCollapsed = () => {
     setCollapsed((v) => !v);
     if (!collapsed) setExpanded(false);
@@ -338,6 +390,8 @@ export function ListingsMap({
     let map: MapLibreMap | undefined;
     (async () => {
       try {
+        await whenIdle();
+        if (cancelled) return;
         const maplibregl = await loadMapLibre();
         if (cancelled || !containerRef.current) return;
         const m = new maplibregl.Map({
@@ -527,6 +581,7 @@ export function ListingsMap({
           layoutneutral. */}
       {stuck && <div ref={sentinelRef} aria-hidden className="h-10 -mb-10" />}
     <div
+      ref={stickyRef}
       className={`${stuck ? "sticky top-0 z-20 will-change-transform transition-transform duration-300 ease-out motion-reduce:transition-none" : ""}`}
       // Fastnaglad karta ligger på top 0 och skjuts ned med en transform (GPU, inget
       // layoutarbete) så mycket som menyn är hög, i stället för att animera top.

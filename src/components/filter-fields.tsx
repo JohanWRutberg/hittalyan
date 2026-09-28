@@ -118,7 +118,13 @@ export function FilterFields({
 
       {/* Boplats Väst märker inte ut specialköer i annonserna, så där finns inget att välja bort. */}
       {info.hasSpecialQueues && (
-        <details className="rounded-xl border border-line bg-canvas p-3">
+        // Utfälld när någon specialkö redan är vald – annars syns inte att filtret
+        // innehåller dem, till exempel när man kommer till en ny bevakning från
+        // "Bevaka detta filter".
+        <details
+          open={!!(initial.inkluderaUngdom || initial.inkluderaStudent || initial.inkluderaSenior || initial.inkluderaKorttid)}
+          className="rounded-xl border border-line bg-canvas p-3"
+        >
           <summary className="cursor-pointer text-sm font-medium text-muted">{t("specialQueues")}</summary>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <Check name="inkluderaUngdom" label={t("includeYouth")} checked={initial.inkluderaUngdom} />

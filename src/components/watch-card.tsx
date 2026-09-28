@@ -10,6 +10,7 @@ import { deleteWatch, toggleWatch } from "@/app/(app)/actions";
 import { formatKr } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import { marketInfo, marketOf } from "@/lib/markets";
+import { useAnimateEntrance } from "@/lib/use-entrance";
 
 export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: number; index: number }) {
   const t = useTranslations("watches.card");
@@ -30,10 +31,12 @@ export function WatchCard({ watch: w, hits, index }: { watch: Watch; hits: numbe
   if (w.hiss) parts.push(t("elevator"));
   if (w.nyproduktion) parts.push(t("newBuild"));
 
+  const animateEntrance = useAnimateEntrance();
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={animateEntrance ? { opacity: 0, y: 10 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
       className={`card flex flex-col gap-3 p-5 ${w.enabled ? "" : "opacity-60"} ${pending ? "animate-pulse" : ""}`}

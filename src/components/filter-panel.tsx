@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { SlidersHorizontal, X, BellPlus, Search } from "lucide-react";
+import { SlidersHorizontal, X, BellPlus, Search, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AreaMap, Filters } from "@/lib/filters";
@@ -14,6 +13,7 @@ import { useIsDesktop } from "@/lib/use-media-query";
 import type { Market } from "@/lib/markets";
 import { useStickyPanel } from "@/components/sticky-panel";
 import { CollapseToggle } from "@/components/collapse-toggle";
+import { ListingsNavLink, useListingsNav } from "@/components/listings-nav";
 
 export function FilterPanel({
   areas,
@@ -29,7 +29,7 @@ export function FilterPanel({
   market: Market;
 }) {
   const t = useTranslations("filters");
-  const router = useRouter();
+  const { navigate, pending } = useListingsNav();
   // Uppe i toppen är filtret en del av den fastnaglade panelen: kompaktare, raka
   // hörn nedåt där kartan tar vid, och en utfälld panel som inte får svälja skärmen.
   const pinned = useStickyPanel();
@@ -39,7 +39,6 @@ export function FilterPanel({
   const [openOverride, setOpenOverride] = useState<boolean | null>(null);
   const open = openOverride ?? (activeCount > 0 && isDesktop);
   const setOpen = setOpenOverride;
-  const [pending, start] = useTransition();
   const query = filtersToQuery(filters);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -48,7 +47,11 @@ export function FilterPanel({
     const q = new URLSearchParams(filtersToQuery(f));
     const cur = new URLSearchParams(window.location.search);
     if (cur.get("sort")) q.set("sort", cur.get("sort")!);
-    start(() => router.push(`/lagenheter?${q}`));
+    navigate(`/lagenheter?${q}`);
+    // Fäll ihop panelen: den har gjort sitt, och det man vill se nu är resultatet.
+    // Utfälld tog den ofta hela skärmen på en telefon, så att träffarna hamnade
+    // under kanten. Valen syns fortfarande i siffran bredvid rubriken.
+    setOpen(false);
   }
 
   return (
@@ -73,9 +76,9 @@ export function FilterPanel({
         <CollapseToggle expanded={open} onToggle={() => setOpen(!open)} label={open ? t("hide") : t("show")} compact={pinned} />
         <div className="flex items-center gap-2 justify-self-end">
           {activeCount > 0 && (
-            <Link href="/lagenheter" onClick={(e) => e.stopPropagation()} className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
+            <ListingsNavLink href="/lagenheter" className="btn-ghost px-2 py-1.5 text-xs sm:px-2.5">
               <X className="size-3.5" /> <span className="hidden sm:inline">{t("clear")}</span>
-            </Link>
+            </ListingsNavLink>
           )}
           <Link href={`/bevakningar/ny?${query}`} onClick={(e) => e.stopPropagation()} className="btn-secondary px-3 py-1.5 text-xs">
             <BellPlus className="size-3.5" /> <span className="sm:hidden">{t("watchThisShort")}</span><span className="hidden sm:inline">{t("watchThis")}</span>
@@ -97,7 +100,12 @@ export function FilterPanel({
             <div className={`space-y-5 p-5 ${pinned ? "max-h-[50vh] overflow-y-auto" : ""}`}>
               <FilterFields areas={areas} initial={filters} counts={counts} market={market} />
               <Check name="nya" label={t("onlyNew")} checked={filters.nya} />
+              {/* "Dölj" även längst ned: panelen kan vara lång, och den enda knappen
+                  satt förut högst upp, där testarna inte hittade den. */}
               <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
+                  <ChevronUp className="size-4" /> {t("hide")}
+                </button>
                 <button type="submit" disabled={pending} className="btn-primary">
                   <Search className="size-4" /> {pending ? t("submitting") : t("submit")}
                 </button>

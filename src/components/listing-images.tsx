@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ImageLightbox } from "@/components/image-lightbox";
@@ -12,7 +12,29 @@ import { ImageLightbox } from "@/components/image-lightbox";
  * med flera bilder var skulle äta upp i onödan. Bilderna är redan färdigskalade.
  *
  * Ligger utanför kortets <a>, eftersom knappar inte får ligga i en länk.
+ *
+ * **Bläddra genom att dra**, med fingret eller med musen. Bilden följer med medan
+ * man drar och grannbilden glider in från sidan; släpper man efter en bit – eller
+ * med en snabb svepning – byter den, annars fjädrar den tillbaka. Det bygger på
+ * pekarhändelser, så samma kod gäller för finger, mus och penna.
+ *
+ * - `touch-action: pan-y`: webbläsaren sköter lodrät scroll själv, och bara de
+ *   vågräta rörelserna kommer hit. Annars hade en tumme som scrollar listan fastnat
+ *   i bildspelet.
+ * - Riktningen avgörs efter några pixlar: är rörelsen mest lodrät släpps den.
+ * - Ett klick förstorar bilden, men inte efter en dragning – annars öppnades
+ *   förstoringen varje gång man släppte musknappen.
+ * - Grannbilderna finns bara i DOM:en medan man drar; korten kan vara 60 på en sida.
  */
+
+/** Hur långt man måste dra för att byta bild: minst så här många pixlar … */
+const SWIPE_MIN_PX = 40;
+/** … eller så stor andel av bildens bredd, om den är större. */
+const SWIPE_MIN_SHARE = 0.18;
+/** En snabb svepning byter bild även om den är kort (pixlar per millisekund). */
+const FLICK_SPEED = 0.4;
+/** Hur långt pekaren ska röra sig innan vi avgör om det är vågrätt eller lodrätt. */
+const DECIDE_AFTER_PX = 6;
 export function ListingImages({ images, alt, fill }: { images: string[]; alt: string; fill?: boolean }) {
   const t = useTranslations("listings.card");
   const [index, setIndex] = useState(0);
@@ -20,23 +42,112 @@ export function ListingImages({ images, alt, fill }: { images: string[]; alt: st
   // på den bild man tittade på, i stället för att hoppa tillbaka till den första.
   const [zoomed, setZoomed] = useState(false);
 
+  // Dragning: hur långt bilden följt med pekaren, och – efter att man släppt – åt
+  // vilket håll den glider (1 = nästa, -1 = föregående, 0 = tillbaka).
+  const [dragX, setDragX] = useState<number | null>(null);
+  const [settling, setSettling] = useState<-1 | 0 | 1 | null>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const gesture = useRef<{ id: number; x: number; y: number; t: number; horizontal: boolean | null } | null>(null);
+  // Bildens bredd, mätt när dragningen börjar. Den styr hur långt bilden glider.
+  const [width, setWidth] = useState(0);
+  const suppressClick = useRef(false);
+
   // Alla annonser har inte bilder – en del publiceras helt utan. De får en
   // platshållare så att korten blir lika höga och rutnätet inte hackar.
   if (!images.length) return <ImagePlaceholder fill={fill} />;
 
   const count = images.length;
   const go = (delta: number) => setIndex((i) => (i + delta + count) % count);
+  const at = (delta: number) => images[(index + delta + count) % count];
+
+  const finish = (dir: -1 | 0 | 1) => {
+    if (dir !== 0) go(dir);
+    setSettling(null);
+    setDragX(null);
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    suppressClick.current = false;
+    if (count < 2 || settling !== null || (e.pointerType === "mouse" && e.button !== 0)) return;
+    gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), horizontal: null };
+    // Grannbilderna börjar laddas redan här, så att de finns när de glider in.
+    new Image().src = at(1);
+    new Image().src = at(-1);
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    const g = gesture.current;
+    if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.x;
+    const dy = e.clientY - g.y;
+    if (g.horizontal === null) {
+      if (Math.abs(dx) < DECIDE_AFTER_PX && Math.abs(dy) < DECIDE_AFTER_PX) return;
+      g.horizontal = Math.abs(dx) > Math.abs(dy);
+      if (!g.horizontal) {
+        gesture.current = null;
+        return;
+      }
+      // Pekaren fångas så att dragningen fortsätter även om den lämnar bilden.
+      e.currentTarget.setPointerCapture(e.pointerId);
+      suppressClick.current = true;
+      setWidth(boxRef.current?.offsetWidth ?? 0);
+    }
+    setDragX(dx);
+  };
+
+  const onPointerEnd = (e: React.PointerEvent) => {
+    const g = gesture.current;
+    if (!g || e.pointerId !== g.id) return;
+    gesture.current = null;
+    if (!g.horizontal || dragX === null) return;
+    const dx = dragX;
+    const speed = dx / Math.max(1, performance.now() - g.t);
+    const needed = Math.max(SWIPE_MIN_PX, width * SWIPE_MIN_SHARE);
+    const dir: -1 | 0 | 1 =
+      dx <= -needed || (speed <= -FLICK_SPEED && dx < -15) ? 1 : dx >= needed || (speed >= FLICK_SPEED && dx > 15) ? -1 : 0;
+    // Utan animation – reducerad rörelse, eller ingenting att glida – är vi klara direkt.
+    // Annars kommer inget transitionend, och bildspelet hade fastnat mitt i.
+    const target = dir === 1 ? -width : dir === -1 ? width : 0;
+    if (target === dx || window.matchMedia("(prefers-reduced-motion: reduce)").matches) finish(dir);
+    else setSettling(dir);
+  };
+
+  const offset = settling === 1 ? -width : settling === -1 ? width : settling === 0 ? 0 : (dragX ?? 0);
+  const moving = dragX !== null || settling !== null;
 
   return (
-    <div className={`group/img relative w-full overflow-hidden bg-canvas ${fill ? "h-full min-h-28" : "aspect-16/10"}`}>
+    <div
+      ref={boxRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
+      className={`group/img relative w-full touch-pan-y select-none overflow-hidden bg-canvas ${
+        fill ? "h-full min-h-28" : "aspect-16/10"
+      } ${dragX !== null ? "cursor-grabbing" : ""}`}
+    >
+      <div
+        className={`relative size-full ${settling !== null ? "transition-transform duration-300 ease-out" : ""}`}
+        style={moving ? { transform: `translateX(${offset}px)` } : undefined}
+        onTransitionEnd={(e) => {
+          if (e.target === e.currentTarget && settling !== null) finish(settling);
+        }}
+      >
       {/* Bilden är en knapp: ett klick förstorar den. Kortet runt omkring är en
           länk till annonsen hos förmedlingen, men bildspelet ligger utanför den
           länken, så de två klicken krockar inte. */}
       <button
         type="button"
-        onClick={() => setZoomed(true)}
+        onClick={() => {
+          // En dragning slutar också med ett klick; det ska inte öppna förstoringen.
+          if (suppressClick.current) {
+            suppressClick.current = false;
+            return;
+          }
+          setZoomed(true);
+        }}
         aria-label={t("openImage")}
-        className="block size-full cursor-zoom-in"
+        className={`block size-full ${dragX !== null ? "cursor-grabbing" : "cursor-zoom-in"}`}
       >
         {/* Bara den aktuella bilden ligger i DOM:en; korten kan vara 60 på en sida. */}
         {/* eslint-disable-next-line @next/next/no-img-element -- medvetet: next/image skulle förbruka Vercels kvot för bildoptimeringar på bilder som redan är färdigskalade hos förmedlingen */}
@@ -45,6 +156,7 @@ export function ListingImages({ images, alt, fill }: { images: string[]; alt: st
           alt={alt}
           loading="lazy"
           decoding="async"
+          draggable={false}
           className="size-full object-cover"
           // Trasiga bild-URL:er hos källan ska inte lämna ett brutet ikonkryss.
           onError={(e) => {
@@ -52,6 +164,16 @@ export function ListingImages({ images, alt, fill }: { images: string[]; alt: st
           }}
         />
       </button>
+      {/* Grannbilderna ligger bredvid, utanför synfältet, och glider in med dragningen. */}
+      {moving && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- se ovan */}
+          <img src={at(-1)} alt="" aria-hidden draggable={false} className="absolute inset-y-0 right-full size-full object-cover" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- se ovan */}
+          <img src={at(1)} alt="" aria-hidden draggable={false} className="absolute inset-y-0 left-full size-full object-cover" />
+        </>
+      )}
+      </div>
 
       {zoomed && (
         <ImageLightbox

@@ -6,6 +6,7 @@ import type { Listing } from "@/generated/prisma/client";
 import { hasPro } from "@/lib/plan";
 import { MARKETS, marketInfo, type Market } from "@/lib/markets";
 import { SOURCES } from "@/lib/sources";
+import { DEACTIVATION_BLOCKED_PREFIX, reportHealth } from "@/lib/poll-health";
 import type { KnownListing } from "@/lib/sources";
 
 /**
@@ -23,19 +24,38 @@ const DEFAULT_RUN_MS = 40_000;
 const WRITE_RESERVE_MS = 10_000;
 
 /**
- * Hur stor andel av en kös aktiva annonser som får försvinna i **en** körning
- * innan avaktiveringen stoppas. Mellan två körningar försvinner i verkligheten en
- * handfull; att hälften gör det samtidigt är i praktiken alltid ett fel hos källan.
+ * Hur stor andel av en kös aktiva annonser som får försvinna **oväntat** i en
+ * körning innan avaktiveringen stoppas.
  *
- * Spärren mot helt tomma svar räckte inte. I september 2026 började HomeQ lämna ut
- * tio träffar i stället för alla – tio är inte noll, och varje körning avaktiverade
- * allt utom tio annonser. Den här spärren hade stoppat det, och den gäller alla
- * källor, också mot fel vi ännu inte sett.
+ * "Oväntat" är hela poängen. Första versionen räknade alla som försvann, med
+ * antagandet att bara en handfull försvinner mellan två körningar. Det stämmer
+ * inte: förmedlingarna publicerar i klump och annonserna går ut i klump. En
+ * vanlig vecka i Stockholm låg sista dag på 68 annonser en dag och 92 två dagar
+ * senare, av ~270. Hos Boplats Väst, med ett femtiotal aktiva, räcker en sådan
+ * klump för att passera hälften – spärren slog till, och eftersom de utgångna
+ * annonserna aldrig avaktiverades fortsatte den slå till i varje körning.
+ *
+ * Nu räknas bara de som försvann **före** sin sista dag. Det är den signal som
+ * skiljer ett trasigt svar från en vanlig vecka: när en källa stympar sitt svar
+ * saknas annonser med sista dag långt fram i tiden, och när annonser löper ut
+ * saknas de vars dag just passerat. Källor utan sista dag (HomeQ) räknas som
+ * oväntade rakt av – där hyrs annonserna ut en och en, aldrig i klump.
+ *
+ * Bakgrunden till spärren: i september 2026 började HomeQ lämna ut tio träffar i
+ * stället för alla – tio är inte noll, och varje körning avaktiverade allt utom tio.
  */
 const MAX_DEACTIVATE_SHARE = 0.5;
 
 /** Under så här många aktiva annonser gäller inte spärren: små köer svänger för mycket. */
 const GUARD_MIN_ACTIVE = 20;
+
+/**
+ * Hur nära sin sista dag en annons får försvinna och ändå räknas som utgången.
+ * Sista dagen sparas som mitt på dagen i UTC, och förmedlingarna tar bort
+ * annonserna någon gång under eller strax efter den dagen – inte på minuten.
+ */
+const EXPIRY_SLACK_MS = 24 * 60 * 60 * 1000;
+
 
 /**
  * Hur tidigt en kö får köras innan dess takt (`pollEveryMinutes`) har gått. GitHub
@@ -46,11 +66,33 @@ const GUARD_MIN_ACTIVE = 20;
 const POLL_SLACK_MS = 15 * 60_000;
 
 /**
+ * Körningen misslyckades, men felet är **bokfört** på körningsraden. Det skiljer ett
+ * fel hos källan – förmedlingen svarade konstigt, spärren slog till – från ett fel
+ * hos oss själva, som en databas som inte svarar. Det första syns i adminportalen
+ * och larmas av hälsokontrollen; det andra kan inte ens skrivas ned, och måste
+ * därför synas någon annanstans (se cron-endpointen).
+ */
+export class RecordedFailure extends Error {}
+
+/**
  * Avaktiveringen stoppades av spärren. Allt annat i körningen – nya annonser,
  * uppdateringar och notiser – har redan gått igenom och är bokfört, så felet ska
  * inte skriva över körningsraden igen.
  */
-class DeactivationBlocked extends Error {}
+class DeactivationBlocked extends RecordedFailure {}
+
+/**
+ * Alla köer som försöktes misslyckades. `recorded` säger om samtliga fel hann
+ * bokföras – då fungerar kedjan, och det är källorna som krånglar.
+ */
+export class AllMarketsFailed extends Error {
+  constructor(
+    message: string,
+    readonly recorded: boolean,
+  ) {
+    super(message);
+  }
+}
 
 export interface MarketPollResult {
   market: Market;
@@ -91,7 +133,7 @@ export interface PollResult {
   runId: string;
   markets: MarketPollResult[];
   /** Förmedlingar som inte gick att hämta, med felmeddelande */
-  failed: { market: Market; error: string }[];
+  failed: { market: Market; error: string; recorded: boolean }[];
   /** Förmedlingar som hoppades över för att tiden tog slut; de tas nästa körning. */
   skipped: Market[];
   /** Köer som inte stod på tur än, enligt sin `pollEveryMinutes`. */
@@ -125,7 +167,7 @@ export async function runPoll(options: PollOptions = {}): Promise<PollResult> {
   const wanted = options.market ? [options.market] : [...MARKETS];
   const runEnd = options.deadline ?? Date.now() + DEFAULT_RUN_MS;
   const markets: MarketPollResult[] = [];
-  const failed: { market: Market; error: string }[] = [];
+  const failed: { market: Market; error: string; recorded: boolean }[] = [];
   const skipped: Market[] = [];
 
   // Varje kö har sin egen takt. Cron-jobbet anropar ändå var 30:e minut, och en kö
@@ -153,13 +195,20 @@ export async function runPoll(options: PollOptions = {}): Promise<PollResult> {
     try {
       markets.push(await runMarketPoll(market, deadline, options.force));
     } catch (err) {
-      failed.push({ market, error: (err as Error).message });
+      failed.push({ market, error: (err as Error).message, recorded: err instanceof RecordedFailure });
       console.error(`[poll:${market}]`, (err as Error).message);
     }
   }
 
+  // Hälsokontrollen larmar en gång när en kö börjat krångla, och en gång när den
+  // fungerar igen. Den tittar bara på köer som faktiskt försöktes den här gången.
+  for (const market of todo.filter((m) => !skipped.includes(m))) await reportHealth(market);
+
   if (!markets.length && failed.length) {
-    throw new Error(failed.map((f) => `${marketInfo(f.market).name}: ${f.error}`).join(" · "));
+    throw new AllMarketsFailed(
+      failed.map((f) => `${marketInfo(f.market).name}: ${f.error}`).join(" · "),
+      failed.every((f) => f.recorded),
+    );
   }
 
   const sum = (pick: (m: MarketPollResult) => number) => markets.reduce((a, m) => a + pick(m), 0);
@@ -243,8 +292,10 @@ export async function runMarketPoll(
     // inte samtidigt stänger av bevakningarna. Körningen markeras som misslyckad
     // längre ned, så att det syns i adminportalen.
     const activeSet = new Set(activeIds);
-    const missing = existing.filter((e) => !activeSet.has(e.id)).length;
-    const blocked = !force && existing.length >= GUARD_MIN_ACTIVE && missing > existing.length * MAX_DEACTIVATE_SHARE;
+    const gone = existing.filter((e) => !activeSet.has(e.id));
+    const expiredBy = Date.now() + EXPIRY_SLACK_MS;
+    const unexpected = gone.filter((e) => !e.annonseradTill || e.annonseradTill.getTime() > expiredBy).length;
+    const blocked = !force && existing.length >= GUARD_MIN_ACTIVE && unexpected > existing.length * MAX_DEACTIVATE_SHARE;
     const now = new Date();
 
     // Få frågor i stället för en per annons: serverless-funktioner har kort tidsgräns.
@@ -354,9 +405,9 @@ export async function runMarketPoll(
 
     const info = marketInfo(market);
     const blockedMessage = blocked
-      ? `Avaktiveringen stoppades: ${missing} av ${existing.length} aktiva annonser saknas i svaret från ${info.name}. ` +
-        `Det är nästan alltid ett fel hos källan. Kontrollera ${info.siteUrl}; stämmer borttagningen, godkänn den med ` +
-        `"Hämta annonser nu" i adminportalen.`
+      ? `${DEACTIVATION_BLOCKED_PREFIX}: ${unexpected} av ${existing.length} aktiva annonser saknas i svaret från ${info.name} ` +
+        `trots att deras sista dag inte har passerat. Det tyder på ett fel hos källan. Kontrollera ${info.siteUrl}; ` +
+        `stämmer borttagningen, godkänn den med "Hämta annonser nu" i adminportalen.`
       : null;
     await prisma.pollRun.update({
       where: { id: run.id },
@@ -384,13 +435,14 @@ export async function runMarketPoll(
     };
   } catch (err) {
     // En stoppad avaktivering är redan bokförd med sina siffror; skriv inte över den.
-    if (!(err instanceof DeactivationBlocked)) {
-      await prisma.pollRun.update({
-        where: { id: run.id },
-        data: { finishedAt: new Date(), ok: false, error: (err as Error).message },
-      });
-    }
-    throw err;
+    if (err instanceof DeactivationBlocked) throw err;
+    // Går det att skriva ned felet är det bokfört. Går inte ens det – databasen svarar
+    // inte – kastas det felet i stället, och då är det inte bokfört.
+    await prisma.pollRun.update({
+      where: { id: run.id },
+      data: { finishedAt: new Date(), ok: false, error: (err as Error).message },
+    });
+    throw new RecordedFailure((err as Error).message);
   }
 }
 

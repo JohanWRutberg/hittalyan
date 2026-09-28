@@ -470,12 +470,25 @@ tar ungefär 20–25 sekunder.
 - **Ett tomt svar behandlas som fel**, inte som en tom bostadskö. Utan den spärren hade
   en sådan körning avaktiverat allt vi har för den förmedlingen.
 - **Spärr mot massavaktivering** (`MAX_DEACTIVATE_SHARE`): saknas mer än hälften av en
-  kös aktiva annonser i svaret stoppas avaktiveringen, och körningen markeras röd i
-  adminportalen med en förklaring. Nya annonser, uppdateringar och notiser går igenom
-  som vanligt. Spärren kom till när HomeQ började lämna ut tio träffar i stället för
-  alla – tio är inte noll, så spärren mot tomma svar räckte inte. Köer under 20 aktiva
-  undantas, de svänger för mycket. **Godkänn** en stoppad avaktivering med "Hämta
-  annonser nu" i adminportalen (`runPoll({ force: true })`), efter att ha kollat källan.
+  kös aktiva annonser i svaret **trots att deras sista dag inte har passerat**, stoppas
+  avaktiveringen och körningen markeras röd. Nya annonser, uppdateringar och notiser går
+  igenom som vanligt. Villkoret om sista dag är avgörande: förmedlingarna publicerar i
+  klump och annonserna går ut i klump (en vanlig vecka i Stockholm: 68 annonser med samma
+  sista dag, 92 två dagar senare, av ~270). Första versionen räknade alla som försvann,
+  slog till på Boplats Väst vid en vanlig utgång och fortsatte slå till i varje körning.
+  Ett stympat svar saknar annonser med sista dag långt fram – det är den signalen som
+  räknas. Källor utan sista dag (HomeQ) räknas rakt av. Köer under 20 aktiva undantas.
+  **Godkänn** en stoppad avaktivering med "Hämta annonser nu" i adminportalen
+  (`runPoll({ force: true })`), efter att ha kollat källan.
+- **Larm en gång per incident** (`src/lib/poll-health.ts`), via mail till `ALERT_EMAIL`
+  (standard `CONTACT_EMAIL`): när en kö misslyckats tre körningar i rad, direkt när
+  spärren slår till, och en gång när kön fungerar igen. Vercels dagliga körning larmar
+  dessutom om GitHubs schema slutat anropa (tre timmar utan körning) – GitHub pausar
+  schemalagda jobb i publika repon efter 60 dagar utan aktivitet.
+- **Cron-endpointens statuskod säger om kedjan fungerar, inte om källan gör det.** Ett
+  bokfört fel hos en förmedling ger 200 med `"ok": false` (appen larmar själv); bara ett
+  fel i vår egen kedja, som inte ens går att skriva ned, ger 500 och gör GitHub-jobbet
+  rött. Förut gav ett fel hos Väst ett rött jobb och ett mail från GitHub varje halvtimme.
 - **Varje kö har sin egen takt** (`MarketInfo.pollEveryMinutes`): förmedlingarna var
   30:e minut, HomeQ en gång i timmen. Cron anropar ändå var 30:e minut och en kö som
   inte står på tur hoppas över (`notDue` i svaret). Takten räknas från senaste
@@ -502,7 +515,9 @@ tar ungefär 20–25 sekunder.
   Är den rutan röd ligger felet i mailet eller pushen, inte i hämtningen.
 - Schemat: **GitHub Actions anropar var 30:e minut** (`.github/workflows/poll.yml`), inte Vercels
   cron, eftersom Hobby-planen bara tillåter en körning per dygn. Actions-minuter är
-  gratis på publika repon. `vercel.json` har en daglig körning som skyddsnät.
+  gratis på publika repon. GitHubs schemaläggare är ungefärlig: körningar kommer sent och
+  ibland inte alls, vilket är ofarligt eftersom varje körning tar igen det som missats.
+  `vercel.json` har en daglig körning som skyddsnät och som vakt för schemat.
 - Anropet använder `curl --location`. Utan det svarar apex-domänens 308-omdirigering och
   curl skulle rapportera framgång utan att någonsin nå endpointen.
 - Endpointen kräver `Authorization: Bearer $CRON_SECRET`.

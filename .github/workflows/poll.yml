@@ -24,9 +24,15 @@ jobs:
           # för sig, och en långsam källa kan inte tvinga fram en 504 för de andra.
           # Alla förmedlingar försöks även om någon misslyckas.
           #
-          # --fail-with-body: vid 500 skrivs svarskroppen ut, alltså vilket fel
-          # pollningen faktiskt fick. Utan den stod bara "error: 500" i loggen och
-          # orsaken gick bara att läsa i adminportalens körningslogg.
+          # Jobbet blir rött bara när **kedjan** är trasig: Vercel svarar inte, fel
+          # hemlighet, databasen nere – då svarar endpointen något annat än 200.
+          # Krånglar en förmedling svarar den 200 med "ok":false. Det felet är
+          # bokfört, och appen larmar själv om det en gång, med orsaken (se
+          # src/lib/poll-health.ts). Här blir det bara en varning i körningen.
+          # Förut blev jobbet rött varje halvtimme så länge en källa krånglade.
+          #
+          # --fail-with-body: vid fel skrivs svarskroppen ut, alltså vilket fel
+          # pollningen faktiskt fick.
           poll_market() {
             curl --fail-with-body --silent --show-error --max-time 120 --location \
               -H "Authorization: Bearer $CRON_SECRET" \
@@ -36,21 +42,22 @@ jobs:
           fail=0
           for market in stockholm vast syd uppsala homeq; do
             echo "--- $market"
-            if poll_market "$market"; then
-              echo
-            else
-              # Ett andra försök efter en paus. Förmedlingarnas servrar är vanliga
-              # webbplatser och svarar då och då 5xx, och en kall Neon-databas eller
-              # en kall serverless-funktion kan också fälla första anropet. Adaptern
-              # försöker redan om internt; det här fångar det som ligger på vår sida.
-              echo "  (misslyckades, försöker igen om 30 s)"
+            if ! body=$(poll_market "$market"); then
+              # Ett andra försök efter en paus: en kall Neon-databas eller en kall
+              # serverless-funktion kan fälla första anropet.
+              echo "$body"
+              echo "  (kedjan svarade inte, försöker igen om 30 s)"
               sleep 30
-              if poll_market "$market"; then
-                echo
-              else
-                echo "::warning::pollningen misslyckades för $market även vid andra försöket"
+              if ! body=$(poll_market "$market"); then
+                echo "$body"
+                echo "::error::pollningen nådde inte fram för $market – kedjan är trasig, inte källan"
                 fail=1
+                continue
               fi
+            fi
+            echo "$body"
+            if echo "$body" | grep -q '"ok":false'; then
+              echo "::warning::$market: källan krånglade (bokfört, larmas av appen)"
             fi
           done
           exit $fail

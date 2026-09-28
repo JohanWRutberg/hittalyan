@@ -246,6 +246,33 @@ export async function sendContactEmail(opts: {
   return res.ok;
 }
 
+// ---------- Driftlarm ----------
+
+/**
+ * Vart larm om pollningen går. Standard är kontaktadressen: tills en domän är
+ * verifierad hos Resend är det den enda adress som går att skicka till över huvud
+ * taget, och det är ändå den som läses.
+ */
+export const ALERT_EMAIL = process.env.ALERT_EMAIL ?? CONTACT_EMAIL;
+
+/**
+ * Ett driftlarm till den som sköter tjänsten. Svenska och ljust läge rakt av: det
+ * här läses av en person, inte av användarna.
+ */
+export async function sendOpsAlert(opts: { subject: string; lines: string[]; link?: string }): Promise<DeliveryResult> {
+  const html = `<!doctype html>
+<html lang="sv"><body style="margin:0;background:#f4f8fa;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 1px 3px rgba(15,23,42,.08)">
+      <h1 style="margin:0 0 16px;font-size:19px">${escapeHtml(opts.subject)}</h1>
+      ${opts.lines.map((l) => `<p style="margin:0 0 12px;font-size:15px;line-height:1.5">${escapeHtml(l)}</p>`).join("")}
+      ${opts.link ? `<p style="margin:16px 0 0"><a href="${escapeHtml(opts.link)}" style="color:#157e6c;font-weight:600">Öppna adminportalen</a></p>` : ""}
+    </div>
+  </div>
+</body></html>`;
+  return sendMail({ to: ALERT_EMAIL, subject: `[Hitta Lyan] ${opts.subject}`, html, preview: opts.lines.join("\n") });
+}
+
 // ---------- Engångskoder (glömt lösenord, byte av e-post) ----------
 
 export type OtpType = "sign-in" | "email-verification" | "forget-password" | "change-email";

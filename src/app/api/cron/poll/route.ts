@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { runPoll } from "@/lib/poll";
+import { AllMarketsFailed, runPoll } from "@/lib/poll";
+import { checkScheduleAlive } from "@/lib/poll-health";
 import { isMarket, type Market } from "@/lib/markets";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,18 @@ function authorized(req: NextRequest) {
 /**
  * `?market=<kod>` kör en enda förmedling, vilket är hur cron-jobbet anropar oss:
  * då får var och en hela funktionens tidsgräns för sig. Utan parameter körs alla
- * i tur och ordning, och de som inte hinns med hoppas över till nästa körning.
+ * i tur och ordning, och de som inte hinns med hoppas över till nästa körning –
+ * så anropar Vercels dagliga körning, som dessutom vaktar att schemat lever.
+ *
+ * **Statuskoden säger om kedjan fungerar, inte om källan gör det.**
+ *
+ * - 200: anropet gick fram och allt är bokfört – även om förmedlingen krånglade
+ *   (`ok: false` i svaret). Det larmar hälsokontrollen om, en gång, med orsaken.
+ * - 500: något i vår egen kedja gick sönder, så att felet inte ens kunde skrivas
+ *   ned. Då är GitHub-jobbet det enda som kan säga ifrån, och det ska bli rött.
+ *
+ * Tidigare svarade ett fel hos Boplats Väst 500, och GitHub skickade ett mail om
+ * misslyckat jobb varje halvtimme så länge felet satt kvar, utan orsak i mailet.
  */
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
@@ -35,12 +47,15 @@ export async function GET(req: NextRequest) {
     }
     market = param;
   }
+  // Vercels dagliga körning (utan kö) tittar först efter om GitHubs schema stannat.
+  if (!market) await checkScheduleAlive();
   try {
     const result = await runPoll({ market, deadline: Date.now() + RUN_BUDGET_MS });
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ ok: result.failed.length === 0, ...result });
   } catch (err) {
     console.error("[poll] misslyckades:", err);
-    return NextResponse.json({ ok: false, error: (err as Error).message }, { status: 500 });
+    const recorded = err instanceof AllMarketsFailed && err.recorded;
+    return NextResponse.json({ ok: false, recorded, error: (err as Error).message }, { status: recorded ? 200 : 500 });
   }
 }
 

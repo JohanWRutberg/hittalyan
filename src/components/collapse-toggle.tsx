@@ -9,6 +9,10 @@ import { ChevronDown } from "lucide-react";
  *
  * Pilen roteras i stället för att bytas ut, vilket ger en mjukare övergång och
  * håller knappens bredd konstant.
+ *
+ * Den ser ut som en knapp: kant, accentfärg och en kraftig pil. Förut var den en
+ * grå chevron utan kant, och testarna hittade den inte – filtret och kartan såg
+ * ut att sakna ett sätt att fällas ihop.
  */
 export function CollapseToggle({
   expanded,
@@ -35,12 +39,13 @@ export function CollapseToggle({
       title={label}
       // Hover och tryckyta ligger i globals.css: Tailwinds hover-variant gäller
       // även på pekskärm, där tillståndet annars blir kvar efter ett tryck.
-      className={`collapse-toggle inline-flex items-center justify-center rounded-full text-muted transition ${
-        compact ? "h-6 w-10" : "h-7 w-12"
+      className={`collapse-toggle inline-flex items-center justify-center rounded-full border border-accent-line bg-accent-soft text-accent shadow-soft transition ${
+        compact ? "h-7 w-12" : "h-8 w-14"
       }`}
     >
       <ChevronDown
-        className={`size-4 transition-transform duration-200 ease-out motion-reduce:transition-none ${
+        strokeWidth={2.75}
+        className={`transition-transform duration-200 ease-out motion-reduce:transition-none ${compact ? "size-4" : "size-5"} ${
           expanded ? "rotate-180" : ""
         }`}
       />

@@ -289,13 +289,13 @@ input[type="radio"]:not(:disabled),
  */
 @media (hover: hover) {
   .collapse-toggle:hover {
-    background-color: var(--subtle);
-    color: var(--ink);
+    border-color: var(--accent-line-strong);
+    color: var(--accent-strong);
   }
 }
 .collapse-toggle:active {
-  background-color: var(--subtle);
-  color: var(--ink);
+  border-color: var(--accent-line-strong);
+  color: var(--accent-strong);
 }
 
 @media (hover: hover) {
